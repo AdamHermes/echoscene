@@ -23,6 +23,6 @@ pip install git+https://github.com/openai/CLIP.git
 
 
 cd scripts
-python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT --residual True --network_type echoscene --with_SDF True --with_CLIP True --batchSize 2 --workers 0 --loadmodel False --nepoch 1 --large False --use_scene_rels True
+python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT --residual True --network_type echoscene --with_SDF True --with_CLIP True --batchSize 1 --workers 0 --loadmodel False --nepoch 1 --large False --use_scene_rels True
 
-python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True
+python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True --render_res 512 --max_samples 5

@@ -121,7 +121,7 @@ def create_bg(box_and_angle, cat_ids, classes, type='floor'):
 
 def render_img(trimesh_meshes):
     scene = pyrender.Scene()
-    renderer = pyrender.OffscreenRenderer(viewport_width=256, viewport_height=256)
+    renderer = pyrender.OffscreenRenderer(viewport_width=512, viewport_height=512)
     for tri_mesh in trimesh_meshes:
         pyrender_mesh = pyrender.Mesh.from_trimesh(tri_mesh, smooth=False)
         scene.add(pyrender_mesh)
