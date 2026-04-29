@@ -47,7 +47,9 @@ class SGDiff(nn.Module):
         return obj_selected, shape_loss, layout_loss, loss_dict
 
     def load_networks(self, exp, epoch, strict=True, restart_optim=False, load_shape_branch=True):
-        ckpt = torch.load(os.path.join(exp, 'checkpoint', 'model{}.pth'.format(epoch)))
+        # Load checkpoints on CPU first to avoid a large temporary GPU memory spike
+        # during evaluation on smaller cards, then move the model to CUDA later.
+        ckpt = torch.load(os.path.join(exp, 'checkpoint', 'model{}.pth'.format(epoch)), map_location='cpu')
         diff_state_dict = {}
         diff_state_dict['opt'] = ckpt.pop('opt')
         if load_shape_branch:

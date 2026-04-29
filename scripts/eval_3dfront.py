@@ -33,6 +33,7 @@ parser.add_argument('--gen_shape', default=False, type=bool_flag, help='infer di
 parser.add_argument('--visualize', default=False, type=bool_flag)
 parser.add_argument('--export_3d', default=False, type=bool_flag, help='Export the generated shapes and boxes in json files for future use')
 parser.add_argument('--room_type', default='all', help='all, bedroom, livingroom, diningroom, library')
+parser.add_argument('--max_samples', type=int, default=None, help='Limit evaluation to the first N samples')
 
 args = parser.parse_args()
 
@@ -340,6 +341,7 @@ def evaluate():
         root=args.dataset,
         split='val_scans',
         use_scene_rels=modelArgs['use_scene_rels'],
+        data_len=args.max_samples,
         with_changes=True,
         eval=True,
         eval_type='relationship',
@@ -353,6 +355,7 @@ def evaluate():
         root=args.dataset,
         split='val_scans',
         use_scene_rels=modelArgs['use_scene_rels'],
+        data_len=args.max_samples,
         with_changes=True,
         eval=True,
         eval_type='addition',
@@ -365,6 +368,7 @@ def evaluate():
         root=args.dataset,
         split='val_scans',
         use_scene_rels=modelArgs['use_scene_rels'],
+        data_len=args.max_samples,
         with_changes=False,
         eval=True,
         eval_type='none',
@@ -394,6 +398,8 @@ def evaluate():
 
     model = model.eval()
     cat2objs = None
+
+    print('Evaluating {} sample(s)'.format(len(test_dataset_no_changes)))
 
     print('\nEditing Mode - Additions')
     reseed(47)

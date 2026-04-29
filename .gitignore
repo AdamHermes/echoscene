@@ -2,10 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.zip
 # C extensions
 *.so
-
+FRONT/
 # Distribution / packaging
 .Python
 build/
@@ -134,3 +134,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+*.pth
+released_full_model/
+released_layout_model/
