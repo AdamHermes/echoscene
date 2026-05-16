@@ -68,6 +68,7 @@ print(args)
 
 
 def parse_data(data):
+    scan_ids = data['scan_id']
     enc_objs, enc_triples, enc_objs_to_scene, enc_triples_to_scene = data['encoder']['objs'], \
                                                                      data['encoder']['tripltes'], \
                                                                      data['encoder']['obj_to_scene'], \
@@ -136,7 +137,7 @@ def parse_data(data):
 
     return enc_objs, enc_triples, encoded_enc_f, encoded_enc_text_feat, encoded_enc_rel_feat,\
            enc_objs_to_scene, dec_objs, dec_objs_grained, dec_triples, dec_boxes, dec_angles, dec_sdfs, \
-           encoded_dec_f, encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, dec_triples_to_scene, missing_nodes, manipulated_nodes
+           encoded_dec_f, encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, dec_triples_to_scene, missing_nodes, manipulated_nodes, scan_ids
 
 
 def train():
@@ -207,7 +208,7 @@ def train():
     print("Saving all parameters under:")
     print(os.path.join(args.exp, 'args.json'))
 
-    torch.autograd.set_detect_anomaly(True)
+    #torch.autograd.set_detect_anomaly(True)
     counter = model.counter if model.counter else 0
 
     print("---- Starting training loop! ----")
@@ -217,14 +218,15 @@ def train():
         for epoch in range(start_epoch, args.nepoch):
             print('Epoch: {}/{}'.format(epoch, args.nepoch))
             for i, data in enumerate(tqdm(dataloader)):
+                current_scan_ids = data['scan_id'] if isinstance(data, dict) and 'scan_id' in data else None
 
                 # parse the data to the network
                 try:
                     enc_objs, enc_triples, encoded_enc_f, encoded_enc_text_feat, encoded_enc_rel_feat,\
                     enc_objs_to_scene, dec_objs, dec_objs_grained, dec_triples, dec_boxes, dec_angles, dec_sdfs,\
-                    encoded_dec_f, encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, dec_triples_to_scene, missing_nodes, manipulated_nodes = parse_data(data)
+                    encoded_dec_f, encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, dec_triples_to_scene, missing_nodes, manipulated_nodes, current_scan_ids = parse_data(data)
                 except Exception as e:
-                    print('Exception', str(e))
+                    print('Exception while parsing batch {} scan_ids={}: {}'.format(i, current_scan_ids, str(e)))
                     continue
 
                 if args.bin_angle:
@@ -236,9 +238,13 @@ def train():
 
                 model = model.train()
 
-                obj_selected, shape_loss, layout_loss, loss_dict = model.forward_mani(enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat,
-                                               dec_objs, dec_objs_grained, dec_triples, dec_boxes, dec_angles, dec_sdfs, encoded_dec_text_feat, encoded_dec_rel_feat,
-                                               dec_objs_to_scene, missing_nodes, manipulated_nodes)
+                try:
+                    obj_selected, shape_loss, layout_loss, loss_dict = model.forward_mani(enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat,
+                                                   dec_objs, dec_objs_grained, dec_triples, dec_boxes, dec_angles, dec_sdfs, encoded_dec_text_feat, encoded_dec_rel_feat,
+                                                   dec_objs_to_scene, missing_nodes, manipulated_nodes, scan_ids=current_scan_ids)
+                except Exception as e:
+                    print('Exception during forward pass at epoch {} iter {} scan_ids={}'.format(epoch, i, current_scan_ids))
+                    raise
 
                 if args.network_type == 'echoscene':
                     model.diff.ShapeDiff.update_loss()

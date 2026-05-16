@@ -31,13 +31,13 @@ class SGDiff(nn.Module):
 
     def forward_mani(self, enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat, dec_objs, dec_objs_grained,
                      dec_triples, dec_boxes, dec_angles, dec_sdfs, encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, missing_nodes,
-                     manipulated_nodes):
+                     manipulated_nodes, scan_ids=None):
 
         if self.type_ == 'echoscene':
             obj_selected, shape_loss, layout_loss, loss_dict = self.diff.forward(
                 enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat, dec_objs, dec_objs_grained, dec_triples, dec_boxes,
                 encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, missing_nodes,
-                manipulated_nodes, dec_sdfs, dec_angles)
+                manipulated_nodes, dec_sdfs, dec_angles, scan_ids=scan_ids)
         elif self.type_ == 'echolayout':
             obj_selected, shape_loss, layout_loss, loss_dict = self.diff.forward(enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat, dec_objs, dec_triples, dec_boxes, encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, missing_nodes,
                 manipulated_nodes, dec_angles)

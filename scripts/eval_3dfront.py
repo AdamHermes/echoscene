@@ -337,33 +337,7 @@ def evaluate():
     with open(argsJson) as j:
         modelArgs = json.load(j)
     normalized_file = os.path.join(args.dataset, 'centered_bounds_{}_trainval.txt').format(modelArgs['room_type'])
-    test_dataset_rels_changes = ThreedFrontDatasetSceneGraph(
-        root=args.dataset,
-        split='val_scans',
-        use_scene_rels=modelArgs['use_scene_rels'],
-        data_len=args.max_samples,
-        with_changes=True,
-        eval=True,
-        eval_type='relationship',
-        with_CLIP=modelArgs['with_CLIP'],
-        use_SDF=modelArgs['with_SDF'],
-        large=modelArgs['large'],
-        room_type=args.room_type,
-        recompute_clip=False)
-
-    test_dataset_addition_changes = ThreedFrontDatasetSceneGraph(
-        root=args.dataset,
-        split='val_scans',
-        use_scene_rels=modelArgs['use_scene_rels'],
-        data_len=args.max_samples,
-        with_changes=True,
-        eval=True,
-        eval_type='addition',
-        with_CLIP=modelArgs['with_CLIP'],
-        use_SDF=modelArgs['with_SDF'],
-        large=modelArgs['large'],
-        room_type=args.room_type)
-
+    print('Building generation dataset...')
     test_dataset_no_changes = ThreedFrontDatasetSceneGraph(
         root=args.dataset,
         split='val_scans',
@@ -392,9 +366,13 @@ def evaluate():
                 with_changes=with_changes_, residual=modelArgs['residual'], gconv_pooling=modelArgs['pooling'], clip=modelArgs['with_CLIP'],
                 with_angles=modelArgs['with_angles'], separated=modelArgs['separated'])
     model.diff.optimizer_ini()
+    print('Loading checkpoint {} from {}...'.format(args.epoch, args.exp))
     model.load_networks(exp=args.exp, epoch=args.epoch, restart_optim=True, load_shape_branch=args.gen_shape)
+    print('Checkpoint loaded.')
     if torch.cuda.is_available():
+        print('Moving model to CUDA...')
         model = model.cuda()
+        print('Model on CUDA.')
 
     model = model.eval()
     cat2objs = None
