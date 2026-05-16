@@ -18,11 +18,11 @@ class SGDiff(nn.Module):
         assert replace_latent is not None and with_changes is not None
         if self.type_ == 'echoscene':
             from model.EchoScene import Sg2ScDiffModel
-            self.diff = Sg2ScDiffModel(vocab, self.diff_opt, diffusion_bs=16, embedding_dim=64, mlp_normalization="batch", separated=separated,
+            self.diff = Sg2ScDiffModel(vocab, self.diff_opt, diffusion_bs=32, embedding_dim=64, mlp_normalization="batch", separated=separated,
                               gconv_num_layers=5, use_angles=with_angles, replace_latent=replace_latent, residual=residual, use_clip=clip)
         elif self.type_ == 'echolayout':
             from model.EchoLayout import Sg2BoxDiffModel
-            self.diff = Sg2BoxDiffModel(vocab, self.diff_opt, diffusion_bs=16, embedding_dim=64, mlp_normalization="batch", separated=separated,
+            self.diff = Sg2BoxDiffModel(vocab, self.diff_opt, diffusion_bs=32, embedding_dim=64, mlp_normalization="batch", separated=separated,
                               gconv_num_layers=5, use_angles=with_angles, replace_latent=replace_latent, residual=residual, use_clip=clip)
         else:
             raise NotImplementedError

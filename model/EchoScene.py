@@ -73,7 +73,7 @@ class Sg2ScDiffModel(nn.Module):
         self.gconv_net_manipulation = GraphTripleConvNet(**gconv_kwargs_manipulation)
 
         self.diff_cfg = diff_opt
-        self.diffusion_bs = diffusion_bs if self.diff_cfg.hyper.batch_size is None else self.diff_cfg.hyper.batch_size
+        self.diffusion_bs = diffusion_bs
         self.s_l_separated = separated
         if self.s_l_separated:
             gconv_kwargs_ec_rel = {
