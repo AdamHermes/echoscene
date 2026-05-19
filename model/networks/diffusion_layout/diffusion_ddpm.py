@@ -470,49 +470,47 @@ class GaussianDiffusion:
         }
         return loss, stats
 
-    def _apply_inference_guidance(self, sample, timestep, scene_ids):
+    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids):
         step_stats = {
             'timestep': int(timestep),
             'applied': False,
         }
         if not self._guidance_active_for_timestep(timestep):
             step_stats['skip_reason'] = 'schedule_inactive'
-            return sample, step_stats
+            return model_mean, step_stats
 
         collision_cfg = self._collision_guidance_cfg()
         strength = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
         if strength <= 0.0:
             step_stats['skip_reason'] = 'zero_strength'
-            return sample, step_stats
+            return model_mean, step_stats
 
-        with torch.enable_grad():
-            guided_sample = sample.detach().clone().requires_grad_(True)
-            collision_loss, collision_stats = self._compute_collision_guidance_loss(guided_sample, scene_ids)
-            step_stats.update(collision_stats)
-            if collision_loss is None or not torch.isfinite(collision_loss):
-                step_stats['skip_reason'] = step_stats.get('skip_reason', 'invalid_loss')
-                return sample, step_stats
+        collision_loss, collision_stats = self._compute_collision_guidance_loss(pred_xstart, scene_ids)
+        step_stats.update(collision_stats)
+        if collision_loss is None or not torch.isfinite(collision_loss):
+            step_stats['skip_reason'] = step_stats.get('skip_reason', 'invalid_loss')
+            return model_mean, step_stats
 
-            guidance_grad = torch.autograd.grad(collision_loss, guided_sample, allow_unused=False)[0]
-            grad_norm = guidance_grad.norm(p=2, dim=1, keepdim=True)
-            grad_clip = float(cfg_get(self.inference_guidance, 'grad_clip', 0.0))
-            if grad_clip > 0.0:
-                clip_scale = torch.clamp(grad_clip / (grad_norm + 1e-12), max=1.0)
-                guidance_grad = guidance_grad * clip_scale
+        guidance_grad = torch.autograd.grad(collision_loss, pred_xstart, allow_unused=False)[0]
+        grad_norm = guidance_grad.norm(p=2, dim=1, keepdim=True)
+        grad_clip = float(cfg_get(self.inference_guidance, 'grad_clip', 0.0))
+        if grad_clip > 0.0:
+            clip_scale = torch.clamp(grad_clip / (grad_norm + 1e-12), max=1.0)
+            guidance_grad = guidance_grad * clip_scale
 
-            guided_sample = guided_sample - strength * guidance_grad
-            if bool(cfg_get(self.inference_guidance, 'clip_to_bounds', True)):
-                guided_sample = guided_sample.clamp(-1.0, 1.0)
+        variance_preconditioned_grad = model_variance * guidance_grad
+        guided_mean = model_mean - strength * variance_preconditioned_grad
 
         step_stats.update({
             'applied': True,
             'guidance_strength': strength,
             'collision_loss': float(collision_loss.detach().item()),
-            'penetration_loss': float(collision_loss.detach().item()),
+            'variance_scale_mean': float(model_variance.mean().detach().item()),
+            'variance_scale_max': float(model_variance.max().detach().item()),
             'grad_norm_mean': float(grad_norm.mean().detach().item()),
             'grad_norm_max': float(grad_norm.max().detach().item()),
         })
-        return guided_sample.detach(), step_stats
+        return guided_mean.detach(), step_stats
 
     def _summarize_guidance_stats(self, step_stats, final_sample, scene_ids):
         summary = {
@@ -533,11 +531,13 @@ class GaussianDiffusion:
             summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
             summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
             summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
+            summary['avg_guided_variance_scale'] = float(np.mean([stat.get('variance_scale_mean', 0.0) for stat in applied_stats]))
         else:
             summary['avg_guided_scene_iou'] = 0.0
             summary['avg_guided_scene_penetration'] = 0.0
             summary['avg_guided_collision_loss'] = 0.0
             summary['avg_guided_grad_norm'] = 0.0
+            summary['avg_guided_variance_scale'] = 0.0
 
         try:
             _, final_collision_stats = self._compute_collision_guidance_loss(final_sample.detach(), scene_ids, ignore_enabled=True)
@@ -577,12 +577,48 @@ class GaussianDiffusion:
         assert sample.shape == pred_xstart.shape
         return (sample, pred_xstart) if return_pred_xstart else sample
 
-    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, noise_fn, clip_denoised=False, return_pred_xstart=False):
+    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=False, return_pred_xstart=False):
         """
         Sample from the model
         """
-        model_mean, _, model_log_variance, pred_xstart = self.p_mean_variance(denoise_fn, data=data, t=t, obj_embed=obj_embed, triples=triples, condition=condition, clip_denoised=clip_denoised,
-                                                                 return_pred_xstart=True)
+        guidance_step_stats = {
+            'timestep': int(t[0].item()),
+            'applied': False,
+            'skip_reason': 'guidance_disabled',
+        }
+        if self._guidance_enabled():
+            with torch.enable_grad():
+                guided_data = data.detach().clone().requires_grad_(True)
+                model_mean, model_variance, model_log_variance, pred_xstart = self.p_mean_variance(
+                    denoise_fn,
+                    data=guided_data,
+                    t=t,
+                    obj_embed=obj_embed,
+                    triples=triples,
+                    condition=condition,
+                    clip_denoised=clip_denoised,
+                    return_pred_xstart=True,
+                )
+                model_mean, guidance_step_stats = self._apply_inference_guidance(
+                    pred_xstart=pred_xstart,
+                    model_mean=model_mean,
+                    model_variance=model_variance,
+                    timestep=int(t[0].item()),
+                    scene_ids=scene_ids,
+                )
+                pred_xstart = pred_xstart.detach()
+                model_log_variance = model_log_variance.detach()
+        else:
+            model_mean, _, model_log_variance, pred_xstart = self.p_mean_variance(
+                denoise_fn,
+                data=data,
+                t=t,
+                obj_embed=obj_embed,
+                triples=triples,
+                condition=condition,
+                clip_denoised=clip_denoised,
+                return_pred_xstart=True,
+            )
         noise = noise_fn(size=data.shape, dtype=data.dtype, device=data.device)
         assert noise.shape == data.shape
         # no noise when t == 0
@@ -590,7 +626,9 @@ class GaussianDiffusion:
 
         sample = model_mean + nonzero_mask * torch.exp(0.5 * model_log_variance) * noise
         assert sample.shape == pred_xstart.shape
-        return (sample, pred_xstart) if return_pred_xstart else sample
+        if return_pred_xstart:
+            return sample, pred_xstart, guidance_step_stats
+        return sample, guidance_step_stats
 
 
     def p_sample_loop(self, denoise_fn, shape, device, condition, condition_cross,
@@ -623,9 +661,8 @@ class GaussianDiffusion:
         step_stats = []
         for t in tqdm(reversed(range(0, self.num_timesteps if not keep_running else len(self.betas)))):
             t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
-            x_t = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, noise_fn=noise_fn,
+            x_t, guidance_step_stats = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
                                   clip_denoised=clip_denoised, return_pred_xstart=False)
-            x_t, guidance_step_stats = self._apply_inference_guidance(x_t, t, scene_ids)
             if self._guidance_enabled():
                 step_stats.append(guidance_step_stats)
 
