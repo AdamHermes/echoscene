@@ -332,6 +332,15 @@ class GaussianDiffusion:
         constraints_cfg = cfg_get(self.inference_guidance, 'constraints', None)
         return cfg_get(constraints_cfg, 'collision', None)
 
+    def _compute_pairwise_penetration(self, scene_boxes):
+        half_sizes = scene_boxes[:, :3].clamp(min=1e-4) * 0.5
+        centers = scene_boxes[:, 3:6]
+        center_delta = torch.abs(centers[:, None, :] - centers[None, :, :])
+        overlap_delta = torch.relu(half_sizes[:, None, :] + half_sizes[None, :, :] - center_delta)
+        penetration_volume = overlap_delta[..., 0] * overlap_delta[..., 1] * overlap_delta[..., 2]
+        max_penetration_depth = overlap_delta.max(dim=-1).values
+        return penetration_volume, max_penetration_depth
+
     def _compute_collision_guidance_loss(self, box_params, scene_ids, ignore_enabled=False):
         collision_cfg = self._collision_guidance_cfg()
         if not ignore_enabled and (collision_cfg is None or not bool(cfg_get(collision_cfg, 'enabled', False))):
@@ -352,14 +361,20 @@ class GaussianDiffusion:
             raise NotImplementedError('Inference-time collision guidance currently supports metric="aabb" only.')
 
         iou_threshold = float(cfg_get(collision_cfg, 'iou_threshold', 0.0) if collision_cfg is not None else 0.0)
+        penetration_threshold = float(cfg_get(collision_cfg, 'penetration_threshold', 0.0) if collision_cfg is not None else 0.0)
+        iou_weight = float(cfg_get(collision_cfg, 'iou_weight', 1.0) if collision_cfg is not None else 1.0)
+        penetration_weight = float(cfg_get(collision_cfg, 'penetration_weight', 0.0) if collision_cfg is not None else 0.0)
         denorm_boxes = self._denormalize_box_params(box_params)
         scene_ids = self._scene_ids_tensor(scene_ids, box_params.shape[0], box_params.device)
 
         scene_losses = []
         per_scene_mean_ious = []
         per_scene_max_ious = []
+        per_scene_penetration = []
+        per_scene_max_penetration = []
         total_pairs = 0
         total_pairs_above_threshold = 0
+        total_pairs_with_penetration = 0
 
         for scene_id in torch.unique(scene_ids):
             scene_mask = scene_ids == scene_id
@@ -376,16 +391,29 @@ class GaussianDiffusion:
                 diagonal=1,
             )
             pair_iou = iou_matrix[pair_mask]
+            penetration_matrix, penetration_depth_matrix = self._compute_pairwise_penetration(scene_boxes)
+            pair_penetration = penetration_matrix[pair_mask]
+            pair_penetration_depth = penetration_depth_matrix[pair_mask]
             if pair_iou.numel() == 0:
                 continue
 
             active_pair_iou = torch.relu(pair_iou - iou_threshold)
+            active_pair_penetration = torch.relu(pair_penetration - penetration_threshold)
             total_pairs += int(pair_iou.numel())
             total_pairs_above_threshold += int((pair_iou > iou_threshold).sum().item())
+            total_pairs_with_penetration += int((pair_penetration > penetration_threshold).sum().item())
             per_scene_mean_ious.append(pair_iou.mean())
             per_scene_max_ious.append(pair_iou.max())
-            if torch.any(active_pair_iou > 0):
-                scene_losses.append(active_pair_iou.mean())
+            per_scene_penetration.append(pair_penetration.mean())
+            per_scene_max_penetration.append(pair_penetration_depth.max())
+
+            scene_loss_terms = []
+            if iou_weight > 0.0 and torch.any(active_pair_iou > 0):
+                scene_loss_terms.append(iou_weight * active_pair_iou.mean())
+            if penetration_weight > 0.0 and torch.any(active_pair_penetration > 0):
+                scene_loss_terms.append(penetration_weight * active_pair_penetration.mean())
+            if len(scene_loss_terms) > 0:
+                scene_losses.append(torch.stack(scene_loss_terms).sum())
 
         if len(per_scene_mean_ious) == 0:
             return None, {
@@ -394,9 +422,13 @@ class GaussianDiffusion:
                 'skip_reason': 'insufficient_pairs',
                 'num_pairs': 0,
                 'pairs_above_threshold': 0,
+                'pairs_with_penetration': 0,
                 'avg_scene_iou': 0.0,
                 'max_pair_iou': 0.0,
+                'avg_scene_penetration': 0.0,
+                'max_pair_penetration': 0.0,
                 'iou_threshold': iou_threshold,
+                'penetration_threshold': penetration_threshold,
                 'metric': metric,
             }
 
@@ -407,9 +439,15 @@ class GaussianDiffusion:
                 'skip_reason': 'below_threshold',
                 'num_pairs': total_pairs,
                 'pairs_above_threshold': total_pairs_above_threshold,
+                'pairs_with_penetration': total_pairs_with_penetration,
                 'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
                 'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
+                'avg_scene_penetration': float(torch.stack(per_scene_penetration).mean().detach().item()),
+                'max_pair_penetration': float(torch.stack(per_scene_max_penetration).max().detach().item()),
                 'iou_threshold': iou_threshold,
+                'penetration_threshold': penetration_threshold,
+                'iou_weight': iou_weight,
+                'penetration_weight': penetration_weight,
                 'metric': metric,
             }
 
@@ -419,9 +457,15 @@ class GaussianDiffusion:
             'skipped': False,
             'num_pairs': total_pairs,
             'pairs_above_threshold': total_pairs_above_threshold,
+            'pairs_with_penetration': total_pairs_with_penetration,
             'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
             'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
+            'avg_scene_penetration': float(torch.stack(per_scene_penetration).mean().detach().item()),
+            'max_pair_penetration': float(torch.stack(per_scene_max_penetration).max().detach().item()),
             'iou_threshold': iou_threshold,
+            'penetration_threshold': penetration_threshold,
+            'iou_weight': iou_weight,
+            'penetration_weight': penetration_weight,
             'metric': metric,
         }
         return loss, stats
@@ -464,6 +508,7 @@ class GaussianDiffusion:
             'applied': True,
             'guidance_strength': strength,
             'collision_loss': float(collision_loss.detach().item()),
+            'penetration_loss': float(collision_loss.detach().item()),
             'grad_norm_mean': float(grad_norm.mean().detach().item()),
             'grad_norm_max': float(grad_norm.max().detach().item()),
         })
@@ -485,10 +530,12 @@ class GaussianDiffusion:
         applied_stats = [stat for stat in step_stats if stat.get('applied')]
         if applied_stats:
             summary['avg_guided_scene_iou'] = float(np.mean([stat['avg_scene_iou'] for stat in applied_stats]))
+            summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
             summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
             summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
         else:
             summary['avg_guided_scene_iou'] = 0.0
+            summary['avg_guided_scene_penetration'] = 0.0
             summary['avg_guided_collision_loss'] = 0.0
             summary['avg_guided_grad_norm'] = 0.0
 
@@ -496,12 +543,18 @@ class GaussianDiffusion:
             _, final_collision_stats = self._compute_collision_guidance_loss(final_sample.detach(), scene_ids, ignore_enabled=True)
             summary['final_avg_scene_iou'] = float(final_collision_stats.get('avg_scene_iou', 0.0))
             summary['final_max_pair_iou'] = float(final_collision_stats.get('max_pair_iou', 0.0))
+            summary['final_avg_scene_penetration'] = float(final_collision_stats.get('avg_scene_penetration', 0.0))
+            summary['final_max_pair_penetration'] = float(final_collision_stats.get('max_pair_penetration', 0.0))
             summary['final_pairs_above_threshold'] = int(final_collision_stats.get('pairs_above_threshold', 0))
+            summary['final_pairs_with_penetration'] = int(final_collision_stats.get('pairs_with_penetration', 0))
             summary['final_num_pairs'] = int(final_collision_stats.get('num_pairs', 0))
         except ValueError as exc:
             summary['final_avg_scene_iou'] = 0.0
             summary['final_max_pair_iou'] = 0.0
+            summary['final_avg_scene_penetration'] = 0.0
+            summary['final_max_pair_penetration'] = 0.0
             summary['final_pairs_above_threshold'] = 0
+            summary['final_pairs_with_penetration'] = 0
             summary['final_num_pairs'] = 0
             summary['final_metrics_error'] = str(exc)
 

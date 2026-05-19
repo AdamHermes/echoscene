@@ -58,8 +58,11 @@ layout_branch:
       constraints:
         collision:
           enabled: true
-          strength: 0.05
+          strength: 0.08
           iou_threshold: 0.02
+          penetration_threshold: 0.0
+          iou_weight: 0.5
+          penetration_weight: 2.0
           metric: aabb
 
 shape_branch:

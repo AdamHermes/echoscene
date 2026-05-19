@@ -67,9 +67,13 @@ def init_collision_metric_accumulator():
         'enabled_scenes': 0,
         'applied_steps': [],
         'avg_guided_scene_iou': [],
+        'avg_guided_scene_penetration': [],
         'final_avg_scene_iou': [],
         'final_max_pair_iou': [],
+        'final_avg_scene_penetration': [],
+        'final_max_pair_penetration': [],
         'final_pairs_above_threshold': [],
+        'final_pairs_with_penetration': [],
     }
 
 
@@ -82,9 +86,13 @@ def update_collision_metric_accumulator(accumulator, collision_stats):
         accumulator['enabled_scenes'] += 1
     accumulator['applied_steps'].append(int(collision_stats.get('applied_steps', 0)))
     accumulator['avg_guided_scene_iou'].append(float(collision_stats.get('avg_guided_scene_iou', 0.0)))
+    accumulator['avg_guided_scene_penetration'].append(float(collision_stats.get('avg_guided_scene_penetration', 0.0)))
     accumulator['final_avg_scene_iou'].append(float(collision_stats.get('final_avg_scene_iou', 0.0)))
     accumulator['final_max_pair_iou'].append(float(collision_stats.get('final_max_pair_iou', 0.0)))
+    accumulator['final_avg_scene_penetration'].append(float(collision_stats.get('final_avg_scene_penetration', 0.0)))
+    accumulator['final_max_pair_penetration'].append(float(collision_stats.get('final_max_pair_penetration', 0.0)))
     accumulator['final_pairs_above_threshold'].append(int(collision_stats.get('final_pairs_above_threshold', 0)))
+    accumulator['final_pairs_with_penetration'].append(int(collision_stats.get('final_pairs_with_penetration', 0)))
 
 
 def summarize_collision_metrics(accumulator):
@@ -93,16 +101,22 @@ def summarize_collision_metrics(accumulator):
 
     return (
         'collision guidance: scenes={} enabled_scenes={} avg_applied_steps={:.2f} '
-        'avg_guided_scene_iou={:.4f} final_avg_scene_iou={:.4f} '
-        'final_max_pair_iou={:.4f} final_pairs_above_threshold={:.2f}'
+        'avg_guided_scene_iou={:.4f} avg_guided_scene_penetration={:.4f} '
+        'final_avg_scene_iou={:.4f} final_max_pair_iou={:.4f} '
+        'final_avg_scene_penetration={:.4f} final_max_pair_penetration={:.4f} '
+        'final_pairs_above_threshold={:.2f} final_pairs_with_penetration={:.2f}'
     ).format(
         accumulator['num_scenes'],
         accumulator['enabled_scenes'],
         np.mean(accumulator['applied_steps']) if accumulator['applied_steps'] else 0.0,
         np.mean(accumulator['avg_guided_scene_iou']) if accumulator['avg_guided_scene_iou'] else 0.0,
+        np.mean(accumulator['avg_guided_scene_penetration']) if accumulator['avg_guided_scene_penetration'] else 0.0,
         np.mean(accumulator['final_avg_scene_iou']) if accumulator['final_avg_scene_iou'] else 0.0,
         np.mean(accumulator['final_max_pair_iou']) if accumulator['final_max_pair_iou'] else 0.0,
+        np.mean(accumulator['final_avg_scene_penetration']) if accumulator['final_avg_scene_penetration'] else 0.0,
+        np.mean(accumulator['final_max_pair_penetration']) if accumulator['final_max_pair_penetration'] else 0.0,
         np.mean(accumulator['final_pairs_above_threshold']) if accumulator['final_pairs_above_threshold'] else 0.0,
+        np.mean(accumulator['final_pairs_with_penetration']) if accumulator['final_pairs_with_penetration'] else 0.0,
     )
 
 def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized_file=None, bin_angles=False, cat2objs=None, datasize='large', gen_shape=False):
