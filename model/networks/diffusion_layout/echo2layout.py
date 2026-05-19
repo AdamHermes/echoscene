@@ -56,13 +56,10 @@ class EchoToLayout(Module):
 
     def set_input(self, data_dict):
         vars_list = []
-        try:
+        if 'box' in data_dict and data_dict['box'] is not None:
             self.x = data_dict['box']
-            self.scene_ids = data_dict['obj_id_to_scene']
-            B, D = self.x.shape
             vars_list.append('x')
-        except:
-            print('inference mode, no gt boxes and scene ids')
+        self.scene_ids = data_dict.get('obj_id_to_scene', None)
 
         self.preds = data_dict['preds']
         self.rel = data_dict['c_b']
@@ -105,7 +102,7 @@ class EchoToLayout(Module):
         condition = rel if self.rel_condition else None
         condition_cross = None
         # reverse sampling
-        samples = self.df.gen_samples_sg(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, clip_denoised=clip_denoised)
+        samples = self.df.gen_samples_sg(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, clip_denoised=clip_denoised, scene_ids=self.scene_ids)
         
         return samples
 
@@ -122,5 +119,8 @@ class EchoToLayout(Module):
             "translations": samples[:, self.size_dim:self.size_dim + self.translation_dim].contiguous(),
             "angles": samples[:, self.size_dim + self.translation_dim:self.bbox_dim].contiguous(),
         }
+        collision_stats = self.df.get_latest_sampling_stats()
+        if collision_stats is not None:
+            samples_dict["collision_stats"] = collision_stats
         
         return samples_dict

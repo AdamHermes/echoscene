@@ -50,6 +50,18 @@ layout_branch:
       loss_iou: false
       iou_type: obb
       train_stats_file: None
+    inference_guidance:
+      enabled: false
+      interval: 5
+      start_ratio: 0.7
+      grad_clip: 0.1
+      clip_to_bounds: true
+      constraints:
+        collision:
+          enabled: true
+          strength: 0.05
+          iou_threshold: 0.02
+          metric: aabb
 misc:
     debug: 0
     seed: 111

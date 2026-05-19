@@ -12,7 +12,16 @@ import json
 import torch.nn.functional as F
 from einops import rearrange, reduce
 from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_sincos2arctan
+from .loss import axis_aligned_bbox_overlaps_3d
 # from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
+
+
+def cfg_get(cfg, key, default=None):
+    if cfg is None:
+        return default
+    if hasattr(cfg, 'get'):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 def norm(v, f):
     v = (v - v.min())/(v.max() - v.min()) - 0.5
@@ -123,9 +132,11 @@ class GaussianDiffusion:
         self.angle_dim = config.get("angle_dim", 1)
         self.bbox_dim = self.translation_dim + self.size_dim + self.angle_dim
         self.bbox_norm_file = train_stats_file
+        self.box_stats = np.loadtxt(train_stats_file).astype(np.float32) if train_stats_file is not None else None
         self.loss_separate = loss_separate
         self.loss_iou = loss_iou
         self.iou_type = iou_type
+        self.inference_guidance = cfg_get(config, "inference_guidance", None)
         self.loss_type = loss_type
         self.model_mean_type = model_mean_type
         self.model_var_type = model_var_type
@@ -164,6 +175,7 @@ class GaussianDiffusion:
         # borrowed from SDFusion
         logvar_init = 0.
         self.logvar = torch.full(fill_value=logvar_init, size=(self.num_timesteps,))
+        self.latest_sampling_stats = None
 
     @staticmethod
     def _extract(a, t, x_shape):
@@ -276,6 +288,225 @@ class GaussianDiffusion:
             self._extract(self.sqrt_recipm1_alphas_cumprod.to(x_t.device), t, x_t.shape)
         )
 
+    def _scene_ids_tensor(self, scene_ids, num_boxes, device):
+        if scene_ids is None:
+            return torch.zeros(num_boxes, dtype=torch.long, device=device)
+        if isinstance(scene_ids, torch.Tensor):
+            return scene_ids.to(device=device, dtype=torch.long)
+        return torch.as_tensor(scene_ids, dtype=torch.long, device=device)
+
+    def _denormalize_box_params(self, box_params):
+        if self.box_stats is None:
+            raise ValueError('train_stats_file must be set for inference-time physical guidance.')
+        stats = torch.as_tensor(self.box_stats, dtype=box_params.dtype, device=box_params.device)
+        min_lhw, max_lhw = stats[:3], stats[3:6]
+        min_xyz, max_xyz = stats[6:9], stats[9:12]
+
+        sizes = ((box_params[:, :3] + 1.0) / 2.0) * (max_lhw - min_lhw) + min_lhw
+        translations = ((box_params[:, 3:6] + 1.0) / 2.0) * (max_xyz - min_xyz) + min_xyz
+        angles = postprocess_sincos2arctan(box_params[:, -2:])
+        return torch.cat((sizes, translations, angles), dim=-1)
+
+    def _boxes_to_axis_aligned_corners(self, denorm_boxes):
+        half_sizes = denorm_boxes[:, :3].clamp(min=1e-4) * 0.5
+        centers = denorm_boxes[:, 3:6]
+        return torch.cat((centers - half_sizes, centers + half_sizes), dim=-1)
+
+    def _guidance_enabled(self):
+        return bool(cfg_get(self.inference_guidance, 'enabled', False))
+
+    def _guidance_active_for_timestep(self, timestep):
+        if not self._guidance_enabled():
+            return False
+        interval = max(int(cfg_get(self.inference_guidance, 'interval', 1)), 1)
+        start_ratio = float(cfg_get(self.inference_guidance, 'start_ratio', 0.0))
+        start_ratio = min(max(start_ratio, 0.0), 1.0)
+        denoise_step = (self.num_timesteps - 1) - int(timestep)
+        if self.num_timesteps > 1:
+            denoise_progress = denoise_step / float(self.num_timesteps - 1)
+        else:
+            denoise_progress = 1.0
+        return denoise_progress >= start_ratio and denoise_step % interval == 0
+
+    def _collision_guidance_cfg(self):
+        constraints_cfg = cfg_get(self.inference_guidance, 'constraints', None)
+        return cfg_get(constraints_cfg, 'collision', None)
+
+    def _compute_collision_guidance_loss(self, box_params, scene_ids, ignore_enabled=False):
+        collision_cfg = self._collision_guidance_cfg()
+        if not ignore_enabled and (collision_cfg is None or not bool(cfg_get(collision_cfg, 'enabled', False))):
+            return None, {
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'constraint_disabled',
+            }
+        if self.box_stats is None:
+            return None, {
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'missing_train_stats',
+            }
+
+        metric = str(cfg_get(collision_cfg, 'metric', 'aabb') if collision_cfg is not None else 'aabb').lower()
+        if metric != 'aabb':
+            raise NotImplementedError('Inference-time collision guidance currently supports metric="aabb" only.')
+
+        iou_threshold = float(cfg_get(collision_cfg, 'iou_threshold', 0.0) if collision_cfg is not None else 0.0)
+        denorm_boxes = self._denormalize_box_params(box_params)
+        scene_ids = self._scene_ids_tensor(scene_ids, box_params.shape[0], box_params.device)
+
+        scene_losses = []
+        per_scene_mean_ious = []
+        per_scene_max_ious = []
+        total_pairs = 0
+        total_pairs_above_threshold = 0
+
+        for scene_id in torch.unique(scene_ids):
+            scene_mask = scene_ids == scene_id
+            if int(scene_mask.sum().item()) < 2:
+                continue
+
+            scene_boxes = denorm_boxes[scene_mask]
+            scene_corners = self._boxes_to_axis_aligned_corners(scene_boxes).unsqueeze(0)
+            iou_matrix = axis_aligned_bbox_overlaps_3d(scene_corners, scene_corners).squeeze(0)
+            iou_matrix = torch.nan_to_num(iou_matrix, nan=0.0, posinf=0.0, neginf=0.0)
+
+            pair_mask = torch.triu(
+                torch.ones_like(iou_matrix, dtype=torch.bool),
+                diagonal=1,
+            )
+            pair_iou = iou_matrix[pair_mask]
+            if pair_iou.numel() == 0:
+                continue
+
+            active_pair_iou = torch.relu(pair_iou - iou_threshold)
+            total_pairs += int(pair_iou.numel())
+            total_pairs_above_threshold += int((pair_iou > iou_threshold).sum().item())
+            per_scene_mean_ious.append(pair_iou.mean())
+            per_scene_max_ious.append(pair_iou.max())
+            if torch.any(active_pair_iou > 0):
+                scene_losses.append(active_pair_iou.mean())
+
+        if len(per_scene_mean_ious) == 0:
+            return None, {
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'insufficient_pairs',
+                'num_pairs': 0,
+                'pairs_above_threshold': 0,
+                'avg_scene_iou': 0.0,
+                'max_pair_iou': 0.0,
+                'iou_threshold': iou_threshold,
+                'metric': metric,
+            }
+
+        if len(scene_losses) == 0:
+            return None, {
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'below_threshold',
+                'num_pairs': total_pairs,
+                'pairs_above_threshold': total_pairs_above_threshold,
+                'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
+                'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
+                'iou_threshold': iou_threshold,
+                'metric': metric,
+            }
+
+        loss = torch.stack(scene_losses).mean()
+        stats = {
+            'constraint': 'collision',
+            'skipped': False,
+            'num_pairs': total_pairs,
+            'pairs_above_threshold': total_pairs_above_threshold,
+            'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
+            'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
+            'iou_threshold': iou_threshold,
+            'metric': metric,
+        }
+        return loss, stats
+
+    def _apply_inference_guidance(self, sample, timestep, scene_ids):
+        step_stats = {
+            'timestep': int(timestep),
+            'applied': False,
+        }
+        if not self._guidance_active_for_timestep(timestep):
+            step_stats['skip_reason'] = 'schedule_inactive'
+            return sample, step_stats
+
+        collision_cfg = self._collision_guidance_cfg()
+        strength = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
+        if strength <= 0.0:
+            step_stats['skip_reason'] = 'zero_strength'
+            return sample, step_stats
+
+        with torch.enable_grad():
+            guided_sample = sample.detach().clone().requires_grad_(True)
+            collision_loss, collision_stats = self._compute_collision_guidance_loss(guided_sample, scene_ids)
+            step_stats.update(collision_stats)
+            if collision_loss is None or not torch.isfinite(collision_loss):
+                step_stats['skip_reason'] = step_stats.get('skip_reason', 'invalid_loss')
+                return sample, step_stats
+
+            guidance_grad = torch.autograd.grad(collision_loss, guided_sample, allow_unused=False)[0]
+            grad_norm = guidance_grad.norm(p=2, dim=1, keepdim=True)
+            grad_clip = float(cfg_get(self.inference_guidance, 'grad_clip', 0.0))
+            if grad_clip > 0.0:
+                clip_scale = torch.clamp(grad_clip / (grad_norm + 1e-12), max=1.0)
+                guidance_grad = guidance_grad * clip_scale
+
+            guided_sample = guided_sample - strength * guidance_grad
+            if bool(cfg_get(self.inference_guidance, 'clip_to_bounds', True)):
+                guided_sample = guided_sample.clamp(-1.0, 1.0)
+
+        step_stats.update({
+            'applied': True,
+            'guidance_strength': strength,
+            'collision_loss': float(collision_loss.detach().item()),
+            'grad_norm_mean': float(grad_norm.mean().detach().item()),
+            'grad_norm_max': float(grad_norm.max().detach().item()),
+        })
+        return guided_sample.detach(), step_stats
+
+    def _summarize_guidance_stats(self, step_stats, final_sample, scene_ids):
+        summary = {
+            'enabled': self._guidance_enabled(),
+            'scheduled_steps': len(step_stats),
+            'applied_steps': sum(1 for stat in step_stats if stat.get('applied')),
+            'step_stats': step_stats,
+        }
+
+        collision_cfg = self._collision_guidance_cfg()
+        summary['guidance_strength'] = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
+        summary['interval'] = int(cfg_get(self.inference_guidance, 'interval', 1)) if self._guidance_enabled() else 0
+        summary['start_ratio'] = float(cfg_get(self.inference_guidance, 'start_ratio', 0.0)) if self._guidance_enabled() else 0.0
+
+        applied_stats = [stat for stat in step_stats if stat.get('applied')]
+        if applied_stats:
+            summary['avg_guided_scene_iou'] = float(np.mean([stat['avg_scene_iou'] for stat in applied_stats]))
+            summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
+            summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
+        else:
+            summary['avg_guided_scene_iou'] = 0.0
+            summary['avg_guided_collision_loss'] = 0.0
+            summary['avg_guided_grad_norm'] = 0.0
+
+        try:
+            _, final_collision_stats = self._compute_collision_guidance_loss(final_sample.detach(), scene_ids, ignore_enabled=True)
+            summary['final_avg_scene_iou'] = float(final_collision_stats.get('avg_scene_iou', 0.0))
+            summary['final_max_pair_iou'] = float(final_collision_stats.get('max_pair_iou', 0.0))
+            summary['final_pairs_above_threshold'] = int(final_collision_stats.get('pairs_above_threshold', 0))
+            summary['final_num_pairs'] = int(final_collision_stats.get('num_pairs', 0))
+        except ValueError as exc:
+            summary['final_avg_scene_iou'] = 0.0
+            summary['final_max_pair_iou'] = 0.0
+            summary['final_pairs_above_threshold'] = 0
+            summary['final_num_pairs'] = 0
+            summary['final_metrics_error'] = str(exc)
+
+        return summary
+
     ''' samples '''
 
     def p_sample(self, denoise_fn, data, t, condition, condition_cross, noise_fn, clip_denoised=False, return_pred_xstart=False):
@@ -327,7 +558,7 @@ class GaussianDiffusion:
         assert img_t.shape == shape
         return img_t
 
-    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, noise_fn=torch.randn, clip_denoised=True, keep_running=False):
+    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=True, keep_running=False):
         """
         Generate samples
         keep_running: True if we run 2 x num_timesteps, False if we just run num_timesteps
@@ -336,12 +567,17 @@ class GaussianDiffusion:
 
         assert isinstance(shape, (tuple, list))
         x_t = noise_fn(size=shape, dtype=torch.float, device=device)
+        step_stats = []
         for t in tqdm(reversed(range(0, self.num_timesteps if not keep_running else len(self.betas)))):
             t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
             x_t = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, noise_fn=noise_fn,
                                   clip_denoised=clip_denoised, return_pred_xstart=False)
+            x_t, guidance_step_stats = self._apply_inference_guidance(x_t, t, scene_ids)
+            if self._guidance_enabled():
+                step_stats.append(guidance_step_stats)
 
         assert x_t.shape == shape
+        self.latest_sampling_stats = self._summarize_guidance_stats(step_stats, x_t, scene_ids)
         return x_t
 
     def p_sample_loop_trajectory(self, denoise_fn, shape, device, freq, condition, condition_cross,
@@ -615,9 +851,12 @@ class DiffusionPoint(nn.Module):
                                             keep_running=keep_running)
 
     def gen_samples_sg(self, shape, device, obj_embed, triples=None, condition=None, noise_fn=torch.randn,
-                    clip_denoised=True, keep_running=False):
-        return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, noise_fn=noise_fn,
+                    clip_denoised=True, keep_running=False, scene_ids=None):
+        return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
                                             clip_denoised=clip_denoised, keep_running=keep_running)
+
+    def get_latest_sampling_stats(self):
+        return self.diffusion.latest_sampling_stats
 
     def gen_sample_traj(self, shape, device, freq, condition=None, condition_cross=None, noise_fn=torch.randn,
                     clip_denoised=True,keep_running=False):
