@@ -108,9 +108,15 @@ class ThreedFrontDatasetSceneGraph(data.Dataset):
 
         for scene, infos in self.tight_boxes_json.items():
             for id, info in infos.items():
-                if 'model_path' in info:
-                    if info['model_path']:
-                        info['model_path'] = root + info['model_path'][36:]
+                if 'model_path' in info and info['model_path']:
+
+                    model_path = info['model_path']
+
+                    # Extract everything after "3D-FUTURE-model/"
+                    idx = model_path.find("3D-FUTURE-model/")
+                    if idx != -1:
+                        relative_part = model_path[idx:]
+                        info['model_path'] = os.path.join(root, relative_part)
 
 
         self.padding = 0.2
@@ -310,7 +316,16 @@ class ThreedFrontDatasetSceneGraph(data.Dataset):
                 if self.tight_boxes_json[scan_id][key]["model_path"] is None:
                     obj_sdf_list.append(torch.zeros((1, self.sdf_res, self.sdf_res, self.sdf_res))) # floor
                 else:
-                    sdf_path = os.path.join(self.tight_boxes_json[scan_id][key]["model_path"].replace('3D-FUTURE-model', "3D-FUTURE-SDF").rsplit('/', 1)[0], 'ori_sample_grid.h5')
+                    model_id = os.path.basename(
+                        os.path.dirname(self.tight_boxes_json[scan_id][key]["model_path"])
+                    )
+
+                    sdf_path = os.path.join(
+                        self.root,
+                        "3D-FUTURE-SDF",
+                        model_id,
+                        "ori_sample_grid.h5"
+                    )               
                     h5_f = h5py.File(sdf_path, 'r')
                     obj_sdf = h5_f['pc_sdf_sample'][:].astype(np.float32)
                     sdf = torch.Tensor(obj_sdf).view(1, self.sdf_res, self.sdf_res, self.sdf_res)

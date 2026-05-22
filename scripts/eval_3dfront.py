@@ -34,7 +34,7 @@ parser.add_argument('--visualize', default=False, type=bool_flag)
 parser.add_argument('--export_3d', default=False, type=bool_flag, help='Export the generated shapes and boxes in json files for future use')
 parser.add_argument('--room_type', default='all', help='all, bedroom, livingroom, diningroom, library')
 parser.add_argument('--max_samples', type=int, default=None, help='Limit evaluation to the first N samples')
-
+parser.add_argument('--start_idx', type=int, default=0, help='Start evaluation from this sample index')
 args = parser.parse_args()
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
@@ -421,6 +421,9 @@ def evaluate():
         use_SDF=modelArgs['with_SDF'],
         large=modelArgs['large'],
         room_type=args.room_type)
+
+    # slice the dataset scans based on start_idx and max_samples
+    test_dataset_no_changes.scans = test_dataset_no_changes.scans[args.start_idx:args.start_idx + args.max_samples]
 
     modeltype_ = modelArgs['network_type']
     modelArgs['store_path'] = os.path.join(args.exp, "vis", args.epoch)

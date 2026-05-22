@@ -61,7 +61,7 @@ def main(argv):
     args = parser.parse_args(argv)
     room_type = ["bedroom", "livingroom", "diningroom", "all"]
     instruct_scene = True
-    room = room_type[2]
+    room = room_type[3]
     print("testing {}...".format(room))
     room_dict = {'bedroom': ["Bedroom", "MasterBedroom", "SecondBedroom"], 'livingroom': ['LivingDiningRoom','LivingRoom'], 'diningroom': ['LivingDiningRoom','DiningRoom'], 'all': ["Bedroom", "MasterBedroom", "SecondBedroom",'LivingDiningRoom','LivingRoom','DiningRoom']}
     # Create Real datasets
@@ -71,24 +71,14 @@ def main(argv):
     # )
     # splits_builder = CSVSplitsBuilder(args.path_to_annotations)
     if args.compare_trainval:
-        args.path_to_real_renderings = "/media/ymxlzgy/Data/graphto3d_v2_test/gt/small/trainval"
-        args.path_to_synthesized_renderings = "/media/ymxlzgy/Data/graphto3d_v2_test/sln_small/retrieval/render_imgs"
-        # test_real = ThreedFrontRenderDataset(CachedThreedFront(
-        #     args.path_to_real_renderings,
-        #     config=config,
-        #     scene_ids=splits_builder.get_splits(["train", "val"])
-        # ))
+        args.path_to_real_renderings = "../output/small/trainval"
+        args.path_to_synthesized_renderings = "../released_full_model/vis/2050/render_imgs/echoscene"
     else:
-        args.path_to_real_renderings = "/media/ymxlzgy/Data/graphto3d_v2_test/gt_fov90_h8_wo_lamp_no_stool/small/test"
-        args.path_to_synthesized_renderings = "/media/ymxlzgy/Data/model_savedir/Instructscene/epoch_00009"
-        # test_real = ThreedFrontRenderDataset(CachedThreedFront(
-        #     args.path_to_real_renderings,
-        #     config=config,
-        #     scene_ids=splits_builder.get_splits(["test"])
-        # ))
+        args.path_to_real_renderings = "../output/small/test"
+        args.path_to_synthesized_renderings = "../released_full_model/vis/2050/render_imgs/echoscene"
 
     print("Generating temporary a folder with test_real images...")
-    path_to_test_real = "/media/ymxlzgy/Data/model_savedir/fid_kid_tmp/real" # /tmp/test_real
+    path_to_test_real = "../fid_kid_tmp/real"
     if not os.path.exists(path_to_test_real):
         os.makedirs(path_to_test_real)
     real_images = [
@@ -103,22 +93,27 @@ def main(argv):
     print('number of real images :', len(real_images))
 
     print("Generating temporary a folder with test_fake images...")
-    path_to_test_fake = "/media/ymxlzgy/Data/model_savedir/fid_kid_tmp/fake" #/tmp/test_fake/
+    path_to_test_fake = "../fid_kid_tmp/fake" #/tmp/test_fake/
     if not os.path.exists(path_to_test_fake):
         os.makedirs(path_to_test_fake)
 
-    if not instruct_scene:
-        synthesized_images = [
-            os.path.join(args.path_to_synthesized_renderings, oi)
-            for oi in os.listdir(args.path_to_synthesized_renderings)
-            if oi.endswith(".png") and oi.split('-')[0] in room_dict[room]
-        ]
-    else:
-        synthesized_images = [
-            os.path.join(args.path_to_synthesized_renderings, oi)
-            for oi in os.listdir(args.path_to_synthesized_renderings)
-            if oi.endswith(".png") and oi.split('_')[1].split('-')[0] in room_dict[room]
-        ]
+    # if not instruct_scene:
+    #     synthesized_images = [
+    #         os.path.join(args.path_to_synthesized_renderings, oi)
+    #         for oi in os.listdir(args.path_to_synthesized_renderings)
+    #         if oi.endswith(".png") and oi.split('-')[0] in room_dict[room]
+    #     ]
+    # else:
+    #     synthesized_images = [
+    #         os.path.join(args.path_to_synthesized_renderings, oi)
+    #         for oi in os.listdir(args.path_to_synthesized_renderings)
+    #         if oi.endswith(".png") and oi.split('_')[1].split('-')[0] in room_dict[room]
+    #     ]
+    synthesized_images = [
+        os.path.join(args.path_to_synthesized_renderings, oi)
+        for oi in os.listdir(args.path_to_synthesized_renderings)
+        if oi.endswith(".png")
+    ]
     print('number of synthesized images :', len(synthesized_images))
 
     scores = []
