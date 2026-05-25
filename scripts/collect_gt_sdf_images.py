@@ -25,7 +25,7 @@ class_file = f"{dataset_root}/classes_all.txt"
 bath = './output'
 cat = {}
 large = False
-without_lamp = False
+without_lamp = True
 no_stool = False
 mapping_file = f"{dataset_root}/mapping.json" if not no_stool else f"{dataset_root}/mapping_no_stool.json"
 

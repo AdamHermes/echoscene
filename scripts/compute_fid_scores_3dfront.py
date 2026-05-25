@@ -112,7 +112,7 @@ def main(argv):
     synthesized_images = [
         os.path.join(args.path_to_synthesized_renderings, oi)
         for oi in os.listdir(args.path_to_synthesized_renderings)
-        if oi.endswith(".png")
+        if oi.endswith(".png") and oi.split('-')[0] in room_dict[room]
     ]
     print('number of synthesized images :', len(synthesized_images))
 
