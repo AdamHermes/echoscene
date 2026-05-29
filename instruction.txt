@@ -3,7 +3,7 @@ python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT 
 python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True
 
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh  
 
 source ~/.bashrc
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
@@ -30,7 +30,7 @@ unzip FRONT.zip
 cd scripts
 python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT --residual True --network_type echoscene --with_SDF True --with_CLIP True --batchSize 2 --workers 0 --loadmodel False --nepoch 1 --large False --use_scene_rels True
 
-python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True --max_samples 20 --start_idx 55
+python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT/ --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True --max_samples 20 --start_idx 0
 
 
 

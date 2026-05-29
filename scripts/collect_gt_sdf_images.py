@@ -138,7 +138,8 @@ for info in rel['scans']:
         color = color_palette[class_id]
 
         # the base of the model path should be changed to your own path
-        sdf_path = obj_info[scan_id][k]['model_path'].replace('3D-FUTURE-model','3D-FUTURE-SDF').replace('raw_model.obj', 'ori_sample_grid.h5')
+        model_id = obj_info[scan_id][k]['model_path'].split('3D-FUTURE-model/')[-1].split('/')[0]
+        sdf_path = os.path.join(dataset_root, '3D-FUTURE-SDF', model_id, 'ori_sample_grid.h5')  
         h5_f = h5py.File(sdf_path, 'r')
         obj_sdf = h5_f['pc_sdf_sample'][:].astype(np.float32)
         sdf = torch.Tensor(obj_sdf).view(1, 64, 64, 64)

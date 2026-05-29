@@ -236,7 +236,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                                     datasize=datasize,
                                     classes=obj_classes, render_type=args.render_type, shapes_pred=original_shapes_pred,
                                     store_img=True,
-                                    render_boxes=False, visual=True, demo=True, without_lamp=True,
+                                    render_boxes=False, visual=True, demo=True, no_stool = True, without_lamp=True,
                                     store_path=modelArgs['store_path']+"_before")
 
                     # after manipulation
@@ -245,7 +245,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                     render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred,
                                 datasize=datasize,
                                 classes=obj_classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True,
-                                render_boxes=False, visual=True, demo=True, without_lamp=True,
+                                render_boxes=False, visual=True, demo=True, no_stool = True, without_lamp=True,
                                 store_path=modelArgs['store_path']+"_after")
                 else:
                     raise NotImplementedError
