@@ -372,7 +372,7 @@ def evaluate():
         test_dataset_addition_changes.scans = test_dataset_addition_changes.scans[args.start_idx:args.start_idx + args.max_samples]
 
     modeltype_ = modelArgs['network_type']
-    modelArgs['store_path'] = os.path.join(args.default_exp, "vis", args.epoch)
+    modelArgs['store_path'] = os.path.join(args.exp, "vis", args.epoch)
     replacelatent_ = modelArgs['replace_latent'] if 'replace_latent' in modelArgs else None
     with_changes_ = modelArgs['with_changes'] if 'with_changes' in modelArgs else None
 
