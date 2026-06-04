@@ -30,8 +30,7 @@ unzip FRONT.zip
 cd scripts
 python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT --residual True --network_type echoscene --with_SDF True --with_CLIP True --batchSize 64 --workers 8 --loadmodel False --nepoch 100 --large False --use_scene_rels True
 
-python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT/ --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True --max_samples 17 --start_idx 162
-
+python eval_3dfront.py --default_exp ../../drive/MyDrive/EchoScene/released_full_model --dataset ../FRONT/ --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True --max_samples 17 --start_idx 162
 
 
 

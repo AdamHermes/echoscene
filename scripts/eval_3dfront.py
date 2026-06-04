@@ -26,7 +26,7 @@ parser.add_argument('--dataset', required=False, type=str, default="/media/ymxlz
 parser.add_argument('--with_CLIP', type=bool_flag, default=True, help="Load Feats directly instead of points.")
 
 parser.add_argument('--manipulate', default=True, type=bool_flag)
-parser.add_argument('--exp', default='../experiments/layout_test', help='experiment name')
+parser.add_argument('--exp', default='../released_full_model', help='experiment name')
 parser.add_argument('--epoch', type=str, default='100', help='saved epoch')
 parser.add_argument('--render_type', type=str, default='txt2shape', help='retrieval, txt2shape, onlybox, echoscene')
 parser.add_argument('--gen_shape', default=False, type=bool_flag, help='infer diffusion')
@@ -36,7 +36,7 @@ parser.add_argument('--room_type', default='all', help='all, bedroom, livingroom
 parser.add_argument('--max_samples', type=int, default=None, help='Limit evaluation to the first N samples')
 parser.add_argument('--start_idx', type=int, default=0, help='Start evaluation from this sample index')
 parser.add_argument('--save_3d', default=False, type=bool_flag, help='Save .obj and .glb files')
-
+parser.add_argument('--default_exp', default='../released_full_model', help='default exp load arguments')
 args = parser.parse_args()
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
@@ -372,7 +372,7 @@ def evaluate():
         test_dataset_addition_changes.scans = test_dataset_addition_changes.scans[args.start_idx:args.start_idx + args.max_samples]
 
     modeltype_ = modelArgs['network_type']
-    modelArgs['store_path'] = os.path.join(args.exp, "vis", args.epoch)
+    modelArgs['store_path'] = os.path.join(args.default_exp, "vis", args.epoch)
     replacelatent_ = modelArgs['replace_latent'] if 'replace_latent' in modelArgs else None
     with_changes_ = modelArgs['with_changes'] if 'with_changes' in modelArgs else None
 
