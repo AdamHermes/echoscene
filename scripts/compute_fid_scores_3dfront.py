@@ -71,11 +71,11 @@ def main(argv):
     # )
     # splits_builder = CSVSplitsBuilder(args.path_to_annotations)
     if args.compare_trainval:
-        args.path_to_real_renderings = "../output/small/trainval"
-        args.path_to_synthesized_renderings = "../released_full_model/vis/2050/render_imgs/echoscene"
+        args.path_to_real_renderings = "../output/small/test"
+        args.path_to_synthesized_renderings = "../echoscene"
     else:
         args.path_to_real_renderings = "../output/small/test"
-        args.path_to_synthesized_renderings = "../released_full_model/vis/2050/render_imgs/echoscene"
+        args.path_to_synthesized_renderings = "../echoscene"
 
     print("Generating temporary a folder with test_real images...")
     path_to_test_real = "../fid_kid_tmp/real"
@@ -97,23 +97,19 @@ def main(argv):
     if not os.path.exists(path_to_test_fake):
         os.makedirs(path_to_test_fake)
 
-    # if not instruct_scene:
-    #     synthesized_images = [
-    #         os.path.join(args.path_to_synthesized_renderings, oi)
-    #         for oi in os.listdir(args.path_to_synthesized_renderings)
-    #         if oi.endswith(".png") and oi.split('-')[0] in room_dict[room]
-    #     ]
-    # else:
-    #     synthesized_images = [
-    #         os.path.join(args.path_to_synthesized_renderings, oi)
-    #         for oi in os.listdir(args.path_to_synthesized_renderings)
-    #         if oi.endswith(".png") and oi.split('_')[1].split('-')[0] in room_dict[room]
-    #     ]
-    synthesized_images = [
-        os.path.join(args.path_to_synthesized_renderings, oi)
-        for oi in os.listdir(args.path_to_synthesized_renderings)
-        if oi.endswith(".png") and oi.split('-')[0] in room_dict[room]
-    ]
+    if not instruct_scene:
+        synthesized_images = [
+            os.path.join(args.path_to_synthesized_renderings, oi)
+            for oi in os.listdir(args.path_to_synthesized_renderings)
+            if oi.endswith(".png") and oi.split('-')[0] in room_dict[room]
+        ]
+    else:
+        synthesized_images = [
+            os.path.join(args.path_to_synthesized_renderings, oi)
+            for oi in os.listdir(args.path_to_synthesized_renderings)
+            if oi.endswith(".png") and oi.split('-')[0] in room_dict[room]
+        ]
+   
     print('number of synthesized images :', len(synthesized_images))
 
     scores = []

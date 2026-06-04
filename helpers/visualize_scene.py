@@ -237,9 +237,10 @@ def render_box(scene_id, cats, predBoxes, predAngles, datasize='small', classes=
 
     if mani==1:
         return trimesh_meshes
+
 def render_full(scene_id, cats, predBoxes, predAngles=None, datasize='small', classes=None, shapes_pred=None, render_type='txt2shape',
-           render_shapes=True, store_img=False, render_boxes=False, demo=False, visual=False, epoch=None, no_stool=False, without_lamp=False, str_append="", mani=0, missing_nodes=None, manipulated_nodes=None, objs_before=None, store_path=None, save_3d=False):
-    os.makedirs(store_path, exist_ok=True)
+           render_shapes=True, store_img=False, render_boxes=False, demo=False, visual=False, epoch=None, no_stool = False, without_lamp=False, str_append="", mani=0, missing_nodes=None, manipulated_nodes=None, objs_before=None, store_path=None, save_3d = True):
+    os.makedirs(store_path,exist_ok=True)
 
     if render_type not in ['echoscene', 'txt2shape', 'retrieval', 'onlybox']:
         raise ValueError('Render type needs to be either set to echoscene or txt2shape or retrieval or onlybox.')
@@ -252,19 +253,20 @@ def render_full(scene_id, cats, predBoxes, predAngles=None, datasize='small', cl
             box_and_angle = box_and_angle[missing_nodes]
         elif len(manipulated_nodes) > 0:
             box_and_angle = box_and_angle[sorted(manipulated_nodes)]
-
-    # only create mesh_dir if we actually need to save .obj files
-    mesh_dir = None
     if save_3d:
         mesh_dir = os.path.join(store_path, render_type, 'object_meshes', scene_id[0])
         os.makedirs(mesh_dir, exist_ok=True)
-
+    else:
+        mesh_dir = None
     if render_type == 'echoscene':
         lamp_mesh_list, trimesh_meshes, raw_meshes = get_generated_shapes(box_and_angle, shapes_pred, cats, classes, mesh_dir, render_boxes=render_boxes, colors=color_palette[cats], without_lamp=without_lamp)
+
     elif render_type == 'retrieval':
         lamp_mesh_list, trimesh_meshes, raw_meshes = get_database_objects(box_and_angle, datasize, cats, classes, mesh_dir, render_boxes=render_boxes, colors=color_palette[cats], without_lamp=without_lamp)
+
     elif render_type == 'txt2shape':
         lamp_mesh_list, trimesh_meshes, raw_meshes = get_sdfusion_models(box_and_angle, cats, classes, mesh_dir, render_boxes=render_boxes, colors=color_palette[cats], no_stool=no_stool, without_lamp=without_lamp)
+
     elif render_type == 'onlybox':
         lamp_mesh_list, trimesh_meshes = get_bbox(box_and_angle, cats, classes, colors=color_palette[cats], without_lamp=without_lamp)
     else:
@@ -272,7 +274,7 @@ def render_full(scene_id, cats, predBoxes, predAngles=None, datasize='small', cl
 
     if mani == 2:
         print("manipulated nodes: ", len(manipulated_nodes), len(trimesh_meshes))
-        if len(missing_nodes) > 0:
+        if len(missing_nodes) >0:
             trimesh_meshes += objs_before
             query_label = classes[cats[0]].strip('\n')
             str_append += "_" + query_label
@@ -286,6 +288,7 @@ def render_full(scene_id, cats, predBoxes, predAngles=None, datasize='small', cl
                 if i in manipulated_nodes:
                     objs_before[j] = trimesh_meshes[k]
                     str_append += "_" + query_label
+                    #all_meshes.append(trimesh_meshes[j])
                     k += 1
                 j += 1
             trimesh_meshes = objs_before
@@ -302,17 +305,17 @@ def render_full(scene_id, cats, predBoxes, predAngles=None, datasize='small', cl
         trimesh_meshes.append(walls_mesh)
         for i, mesh in enumerate(trimesh_meshes):
             mesh.export(os.path.join(mesh_dir_shifted, f"{i}.obj"))
-
+    scene = trimesh.Scene(trimesh_meshes)
+    if len(str_append) > 0:
+        # render_type_ = render_type + str_append
+        render_type += str_append
     if save_3d:
-        scene = trimesh.Scene(trimesh_meshes)
-        if len(str_append) > 0:
-            render_type += str_append
         scene_path = os.path.join(store_path, render_type)
         os.makedirs(scene_path, exist_ok=True)
         scene.export(os.path.join(scene_path, "{0}_{1}.glb".format(scene_id[0], render_type)))
 
     if visual:
-        trimesh.Scene(trimesh_meshes).show()
+        scene.show()
 
     if store_img and not demo:
         img_path = os.path.join(store_path, "render_imgs", render_type)

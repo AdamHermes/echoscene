@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from einops import rearrange, reduce
 from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_sincos2arctan
 from .loss import axis_aligned_bbox_overlaps_3d
-# from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
+from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
 
 def cfg_get(cfg, key, default=None):

@@ -296,7 +296,7 @@ def pytorch3d_to_trimesh(pytorch3d_mesh):
 #     return lamp_mesh_list, obj_list, raw_obj_list
 
 def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes=False, colors=None, without_lamp=False):
-    mesh_gen = sdf_to_mesh(shapes, render_all=True)
+    mesh_gen = sdf_to_mesh(shapes,render_all=True)
     colors = iter(colors)
     trimesh_meshes = iter([pytorch3d_to_trimesh(mesh) for mesh in mesh_gen])
     obj_list = []
@@ -320,16 +320,21 @@ def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes
 
         box_points, obj = fit_shapes_to_box_v2(obj, boxes[j], degrees=True)
         obj_list.append(obj)
+        # if query_label == 'bed':
+        #     obj.export('/media/ymxlzgy/Data/asset/bedv2.glb')
+        # if query_label == 'nightstand':
+        #     obj_list.pop()
+        #     render_boxes_ = False
         if query_label == 'lamp' and without_lamp:
             lamp_mesh_list.append(obj_list.pop())
+
         if render_boxes_:
             obj_list.append(create_bbox_marker(box_points, tube_radius=0.006, color=color))
-
     return lamp_mesh_list, obj_list, raw_obj_list
 
 
 def get_sdfusion_models(boxes, cat_ids, classes, mesh_dir, render_boxes=False, colors=None, no_stool=False, without_lamp=False):
-    sdfusion_model_path = "../FRONT/txt2shape_results_latest"
+    sdfusion_model_path = "/media/ymxlzgy/Data/Dataset/FRONT/txt2shape_results_latest"
     mapping_full2simple = None
     obj_list = []
     colors = iter(colors)
@@ -357,7 +362,8 @@ def get_sdfusion_models(boxes, cat_ids, classes, mesh_dir, render_boxes=False, c
         obj.visual.vertex_colors = color
         obj.visual.face_colors = color
         raw_obj_list.append(obj.copy())
-        obj.export(os.path.join(mesh_dir, query_label + '_' + str(cat_ids[j]) + "_" + str(instance_id)+".obj"))
+        if mesh_dir is not None:  # <-- add this guard
+            obj.export(os.path.join(mesh_dir, query_label + '_' + str(cat_ids[j]) + "_" + str(instance_id)+".obj"))
         instance_id += 1
         box_points, obj = fit_shapes_to_box_v2(obj, boxes[j], degrees=True)
         obj_list.append(obj)

@@ -35,6 +35,8 @@ parser.add_argument('--export_3d', default=False, type=bool_flag, help='Export t
 parser.add_argument('--room_type', default='all', help='all, bedroom, livingroom, diningroom, library')
 parser.add_argument('--max_samples', type=int, default=None, help='Limit evaluation to the first N samples')
 parser.add_argument('--start_idx', type=int, default=0, help='Start evaluation from this sample index')
+parser.add_argument('--save_3d', default=False, type=bool_flag, help='Save .obj and .glb files')
+
 args = parser.parse_args()
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
@@ -60,65 +62,6 @@ def normalize(vertices, scale=1):
     vertices = vertices / scalars * scale
     return vertices
 
-
-def init_collision_metric_accumulator():
-    return {
-        'num_scenes': 0,
-        'enabled_scenes': 0,
-        'applied_steps': [],
-        'avg_guided_scene_iou': [],
-        'avg_guided_scene_penetration': [],
-        'final_avg_scene_iou': [],
-        'final_max_pair_iou': [],
-        'final_avg_scene_penetration': [],
-        'final_max_pair_penetration': [],
-        'final_pairs_above_threshold': [],
-        'final_pairs_with_penetration': [],
-    }
-
-
-def update_collision_metric_accumulator(accumulator, collision_stats):
-    if not collision_stats:
-        return
-
-    accumulator['num_scenes'] += 1
-    if collision_stats.get('enabled', False):
-        accumulator['enabled_scenes'] += 1
-    accumulator['applied_steps'].append(int(collision_stats.get('applied_steps', 0)))
-    accumulator['avg_guided_scene_iou'].append(float(collision_stats.get('avg_guided_scene_iou', 0.0)))
-    accumulator['avg_guided_scene_penetration'].append(float(collision_stats.get('avg_guided_scene_penetration', 0.0)))
-    accumulator['final_avg_scene_iou'].append(float(collision_stats.get('final_avg_scene_iou', 0.0)))
-    accumulator['final_max_pair_iou'].append(float(collision_stats.get('final_max_pair_iou', 0.0)))
-    accumulator['final_avg_scene_penetration'].append(float(collision_stats.get('final_avg_scene_penetration', 0.0)))
-    accumulator['final_max_pair_penetration'].append(float(collision_stats.get('final_max_pair_penetration', 0.0)))
-    accumulator['final_pairs_above_threshold'].append(int(collision_stats.get('final_pairs_above_threshold', 0)))
-    accumulator['final_pairs_with_penetration'].append(int(collision_stats.get('final_pairs_with_penetration', 0)))
-
-
-def summarize_collision_metrics(accumulator):
-    if accumulator['num_scenes'] == 0:
-        return None
-
-    return (
-        'collision guidance: scenes={} enabled_scenes={} avg_applied_steps={:.2f} '
-        'avg_guided_scene_iou={:.4f} avg_guided_scene_penetration={:.4f} '
-        'final_avg_scene_iou={:.4f} final_max_pair_iou={:.4f} '
-        'final_avg_scene_penetration={:.4f} final_max_pair_penetration={:.4f} '
-        'final_pairs_above_threshold={:.2f} final_pairs_with_penetration={:.2f}'
-    ).format(
-        accumulator['num_scenes'],
-        accumulator['enabled_scenes'],
-        np.mean(accumulator['applied_steps']) if accumulator['applied_steps'] else 0.0,
-        np.mean(accumulator['avg_guided_scene_iou']) if accumulator['avg_guided_scene_iou'] else 0.0,
-        np.mean(accumulator['avg_guided_scene_penetration']) if accumulator['avg_guided_scene_penetration'] else 0.0,
-        np.mean(accumulator['final_avg_scene_iou']) if accumulator['final_avg_scene_iou'] else 0.0,
-        np.mean(accumulator['final_max_pair_iou']) if accumulator['final_max_pair_iou'] else 0.0,
-        np.mean(accumulator['final_avg_scene_penetration']) if accumulator['final_avg_scene_penetration'] else 0.0,
-        np.mean(accumulator['final_max_pair_penetration']) if accumulator['final_max_pair_penetration'] else 0.0,
-        np.mean(accumulator['final_pairs_above_threshold']) if accumulator['final_pairs_above_threshold'] else 0.0,
-        np.mean(accumulator['final_pairs_with_penetration']) if accumulator['final_pairs_with_penetration'] else 0.0,
-    )
-
 def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized_file=None, bin_angles=False, cat2objs=None, datasize='large', gen_shape=False):
 
     test_dataloader_changes = torch.utils.data.DataLoader(
@@ -134,7 +77,6 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
     accuracy = {}
     accuracy_unchanged = {}
     accuracy_in_orig_graph = {}
-    collision_metrics = init_collision_metric_accumulator()
 
     for k in ['left', 'right', 'front', 'behind', 'smaller', 'bigger', 'shorter', 'taller', 'standing on', 'close by', 'symmetrical to', 'total']:
         accuracy_in_orig_graph[k] = []
@@ -208,7 +150,6 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                                                                               encoded_enc_rel_feat, dec_objs, dec_triples,
                                                                               encoded_dec_text_feat, encoded_dec_rel_feat,
                                                                               missing_nodes, gen_shape=gen_shape)
-            update_collision_metric_accumulator(collision_metrics, data_dict.get('collision_stats'))
 
             boxes_pred, angles_pred = torch.concat((data_dict['sizes'], data_dict['translations']), dim=-1), data_dict['angles']
             shapes_pred = None
@@ -218,17 +159,15 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                 print('no shape, only run layout branch.')
 
             if modelArgs['bin_angle']:
-                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1)* 15.0 # angle (previously minus 1, now add it back)
-                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file) # mean, std
+                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1)* 15.0
+                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file)
             else:
                 angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
-                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file) # min, max
+                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
 
             if args.visualize:
-                # layout and shape visualization through open3d
                 print("rendering", [obj_classes[i].strip('\n') for i in dec_objs])
                 if model.type_ == 'echoscene':
-                    # before manipulation
                     if original:
                         if original_shapes_pred is not None:
                             original_shapes_pred = original_shapes_pred.cpu().detach()
@@ -236,29 +175,26 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                                     datasize=datasize,
                                     classes=obj_classes, render_type=args.render_type, shapes_pred=original_shapes_pred,
                                     store_img=True,
-                                    render_boxes=False, visual=True, demo=True, no_stool = True, without_lamp=True,
-                                    store_path=modelArgs['store_path']+"_before")
+                                    render_boxes=False, visual=True, demo=True, without_lamp=True,
+                                    store_path=modelArgs['store_path']+"_before",save_3d=args.save_3d)
 
-                    # after manipulation
                     if shapes_pred is not None:
                         shapes_pred = shapes_pred.cpu().detach()
                     render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred,
                                 datasize=datasize,
                                 classes=obj_classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True,
-                                render_boxes=False, visual=True, demo=True, no_stool = True, without_lamp=True,
-                                store_path=modelArgs['store_path']+"_after")
+                                render_boxes=False, visual=True, demo=True, without_lamp=True,
+                                store_path=modelArgs['store_path']+"_after",save_3d=args.save_3d)
                 else:
                     raise NotImplementedError
 
         bp_box, bp_angle = [], []
         for i in range(len(keep)):
             if keep[i] == 0:
-                # manipulated / added node
                 bp_box.append(boxes_pred_den[i:i+1].cpu().detach())
                 bp_angle.append(angles_pred[i:i+1].cpu().detach())
             else:
-                # original node
-                dec_tight_boxes[i:i+1,:6] = descale_box_params(dec_tight_boxes[i:i+1,:6], file=normalized_file)  # min, max
+                dec_tight_boxes[i:i+1,:6] = descale_box_params(dec_tight_boxes[i:i+1,:6], file=normalized_file)
                 bp_box.append(dec_tight_boxes[i:i+1,:6].cpu().detach())
                 angle = dec_tight_boxes[i:i+1, 6:7] / np.pi * 180
                 bp_angle.append(angle.cpu().detach())
@@ -266,8 +202,6 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         all_pred_boxes.append(boxes_pred_den.cpu().detach())
         all_pred_angles.append(angles_pred.cpu().detach())
 
-        # compute relationship constraints accuracy through simple geometric rules
-        # TODO boxes_pred_den with angle
         accuracy = validate_constrains_changes(dec_triples, boxes_pred_den, angles_pred, keep, model.vocab, accuracy)
         accuracy_unchanged = validate_constrains(dec_triples, boxes_pred_den, angles_pred, keep, model.vocab, accuracy_unchanged)
 
@@ -291,10 +225,6 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                 '{} & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}\n'.format(
                     typ, lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean, total_mean))
             file.write('means of mean: {:.2f}\n\n'.format(means_of_mean))
-        collision_summary = summarize_collision_metrics(collision_metrics)
-        if collision_summary is not None:
-            print(collision_summary)
-            file.write(collision_summary + '\n')
 
 
 def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normalized_file=None, cat2objs=None, datasize='large', gen_shape=False):
@@ -309,9 +239,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
     vocab = test_dataset.vocab
 
     accuracy = {}
-    collision_metrics = init_collision_metric_accumulator()
     for k in ['left', 'right', 'front', 'behind', 'smaller', 'bigger', 'shorter', 'taller', 'standing on', 'close by', 'symmetrical to', 'total']:
-        # compute validation for these relation categories
         accuracy[k] = []
 
     for i, data in enumerate(test_dataloader_no_changes, 0):
@@ -336,7 +264,6 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         with torch.no_grad():
 
             data_dict = model.sample_box_and_shape(dec_objs, dec_triples, encoded_dec_text_feat, encoded_dec_rel_feat, gen_shape=gen_shape)
-            update_collision_metric_accumulator(collision_metrics, data_dict.get('collision_stats'))
 
             boxes_pred, angles_pred = torch.concat((data_dict['sizes'],data_dict['translations']),dim=-1), data_dict['angles']
             shapes_pred = None
@@ -345,31 +272,28 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             except:
                 print('no shape, only run layout branch.')
             if modelArgs['bin_angle']:
-                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1)* 15.0 # angle (previously minus 1, now add it back)
-                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file) # mean, std
+                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1)* 15.0
+                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file)
             else:
                 angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
-                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file) # min, max
-
+                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
 
         if args.visualize:
             classes = sorted(list(set(vocab['object_idx_to_name'])))
-            # layout and shape visualization through open3d
             print("rendering", [classes[i].strip('\n') for i in dec_objs])
             if model.type_ == 'echolayout':
                 render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, no_stool=True, without_lamp=True, store_path=modelArgs['store_path'])
+                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
             elif model.type_ == 'echoscene':
                 if shapes_pred is not None:
                     shapes_pred = shapes_pred.cpu().detach()
                 render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch,no_stool=True, without_lamp=True, store_path=modelArgs['store_path'])
+                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
             else:
                 raise NotImplementedError
 
         all_pred_boxes.append(boxes_pred_den.cpu().detach())
         all_pred_angles.append(angles_pred.cpu().detach())
-        # compute constraints accuracy through simple geometric rules
         accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_pred, None, model.vocab, accuracy)
 
     keys = list(accuracy.keys())
@@ -394,10 +318,6 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                 '{} & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}\n'.format(
                     typ, lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean, total_mean))
             file.write('means of mean: {:.2f}\n\n'.format(means_of_mean))
-        collision_summary = summarize_collision_metrics(collision_metrics)
-        if collision_summary is not None:
-            print(collision_summary)
-            file.write(collision_summary + '\n')
 
 def evaluate():
     random.seed(48)
@@ -408,12 +328,35 @@ def evaluate():
     with open(argsJson) as j:
         modelArgs = json.load(j)
     normalized_file = os.path.join(args.dataset, 'centered_bounds_{}_trainval.txt').format(modelArgs['room_type'])
-    print('Building generation dataset...')
+    test_dataset_rels_changes = ThreedFrontDatasetSceneGraph(
+        root=args.dataset,
+        split='val_scans',
+        use_scene_rels=modelArgs['use_scene_rels'],
+        with_changes=True,
+        eval=True,
+        eval_type='relationship',
+        with_CLIP=modelArgs['with_CLIP'],
+        use_SDF=modelArgs['with_SDF'],
+        large=modelArgs['large'],
+        room_type=args.room_type,
+        recompute_clip=False)
+
+    test_dataset_addition_changes = ThreedFrontDatasetSceneGraph(
+        root=args.dataset,
+        split='val_scans',
+        use_scene_rels=modelArgs['use_scene_rels'],
+        with_changes=True,
+        eval=True,
+        eval_type='addition',
+        with_CLIP=modelArgs['with_CLIP'],
+        use_SDF=modelArgs['with_SDF'],
+        large=modelArgs['large'],
+        room_type=args.room_type)
+
     test_dataset_no_changes = ThreedFrontDatasetSceneGraph(
         root=args.dataset,
         split='val_scans',
         use_scene_rels=modelArgs['use_scene_rels'],
-        data_len=args.max_samples,
         with_changes=False,
         eval=True,
         eval_type='none',
@@ -422,16 +365,17 @@ def evaluate():
         large=modelArgs['large'],
         room_type=args.room_type)
 
-    # slice the dataset scans based on start_idx and max_samples
-    test_dataset_no_changes.scans = test_dataset_no_changes.scans[args.start_idx:args.start_idx + args.max_samples]
+    # apply start_idx and max_samples slicing only if specified
+    if args.max_samples is not None:
+        test_dataset_no_changes.scans = test_dataset_no_changes.scans[args.start_idx:args.start_idx + args.max_samples]
+        test_dataset_rels_changes.scans = test_dataset_rels_changes.scans[args.start_idx:args.start_idx + args.max_samples]
+        test_dataset_addition_changes.scans = test_dataset_addition_changes.scans[args.start_idx:args.start_idx + args.max_samples]
 
     modeltype_ = modelArgs['network_type']
     modelArgs['store_path'] = os.path.join(args.exp, "vis", args.epoch)
     replacelatent_ = modelArgs['replace_latent'] if 'replace_latent' in modelArgs else None
     with_changes_ = modelArgs['with_changes'] if 'with_changes' in modelArgs else None
-    # args.visualize = False if args.gen_shape == False else args.visualize
 
-    # instantiate the model
     diff_opt = modelArgs['diff_yaml']
     diff_cfg = OmegaConf.load(diff_opt)
     diff_cfg.layout_branch.diffusion_kwargs.train_stats_file = test_dataset_no_changes.box_normalized_stats
@@ -440,13 +384,9 @@ def evaluate():
                 with_changes=with_changes_, residual=modelArgs['residual'], gconv_pooling=modelArgs['pooling'], clip=modelArgs['with_CLIP'],
                 with_angles=modelArgs['with_angles'], separated=modelArgs['separated'])
     model.diff.optimizer_ini()
-    print('Loading checkpoint {} from {}...'.format(args.epoch, args.exp))
     model.load_networks(exp=args.exp, epoch=args.epoch, restart_optim=True, load_shape_branch=args.gen_shape)
-    print('Checkpoint loaded.')
     if torch.cuda.is_available():
-        print('Moving model to CUDA...')
         model = model.cuda()
-        print('Model on CUDA.')
 
     model = model.eval()
     cat2objs = None

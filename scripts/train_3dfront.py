@@ -303,7 +303,7 @@ def train():
             if h.interrupted:
                 break
 
-            if epoch % 100 == 0:
+            if epoch % 10 == 0:
                 model.save(args.exp, args.outf, epoch, counter=counter)
                 print('saved model_{}'.format(epoch))
 
