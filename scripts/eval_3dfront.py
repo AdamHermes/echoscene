@@ -328,30 +328,30 @@ def evaluate():
     with open(argsJson) as j:
         modelArgs = json.load(j)
     normalized_file = os.path.join(args.dataset, 'centered_bounds_{}_trainval.txt').format(modelArgs['room_type'])
-    test_dataset_rels_changes = ThreedFrontDatasetSceneGraph(
-        root=args.dataset,
-        split='val_scans',
-        use_scene_rels=modelArgs['use_scene_rels'],
-        with_changes=True,
-        eval=True,
-        eval_type='relationship',
-        with_CLIP=modelArgs['with_CLIP'],
-        use_SDF=modelArgs['with_SDF'],
-        large=modelArgs['large'],
-        room_type=args.room_type,
-        recompute_clip=False)
+    #test_dataset_rels_changes = ThreedFrontDatasetSceneGraph(
+        # root=args.dataset,
+        # split='val_scans',
+        # use_scene_rels=modelArgs['use_scene_rels'],
+        # with_changes=True,
+        # eval=True,
+        # eval_type='relationship',
+        # with_CLIP=modelArgs['with_CLIP'],
+        # use_SDF=modelArgs['with_SDF'],
+        # large=modelArgs['large'],
+        # room_type=args.room_type,
+        # recompute_clip=False)
 
-    test_dataset_addition_changes = ThreedFrontDatasetSceneGraph(
-        root=args.dataset,
-        split='val_scans',
-        use_scene_rels=modelArgs['use_scene_rels'],
-        with_changes=True,
-        eval=True,
-        eval_type='addition',
-        with_CLIP=modelArgs['with_CLIP'],
-        use_SDF=modelArgs['with_SDF'],
-        large=modelArgs['large'],
-        room_type=args.room_type)
+    # test_dataset_addition_changes = ThreedFrontDatasetSceneGraph(
+    #     root=args.dataset,
+    #     split='val_scans',
+    #     use_scene_rels=modelArgs['use_scene_rels'],
+    #     with_changes=True,
+    #     eval=True,
+    #     eval_type='addition',
+    #     with_CLIP=modelArgs['with_CLIP'],
+    #     use_SDF=modelArgs['with_SDF'],
+    #     large=modelArgs['large'],
+    #     room_type=args.room_type)
 
     test_dataset_no_changes = ThreedFrontDatasetSceneGraph(
         root=args.dataset,
@@ -368,8 +368,8 @@ def evaluate():
     # apply start_idx and max_samples slicing only if specified
     if args.max_samples is not None:
         test_dataset_no_changes.scans = test_dataset_no_changes.scans[args.start_idx:args.start_idx + args.max_samples]
-        test_dataset_rels_changes.scans = test_dataset_rels_changes.scans[args.start_idx:args.start_idx + args.max_samples]
-        test_dataset_addition_changes.scans = test_dataset_addition_changes.scans[args.start_idx:args.start_idx + args.max_samples]
+        #test_dataset_rels_changes.scans = test_dataset_rels_changes.scans[args.start_idx:args.start_idx + args.max_samples]
+        #test_dataset_addition_changes.scans = test_dataset_addition_changes.scans[args.start_idx:args.start_idx + args.max_samples]
 
     modeltype_ = modelArgs['network_type']
     modelArgs['store_path'] = os.path.join(args.exp, "vis", args.epoch)
