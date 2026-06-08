@@ -528,6 +528,8 @@ class UNet1DModel(nn.Module):
 
         self.conditioning_key = conditioning_key
         self.using_clip = using_clip
+        self.crossattn_dim = crossattn_dim
+        self.concat_dim = concat_dim
         self.in_channels = in_channels + concat_dim if self.conditioning_key in ['concat','hybrid'] else in_channels
         self.model_channels = model_channels
         self.out_channels = out_channels
@@ -738,6 +740,19 @@ class UNet1DModel(nn.Module):
             gconv_kwargs_box['input_dim_obj'] += box_t_dim
             self.box_time_emb = nn.Linear(time_embed_dim, box_t_dim)
         self.box_graph_cov = GraphTripleConvNet(**gconv_kwargs_box)
+        external_context_dim = gconv_dim * 2 + add_dim
+        if self.conditioning_key in ['crossattn', 'hybrid']:
+            if external_context_dim == self.crossattn_dim:
+                self.external_context_proj = nn.Identity()
+            else:
+                self.external_context_proj = nn.Linear(external_context_dim, self.crossattn_dim)
+            if self.concat_dim == self.crossattn_dim:
+                self.box_context_proj = nn.Identity()
+            else:
+                self.box_context_proj = nn.Linear(self.concat_dim, self.crossattn_dim)
+        else:
+            self.external_context_proj = None
+            self.box_context_proj = None
 
     def convert_to_fp16(self):
         """
@@ -786,10 +801,19 @@ class UNet1DModel(nn.Module):
 
         latent_box_rel = self.box_messsage_passing(obj_embed, triples, box_t, t_emb=emb, enable_t_emb=self.enable_t_emb)
         box_t, latent_box_rel = box_t.unsqueeze(1), latent_box_rel.unsqueeze(1)
+
         if self.conditioning_key in ['concat', 'hybrid']:
             box_t = torch.cat([box_t, latent_box_rel], dim=-1)
-        elif self.conditioning_key in ['crossattn', 'hybrid']:
-            context = latent_box_rel
+
+        if self.conditioning_key in ['crossattn', 'hybrid']:
+            latent_box_context = self.box_context_proj(latent_box_rel)
+            if context is not None:
+                if context.dim() == 2:
+                    context = context.unsqueeze(1)
+                context = self.external_context_proj(context)
+                context = context + latent_box_context
+            else:
+                context = latent_box_context
 
         # import pdb; pdb.set_trace()
         # h = x.type(self.dtype)

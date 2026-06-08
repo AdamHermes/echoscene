@@ -40,3 +40,9 @@ apt update && apt install -y rclone
 
 rclone config
 rclone copy checkpoints.zip drive:/backup/
+
+
+!zip -r released_full_model.zip /content/echoscene/released_full_model
+
+from google.colab import files
+files.download('released_full_model.zip')

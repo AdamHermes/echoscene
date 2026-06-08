@@ -328,7 +328,7 @@ def evaluate():
     with open(argsJson) as j:
         modelArgs = json.load(j)
     normalized_file = os.path.join(args.dataset, 'centered_bounds_{}_trainval.txt').format(modelArgs['room_type'])
-    #test_dataset_rels_changes = ThreedFrontDatasetSceneGraph(
+    # test_dataset_rels_changes = ThreedFrontDatasetSceneGraph(
         # root=args.dataset,
         # split='val_scans',
         # use_scene_rels=modelArgs['use_scene_rels'],
