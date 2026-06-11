@@ -18,6 +18,7 @@ from dataset.threedfront_dataset import ThreedFrontDatasetSceneGraph
 from helpers.util import bool_flag, preprocess_angle2sincos, batch_torch_destandardize_box_params, descale_box_params, postprocess_sincos2arctan, sample_points
 from helpers.metrics_3dfront import validate_constrains, validate_constrains_changes, estimate_angular_std
 from helpers.visualize_scene import render_full, render_box
+from helpers.structured_scene_export import export_structured_scene
 from omegaconf import OmegaConf
 import json
 
@@ -42,10 +43,16 @@ args = parser.parse_args()
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
 
 
-def reseed(num):
-    np.random.seed(num)
-    torch.manual_seed(num)
-    random.seed(num)
+def reseed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def normalize(vertices, scale=1):
     xmin, xmax = np.amin(vertices[:, 0]), np.amax(vertices[:, 0])
@@ -61,6 +68,48 @@ def normalize(vertices, scale=1):
 
     vertices = vertices / scalars * scale
     return vertices
+
+
+def export_echoscene_sidecar(modelArgs, test_dataset, data, dec_objs, dec_triples, boxes_pred_den, angles_pred,
+                             classes, epoch=None, render_type='echoscene'):
+    scan_id = data['scan_id'][0]
+    instance_ids = data['instance_id'][0] if len(data['instance_id']) > 0 else []
+    scene_dir = os.path.join(modelArgs['store_path'], render_type)
+    mesh_dir = os.path.join(scene_dir, 'object_meshes', scan_id)
+    scene_mesh_path = os.path.join(scene_dir, "{0}_{1}.glb".format(scan_id, render_type))
+    output_dir = os.path.join(modelArgs['store_path'], 'structured_scenes')
+
+    source_object_metadata = None
+    if hasattr(test_dataset, 'tight_boxes_json') and scan_id in test_dataset.tight_boxes_json:
+        source_object_metadata = test_dataset.tight_boxes_json[scan_id]
+
+    layout_guidance = None
+    if hasattr(test_dataset, 'eval_type'):
+        layout_guidance = {'eval_type': test_dataset.eval_type}
+
+    export_path = export_structured_scene(
+        output_dir=output_dir,
+        scan_id=scan_id,
+        cat_ids=dec_objs.detach().cpu(),
+        boxes=boxes_pred_den.detach().cpu(),
+        angles=angles_pred.detach().cpu(),
+        triples=dec_triples.detach().cpu(),
+        classes=classes,
+        predicate_names=test_dataset.vocab['pred_idx_to_name'],
+        instance_ids=instance_ids,
+        mesh_dir=mesh_dir,
+        scene_mesh_path=scene_mesh_path,
+        render_type=render_type,
+        room_type=getattr(test_dataset, 'room_type', None),
+        epoch=epoch,
+        exp_path=args.exp,
+        dataset_path=args.dataset,
+        source_object_metadata=source_object_metadata,
+        excluded_render_categories={'lamp'},
+        layout_guidance=layout_guidance,
+    )
+    print("structured scene exported:", export_path)
+    return export_path
 
 def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized_file=None, bin_angles=False, cat2objs=None, datasize='large', gen_shape=False):
 
@@ -289,6 +338,13 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                     shapes_pred = shapes_pred.cpu().detach()
                 render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
                 classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                if args.export_3d:
+                    if not args.save_3d:
+                        print("Skipping structured scene export because --save_3d is False.")
+                    else:
+                        export_echoscene_sidecar(modelArgs, test_dataset, data, dec_objs, dec_triples,
+                                                 boxes_pred_den, angles_pred, classes, epoch=epoch,
+                                                 render_type=args.render_type)
             else:
                 raise NotImplementedError
 
@@ -320,8 +376,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             file.write('means of mean: {:.2f}\n\n'.format(means_of_mean))
 
 def evaluate():
-    random.seed(48)
-    torch.manual_seed(48)
+    reseed(48)
 
     argsJson = os.path.join(args.exp, 'args.json')
     assert os.path.exists(argsJson), 'Could not find args.json for experiment {}'.format(args.exp)
