@@ -8,7 +8,7 @@ from torch.nn.utils import clip_grad_norm_
 from .diffusion_ddpm import DiffusionPoint
 from .denoise_net import Unet1D
 from ..stats_logger import StatsLogger
-from transformers import BertTokenizer, BertModel
+#from transformers import BertTokenizer, BertModel
 import clip
 
 class DiffusionSceneLayout_DDPM(Module):
