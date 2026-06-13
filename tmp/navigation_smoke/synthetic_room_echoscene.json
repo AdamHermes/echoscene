@@ -1,0 +1,1 @@
+{"scan_id": "synthetic_room", "room_bounds": {"min": [0, 0, 0], "max": [4, 2.5, 3]}, "objects": [{"id": 0, "category": "table", "included_in_scene_mesh": true, "affordances": ["scene_obstacle", "support_surface"], "aabb": {"min": [1.5, 0, 1.0], "max": [2.5, 1, 2.0]}}]}

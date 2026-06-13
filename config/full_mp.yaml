@@ -21,15 +21,14 @@ layout_branch:
     denoiser: unet1d
     relation_condition: true
     denoiser_kwargs:
-        dims: 1 # 1D
-        in_channels: 8 # size(3)+loc(3)+sincos(2)
-        out_channels: 8 # same
+        dims: 1
+        in_channels: 8
+        out_channels: 8
         model_channels: 512
         channel_mult: [ 1,1,1,1]
         num_res_blocks: 2
         attention_resolutions: [ 4, 2 ]
         num_heads: 8
-        # cond_model params
         use_spatial_transformer: true
         transformer_depth: 1
         conditioning_key: 'crossattn'
@@ -49,21 +48,29 @@ layout_branch:
       loss_iou: false
       iou_type: obb
       train_stats_file: null
+      
+    # -----------------------------------------------
+    # NEW PHYSCENE CONFIGURATION
+    # -----------------------------------------------
     inference_guidance:
-      enabled: false
-      interval: 5
-      start_ratio: 0.7
-      grad_clip: 0.1
-      clip_to_bounds: true
-      constraints:
-        collision:
-          enabled: true
-          strength: 0.08
-          iou_threshold: 0.02
-          penetration_threshold: 0.0
-          iou_weight: 0.5
-          penetration_weight: 2.0
-          metric: aabb
+      scale: 1.0
+      scale_type: 'div_var'
+      collision: true
+      collision_weight: 1.0
+      collision_type: "bbox_IOU"   # Keep this to bbox_IOU for now!
+      clip_grad_by_value:
+        min: -0.1
+        max: 0.1
+      guidance: 
+        collision: true
+        weight_coll: 2.0
+        open: false
+        room_layout: false
+        weight_room: 300000.0
+        reachability: false
+        weight_reach: 100.0
+        robot_width_real: 0.2 
+        robot_hight_real: 1.5
 
 shape_branch:
     model: sdfusion-txt2shape_mp

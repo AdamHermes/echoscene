@@ -186,6 +186,7 @@ def _source_metadata_for_instance(source_object_metadata, instance_id):
     return {
         "source_model_path": _abs_path(info.get("model_path")) if info.get("model_path") else None,
         "source_scale": _to_builtin(info.get("scale")),
+        "source_param7": _to_builtin(info.get("param7")),
     }
 
 
@@ -282,6 +283,22 @@ def build_structured_scene(
             }
         )
 
+    source_floor_bounds = None
+    for obj in objects:
+        if obj["category"] != "floor":
+            continue
+        source_param7 = obj.get("source_param7")
+        if source_param7 is None:
+            continue
+        try:
+            floor_corners = _bbox_corners([float(v) for v in source_param7])
+            source_floor_bounds = _aabb_from_corners(floor_corners)
+            source_floor_bounds["source"] = "source_floor_bbox"
+            source_floor_bounds["up_axis"] = "Y"
+            break
+        except (TypeError, ValueError):
+            continue
+
     relations = []
     for relation_index, triple in enumerate(triples):
         if len(triple) < 3:
@@ -303,7 +320,7 @@ def build_structured_scene(
             relation["affordance_relation"] = "support"
         relations.append(relation)
 
-    bounds = _room_bounds(objects)
+    bounds = source_floor_bounds or _room_bounds(objects)
     return {
         "schema_version": "0.1",
         "generator": {

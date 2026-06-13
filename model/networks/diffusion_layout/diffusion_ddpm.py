@@ -15,7 +15,6 @@ from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_
 from .loss import axis_aligned_bbox_overlaps_3d
 #from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
-
 def cfg_get(cfg, key, default=None):
     if cfg is None:
         return default
@@ -470,47 +469,72 @@ class GaussianDiffusion:
         }
         return loss, stats
 
-    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids):
-        step_stats = {
-            'timestep': int(timestep),
-            'applied': False,
-        }
-        if not self._guidance_active_for_timestep(timestep):
-            step_stats['skip_reason'] = 'schedule_inactive'
-            return model_mean, step_stats
+    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids, class_labels):
+        stats = {'timestep': timestep, 'applied': False}
+        
+        # 1. Group 2D flat objects into 3D scenes
+        unique_scenes, inverse_indices, counts = torch.unique(scene_ids, return_inverse=True, return_counts=True)
+        B = len(unique_scenes)
+        max_obj = counts.max().item()
+        d_class = self.physcene_optimizer.d_class
 
-        collision_cfg = self._collision_guidance_cfg()
-        strength = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
-        if strength <= 0.0:
-            step_stats['skip_reason'] = 'zero_strength'
-            return model_mean, step_stats
+        # Prepare 3D tensors
+        # PHYSCENE expects: [translations(3), sizes(3), angles(1), class_one_hot(d_class)]
+        d_physcene = 7 + d_class
+        x_3d = torch.zeros((B, max_obj, d_physcene), device=pred_xstart.device)
+        variance_3d = torch.zeros((B, max_obj, 7), device=pred_xstart.device)
+        objectness = torch.zeros((B, max_obj, 1), device=pred_xstart.device)
 
-        collision_loss, collision_stats = self._compute_collision_guidance_loss(pred_xstart, scene_ids)
-        step_stats.update(collision_stats)
-        if collision_loss is None or not torch.isfinite(collision_loss):
-            step_stats['skip_reason'] = step_stats.get('skip_reason', 'invalid_loss')
-            return model_mean, step_stats
+        # 2. Scatter the data and SWAP bbox components
+        for i in range(B):
+            mask = (scene_ids == unique_scenes[i])
+            num_items = mask.sum()
+            
+            # EchoScene format: [sizes(0:3), translations(3:6), angles(6:7)]
+            sizes = pred_xstart[mask, 0:3]
+            trans = pred_xstart[mask, 3:6]
+            angles = pred_xstart[mask, 6:7]
+            
+            # Reconstruct for PHYSCENE: [translations, sizes, angles]
+            bbox_physcene = torch.cat([trans, sizes, angles], dim=-1)
+            
+            # Convert class labels to one-hot
+            labels_one_hot = torch.nn.functional.one_hot(class_labels[mask].long(), num_classes=d_class).float()
+            
+            x_3d[i, :num_items] = torch.cat([bbox_physcene, labels_one_hot], dim=-1)
+            variance_3d[i, :num_items] = torch.cat([model_variance[mask, 3:6], model_variance[mask, 0:3], model_variance[mask, 6:7]], dim=-1)
+            objectness[i, :num_items] = 1.0
 
-        guidance_grad = torch.autograd.grad(collision_loss, pred_xstart, allow_unused=False)[0]
-        grad_norm = guidance_grad.norm(p=2, dim=1, keepdim=True)
-        grad_clip = float(cfg_get(self.inference_guidance, 'grad_clip', 0.0))
-        if grad_clip > 0.0:
-            clip_scale = torch.clamp(grad_clip / (grad_norm + 1e-12), max=1.0)
-            guidance_grad = guidance_grad * clip_scale
+        # 3. Ask PHYSCENE for gradients
+        guidance_3d = self.physcene_optimizer.gradient(
+            x=x_3d, 
+            data=None, 
+            variance=variance_3d, 
+            objectness=objectness
+        )
 
-        variance_preconditioned_grad = model_variance * guidance_grad
-        guided_mean = model_mean - strength * variance_preconditioned_grad
+        if guidance_3d is not None:
+            # 4. Flatten back to 2D and un-swap the bounding box!
+            guidance_2d = torch.zeros_like(pred_xstart)
+            for i in range(B):
+                mask = (scene_ids == unique_scenes[i])
+                num_items = mask.sum()
+                
+                # PHYSCENE guidance format: [trans_grad, sizes_grad, angles_grad]
+                g_trans = guidance_3d[i, :num_items, 0:3]
+                g_sizes = guidance_3d[i, :num_items, 3:6]
+                g_angles = guidance_3d[i, :num_items, 6:7]
+                
+                # Back to EchoScene format: [sizes, trans, angles]
+                guidance_2d[mask] = torch.cat([g_sizes, g_trans, g_angles], dim=-1)
 
-        step_stats.update({
-            'applied': True,
-            'guidance_strength': strength,
-            'collision_loss': float(collision_loss.detach().item()),
-            'variance_scale_mean': float(model_variance.mean().detach().item()),
-            'variance_scale_max': float(model_variance.max().detach().item()),
-            'grad_norm_mean': float(grad_norm.mean().detach().item()),
-            'grad_norm_max': float(grad_norm.max().detach().item()),
-        })
-        return guided_mean.detach(), step_stats
+            model_mean = model_mean + guidance_2d
+            stats['applied'] = True
+            stats['guidance_norm'] = guidance_2d.norm().item()
+        else:
+            stats['skip_reason'] = 'guidance_zero'
+
+        return model_mean, stats
 
     def _summarize_guidance_stats(self, step_stats, final_sample, scene_ids):
         summary = {
@@ -577,7 +601,7 @@ class GaussianDiffusion:
         assert sample.shape == pred_xstart.shape
         return (sample, pred_xstart) if return_pred_xstart else sample
 
-    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=False, return_pred_xstart=False):
+    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, scene_ids=None, class_labels=None, noise_fn=torch.randn, clip_denoised=False, return_pred_xstart=False):
         """
         Sample from the model
         """
@@ -605,6 +629,7 @@ class GaussianDiffusion:
                     model_variance=model_variance,
                     timestep=int(t[0].item()),
                     scene_ids=scene_ids,
+                    class_labels=class_labels,
                 )
                 pred_xstart = pred_xstart.detach()
                 model_log_variance = model_log_variance.detach()
@@ -649,7 +674,7 @@ class GaussianDiffusion:
         assert img_t.shape == shape
         return img_t
 
-    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=True, keep_running=False):
+    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, scene_ids=None, class_labels=None, noise_fn=torch.randn, clip_denoised=True, keep_running=False):
         """
         Generate samples
         keep_running: True if we run 2 x num_timesteps, False if we just run num_timesteps
@@ -661,7 +686,7 @@ class GaussianDiffusion:
         step_stats = []
         for t in tqdm(reversed(range(0, self.num_timesteps if not keep_running else len(self.betas)))):
             t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
-            x_t, guidance_step_stats = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
+            x_t, guidance_step_stats = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids,class_labels=class_labels, noise_fn=noise_fn,
                                   clip_denoised=clip_denoised, return_pred_xstart=False)
             if self._guidance_enabled():
                 step_stats.append(guidance_step_stats)
@@ -941,8 +966,8 @@ class DiffusionPoint(nn.Module):
                                             keep_running=keep_running)
 
     def gen_samples_sg(self, shape, device, obj_embed, triples=None, condition=None, noise_fn=torch.randn,
-                    clip_denoised=True, keep_running=False, scene_ids=None):
-        return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
+                    clip_denoised=True, keep_running=False, scene_ids=None, class_labels=None):
+        return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, class_labels=class_labels, noise_fn=noise_fn,
                                             clip_denoised=clip_denoised, keep_running=keep_running)
 
     def get_latest_sampling_stats(self):

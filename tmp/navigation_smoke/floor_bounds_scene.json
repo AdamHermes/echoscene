@@ -1,0 +1,1 @@
+{"scan_id": "floor_bounds_scene", "room_bounds": {"min": [1, 0, 1], "max": [2, 0, 2], "source": "bad"}, "objects": [{"id": 1, "category": "floor", "aabb": {"min": [0, 0, 0], "max": [4, 0, 3]}}, {"id": 2, "category": "table", "included_in_scene_mesh": true, "affordances": ["scene_obstacle"], "aabb": {"min": [1, 0, 1], "max": [2, 1, 2]}}]}

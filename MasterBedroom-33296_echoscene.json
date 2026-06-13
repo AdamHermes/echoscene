@@ -1,0 +1,1999 @@
+{
+  "schema_version": "0.1",
+  "generator": {
+    "name": "EchoScene",
+    "render_type": "echoscene",
+    "epoch": "2050",
+    "experiment_path": "/content/echoscene/released_full_model",
+    "dataset_path": "/content/echoscene/FRONT"
+  },
+  "scan_id": "MasterBedroom-33296",
+  "room_type": "all",
+  "coordinate_system": {
+    "up_axis": "Y",
+    "bbox_format": "[length, height, width, x, y, z, yaw_degrees]",
+    "units": "meters"
+  },
+  "scene_mesh_path": "/content/echoscene/released_full_model/vis/2050/echoscene/MasterBedroom-33296_echoscene.glb",
+  "scene_mesh_exists": true,
+  "object_mesh_dir": "/content/echoscene/released_full_model/vis/2050/echoscene/object_meshes/MasterBedroom-33296",
+  "objects": [
+    {
+      "id": 0,
+      "instance_id": 1,
+      "category_id": 11,
+      "category": "table",
+      "mesh_export_index": 1,
+      "mesh_path": "/content/echoscene/released_full_model/vis/2050/echoscene/object_meshes/MasterBedroom-33296/table_11_1.obj",
+      "mesh_exists": true,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": true,
+      "bbox": {
+        "param7": [
+          1.1309795379638672,
+          1.050720453262329,
+          0.5083685517311096,
+          -2.353851556777954,
+          0.0007087024860084057,
+          -1.4449481964111328,
+          0.009767132811248302
+        ],
+        "size": [
+          1.1309795379638672,
+          1.050720453262329,
+          0.5083685517311096
+        ],
+        "translation": [
+          -2.353851556777954,
+          0.0007087024860084057,
+          -1.4449481964111328
+        ],
+        "yaw_degrees": 0.009767132811248302,
+        "up_axis": "Y",
+        "top_y": 1.0514291557483375
+      },
+      "aabb": {
+        "min": [
+          -2.919384647987505,
+          0.0007087024860084057,
+          -1.6992288668469357
+        ],
+        "max": [
+          -1.7883184655684032,
+          1.0514291557483375,
+          -1.1906675259753299
+        ],
+        "size": [
+          1.1310661824191017,
+          1.050720453262329,
+          0.5085613408716059
+        ],
+        "center": [
+          -2.353851556777954,
+          0.526068929117173,
+          -1.4449481964111328
+        ]
+      },
+      "corners": [
+        [
+          -2.919384647987505,
+          0.0007087024860084057,
+          -1.6990360703199583
+        ],
+        [
+          -2.919297987099391,
+          0.0007087024860084057,
+          -1.1906675259753299
+        ],
+        [
+          -2.919384647987505,
+          1.0514291557483375,
+          -1.6990360703199583
+        ],
+        [
+          -2.919297987099391,
+          1.0514291557483375,
+          -1.1906675259753299
+        ],
+        [
+          -1.7884051264565173,
+          0.0007087024860084057,
+          -1.6992288668469357
+        ],
+        [
+          -1.7883184655684032,
+          0.0007087024860084057,
+          -1.1908603225023073
+        ],
+        [
+          -1.7884051264565173,
+          1.0514291557483375,
+          -1.6992288668469357
+        ],
+        [
+          -1.7883184655684032,
+          1.0514291557483375,
+          -1.1908603225023073
+        ]
+      ],
+      "affordances": [
+        "scene_obstacle",
+        "support_surface"
+      ],
+      "support_surface": {
+        "enabled": true,
+        "height": 1.0514291557483375,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      },
+      "source_model_path": "/content/echoscene/FRONT/3D-FUTURE-model/1791e0c9-15fc-4fa9-80df-e73332ed6ce0/raw_model.obj",
+      "source_scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 1,
+      "instance_id": 2,
+      "category_id": 8,
+      "category": "nightstand",
+      "mesh_export_index": 2,
+      "mesh_path": "/content/echoscene/released_full_model/vis/2050/echoscene/object_meshes/MasterBedroom-33296/nightstand_8_2.obj",
+      "mesh_exists": true,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": true,
+      "bbox": {
+        "param7": [
+          0.576690673828125,
+          0.5819662809371948,
+          0.4420080780982971,
+          0.28628063201904297,
+          -0.0006195651367306709,
+          -1.470703125,
+          0.07331156730651855
+        ],
+        "size": [
+          0.576690673828125,
+          0.5819662809371948,
+          0.4420080780982971
+        ],
+        "translation": [
+          0.28628063201904297,
+          -0.0006195651367306709,
+          -1.470703125
+        ],
+        "yaw_degrees": 0.07331156730651855,
+        "up_axis": "Y",
+        "top_y": 0.5813467158004642
+      },
+      "aabb": {
+        "min": [
+          -0.0023472496862324554,
+          -0.0006195651367306709,
+          -1.6920759290337917
+        ],
+        "max": [
+          0.5749085137243184,
+          0.5813467158004642,
+          -1.2493303209662083
+        ],
+        "size": [
+          0.5772557634105508,
+          0.5819662809371948,
+          0.44274560806758334
+        ],
+        "center": [
+          0.28628063201904297,
+          0.29036357533186674,
+          -1.470703125
+        ]
+      },
+      "corners": [
+        [
+          -0.0023472496862324554,
+          -0.0006195651367306709,
+          -1.691338037238402
+        ],
+        [
+          -0.0017816880270510316,
+          -0.0006195651367306709,
+          -1.2493303209662083
+        ],
+        [
+          -0.0023472496862324554,
+          0.5813467158004642,
+          -1.691338037238402
+        ],
+        [
+          -0.0017816880270510316,
+          0.5813467158004642,
+          -1.2493303209662083
+        ],
+        [
+          0.574342952065137,
+          -0.0006195651367306709,
+          -1.6920759290337917
+        ],
+        [
+          0.5749085137243184,
+          -0.0006195651367306709,
+          -1.250068212761598
+        ],
+        [
+          0.574342952065137,
+          0.5813467158004642,
+          -1.6920759290337917
+        ],
+        [
+          0.5749085137243184,
+          0.5813467158004642,
+          -1.250068212761598
+        ]
+      ],
+      "affordances": [
+        "scene_obstacle",
+        "support_surface"
+      ],
+      "support_surface": {
+        "enabled": true,
+        "height": 0.5813467158004642,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      },
+      "source_model_path": "/content/echoscene/FRONT/3D-FUTURE-model/62319141-32fa-4353-b2ff-ec31ca232e3e/raw_model.obj",
+      "source_scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 2,
+      "instance_id": 3,
+      "category_id": 4,
+      "category": "chair",
+      "mesh_export_index": 3,
+      "mesh_path": "/content/echoscene/released_full_model/vis/2050/echoscene/object_meshes/MasterBedroom-33296/chair_4_3.obj",
+      "mesh_exists": true,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": true,
+      "bbox": {
+        "param7": [
+          0.48789888620376587,
+          0.44519340991973877,
+          0.5364844799041748,
+          -2.0676610469818115,
+          -0.0006355224177241325,
+          -0.7670574188232422,
+          -89.93505859375
+        ],
+        "size": [
+          0.48789888620376587,
+          0.44519340991973877,
+          0.5364844799041748
+        ],
+        "translation": [
+          -2.0676610469818115,
+          -0.0006355224177241325,
+          -0.7670574188232422
+        ],
+        "yaw_degrees": -89.93505859375,
+        "up_axis": "Y",
+        "top_y": 0.44455788750201464
+      },
+      "aabb": {
+        "min": [
+          -2.3361796169592894,
+          -0.0006355224177241325,
+          -1.0113107420096654
+        ],
+        "max": [
+          -1.7991424770043334,
+          0.44455788750201464,
+          -0.5228040956368188
+        ],
+        "size": [
+          0.537037139954956,
+          0.44519340991973877,
+          0.4885066463728466
+        ],
+        "center": [
+          -2.0676610469818115,
+          0.22196118254214525,
+          -0.7670574188232422
+        ]
+      },
+      "corners": [
+        [
+          -1.7996954816630177,
+          -0.0006355224177241325,
+          -1.0113107420096654
+        ],
+        [
+          -2.3361796169592894,
+          -0.0006355224177241325,
+          -1.010702668441375
+        ],
+        [
+          -1.7996954816630177,
+          0.44455788750201464,
+          -1.0113107420096654
+        ],
+        [
+          -2.3361796169592894,
+          0.44455788750201464,
+          -1.010702668441375
+        ],
+        [
+          -1.7991424770043334,
+          -0.0006355224177241325,
+          -0.5234121692051094
+        ],
+        [
+          -2.3356266123006053,
+          -0.0006355224177241325,
+          -0.5228040956368188
+        ],
+        [
+          -1.7991424770043334,
+          0.44455788750201464,
+          -0.5234121692051094
+        ],
+        [
+          -2.3356266123006053,
+          0.44455788750201464,
+          -0.5228040956368188
+        ]
+      ],
+      "affordances": [
+        "scene_obstacle",
+        "sittable"
+      ],
+      "support_surface": {
+        "enabled": false,
+        "height": 0.44455788750201464,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      },
+      "source_model_path": "/content/echoscene/FRONT/3D-FUTURE-model/9df2949c-074e-4b18-b779-b88a074f9590/raw_model.obj",
+      "source_scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 3,
+      "instance_id": 4,
+      "category_id": 1,
+      "category": "bed",
+      "mesh_export_index": 4,
+      "mesh_path": "/content/echoscene/released_full_model/vis/2050/echoscene/object_meshes/MasterBedroom-33296/bed_1_4.obj",
+      "mesh_exists": true,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": true,
+      "bbox": {
+        "param7": [
+          2.0427205562591553,
+          1.4470810890197754,
+          2.250777244567871,
+          -0.989438533782959,
+          -0.0008807294070720673,
+          -0.47470903396606445,
+          0.007776601240038872
+        ],
+        "size": [
+          2.0427205562591553,
+          1.4470810890197754,
+          2.250777244567871
+        ],
+        "translation": [
+          -0.989438533782959,
+          -0.0008807294070720673,
+          -0.47470903396606445
+        ],
+        "yaw_degrees": 0.007776601240038872,
+        "up_axis": "Y",
+        "top_y": 1.4462003596127033
+      },
+      "aabb": {
+        "min": [
+          -2.010951548459307,
+          -0.0008807294070720673,
+          -1.6002362723527277
+        ],
+        "max": [
+          0.0320744808933886,
+          1.4462003596127033,
+          0.6508182044205988
+        ],
+        "size": [
+          2.0430260293526956,
+          1.4470810890197754,
+          2.2510544767733265
+        ],
+        "center": [
+          -0.9894385337829591,
+          0.7226598151028156,
+          -0.47470903396606445
+        ]
+      },
+      "corners": [
+        [
+          -2.010951548459307,
+          -0.0008807294070720673,
+          -1.599959019415477
+        ],
+        [
+          -2.010646056550371,
+          -0.0008807294070720673,
+          0.6508182044205988
+        ],
+        [
+          -2.010951548459307,
+          1.4462003596127033,
+          -1.599959019415477
+        ],
+        [
+          -2.010646056550371,
+          1.4462003596127033,
+          0.6508182044205988
+        ],
+        [
+          0.031768988984452795,
+          -0.0008807294070720673,
+          -1.6002362723527277
+        ],
+        [
+          0.0320744808933886,
+          -0.0008807294070720673,
+          0.650540951483348
+        ],
+        [
+          0.031768988984452795,
+          1.4462003596127033,
+          -1.6002362723527277
+        ],
+        [
+          0.0320744808933886,
+          1.4462003596127033,
+          0.650540951483348
+        ]
+      ],
+      "affordances": [
+        "scene_obstacle",
+        "support_surface"
+      ],
+      "support_surface": {
+        "enabled": true,
+        "height": 1.4462003596127033,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      },
+      "source_model_path": "/content/echoscene/FRONT/3D-FUTURE-model/6c185b06-6b95-45d0-bad2-fea9895e1e5a/raw_model.obj",
+      "source_scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 4,
+      "instance_id": 5,
+      "category_id": 3,
+      "category": "cabinet",
+      "mesh_export_index": 5,
+      "mesh_path": "/content/echoscene/released_full_model/vis/2050/echoscene/object_meshes/MasterBedroom-33296/cabinet_3_5.obj",
+      "mesh_exists": true,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": true,
+      "bbox": {
+        "param7": [
+          0.8499858975410461,
+          1.0335115194320679,
+          0.43282362818717957,
+          -2.130984306335449,
+          0.0023882384411990643,
+          1.1907000541687012,
+          -179.986572265625
+        ],
+        "size": [
+          0.8499858975410461,
+          1.0335115194320679,
+          0.43282362818717957
+        ],
+        "translation": [
+          -2.130984306335449,
+          0.0023882384411990643,
+          1.1907000541687012
+        ],
+        "yaw_degrees": -179.986572265625,
+        "up_axis": "Y",
+        "top_y": 1.035899757873267
+      },
+      "aabb": {
+        "min": [
+          -2.5560279613124037,
+          0.0023882384411990643,
+          0.974188645446842
+        ],
+        "max": [
+          -1.7059406513584945,
+          1.035899757873267,
+          1.4072114628905603
+        ],
+        "size": [
+          0.8500873099539092,
+          1.0335115194320679,
+          0.4330228174437183
+        ],
+        "center": [
+          -2.130984306335449,
+          0.519143998157233,
+          1.1907000541687012
+        ]
+      },
+      "corners": [
+        [
+          -1.7059406513584945,
+          0.0023882384411990643,
+          1.4070122617478722
+        ],
+        [
+          -1.7060420871135662,
+          0.0023882384411990643,
+          0.974188645446842
+        ],
+        [
+          -1.7059406513584945,
+          1.035899757873267,
+          1.4070122617478722
+        ],
+        [
+          -1.7060420871135662,
+          1.035899757873267,
+          0.974188645446842
+        ],
+        [
+          -2.5559265255573322,
+          0.0023882384411990643,
+          1.4072114628905603
+        ],
+        [
+          -2.5560279613124037,
+          0.0023882384411990643,
+          0.97438784658953
+        ],
+        [
+          -2.5559265255573322,
+          1.035899757873267,
+          1.4072114628905603
+        ],
+        [
+          -2.5560279613124037,
+          1.035899757873267,
+          0.97438784658953
+        ]
+      ],
+      "affordances": [
+        "scene_obstacle",
+        "support_surface"
+      ],
+      "support_surface": {
+        "enabled": true,
+        "height": 1.035899757873267,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      },
+      "source_model_path": "/content/echoscene/FRONT/3D-FUTURE-model/8f4f873e-6974-4126-8c16-ab7d85204903/raw_model.obj",
+      "source_scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 5,
+      "instance_id": 6,
+      "category_id": 7,
+      "category": "lamp",
+      "mesh_export_index": 6,
+      "mesh_path": "/content/echoscene/released_full_model/vis/2050/echoscene/object_meshes/MasterBedroom-33296/lamp_7_6.obj",
+      "mesh_exists": true,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": false,
+      "bbox": {
+        "param7": [
+          0.7114211320877075,
+          0.8687154054641724,
+          0.6978638172149658,
+          -1.1197733879089355,
+          1.9424784183502197,
+          0.0506134033203125,
+          -0.014588179998099804
+        ],
+        "size": [
+          0.7114211320877075,
+          0.8687154054641724,
+          0.6978638172149658
+        ],
+        "translation": [
+          -1.1197733879089355,
+          1.9424784183502197,
+          0.0506134033203125
+        ],
+        "yaw_degrees": -0.014588179998099804,
+        "up_axis": "Y",
+        "top_y": 2.811193823814392
+      },
+      "aabb": {
+        "min": [
+          -1.4755727845938287,
+          1.9424784183502197,
+          -0.298409062073899
+        ],
+        "max": [
+          -0.7639739912240424,
+          2.811193823814392,
+          0.399635868714524
+        ],
+        "size": [
+          0.7115987933697863,
+          0.8687154054641724,
+          0.698044930788423
+        ],
+        "center": [
+          -1.1197733879089355,
+          2.376836121082306,
+          0.0506134033203125
+        ]
+      },
+      "corners": [
+        [
+          -1.4753951002520462,
+          1.9424784183502197,
+          -0.298409062073899
+        ],
+        [
+          -1.4755727845938287,
+          1.9424784183502197,
+          0.39945473252080405
+        ],
+        [
+          -1.4753951002520462,
+          2.811193823814392,
+          -0.298409062073899
+        ],
+        [
+          -1.4755727845938287,
+          2.811193823814392,
+          0.39945473252080405
+        ],
+        [
+          -0.7639739912240424,
+          1.9424784183502197,
+          -0.29822792588017905
+        ],
+        [
+          -0.7641516755658249,
+          1.9424784183502197,
+          0.399635868714524
+        ],
+        [
+          -0.7639739912240424,
+          2.811193823814392,
+          -0.29822792588017905
+        ],
+        [
+          -0.7641516755658249,
+          2.811193823814392,
+          0.399635868714524
+        ]
+      ],
+      "affordances": [
+        "scene_obstacle",
+        "illumination"
+      ],
+      "support_surface": {
+        "enabled": false,
+        "height": 2.811193823814392,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      },
+      "source_model_path": "/content/echoscene/FRONT/3D-FUTURE-model/bd2a6793-4c84-49a6-9311-3cc71701dccc/raw_model.obj",
+      "source_scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 6,
+      "instance_id": 7,
+      "category_id": 13,
+      "category": "wardrobe",
+      "mesh_export_index": 7,
+      "mesh_path": "/content/echoscene/released_full_model/vis/2050/echoscene/object_meshes/MasterBedroom-33296/wardrobe_13_7.obj",
+      "mesh_exists": true,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": true,
+      "bbox": {
+        "param7": [
+          3.30222749710083,
+          2.363100528717041,
+          0.616976261138916,
+          0.7876291275024414,
+          -0.0004735048860311508,
+          0.1491680145263672,
+          -90.1133041381836
+        ],
+        "size": [
+          3.30222749710083,
+          2.363100528717041,
+          0.616976261138916
+        ],
+        "translation": [
+          0.7876291275024414,
+          -0.0004735048860311508,
+          0.1491680145263672
+        ],
+        "yaw_degrees": -90.1133041381836,
+        "up_axis": "Y",
+        "top_y": 2.36262702383101
+      },
+      "aabb": {
+        "min": [
+          0.4758764748390056,
+          -0.0004735048860311508,
+          -1.5025525497986942
+        ],
+        "max": [
+          1.0993817801658772,
+          2.36262702383101,
+          1.8008885788514286
+        ],
+        "size": [
+          0.6235053053268715,
+          2.363100528717041,
+          3.303441128650123
+        ],
+        "center": [
+          0.7876291275024414,
+          1.1810767594724894,
+          0.1491680145263672
+        ]
+      },
+      "corners": [
+        [
+          1.0993817801658772,
+          -0.0004735048860311508,
+          -1.5013324613632197
+        ],
+        [
+          0.4824067254082594,
+          -0.0004735048860311508,
+          -1.5025525497986942
+        ],
+        [
+          1.0993817801658772,
+          2.36262702383101,
+          -1.5013324613632197
+        ],
+        [
+          0.4824067254082594,
+          2.36262702383101,
+          -1.5025525497986942
+        ],
+        [
+          1.0928515295966235,
+          -0.0004735048860311508,
+          1.8008885788514286
+        ],
+        [
+          0.4758764748390056,
+          -0.0004735048860311508,
+          1.7996684904159541
+        ],
+        [
+          1.0928515295966235,
+          2.36262702383101,
+          1.8008885788514286
+        ],
+        [
+          0.4758764748390056,
+          2.36262702383101,
+          1.7996684904159541
+        ]
+      ],
+      "affordances": [
+        "scene_obstacle",
+        "support_surface"
+      ],
+      "support_surface": {
+        "enabled": true,
+        "height": 2.36262702383101,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      },
+      "source_model_path": "/content/echoscene/FRONT/3D-FUTURE-model/e0d0379b-0835-482f-836a-5803975ade24/raw_model.obj",
+      "source_scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 7,
+      "instance_id": 8,
+      "category_id": 6,
+      "category": "floor",
+      "mesh_export_index": null,
+      "mesh_path": null,
+      "mesh_exists": false,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": false,
+      "bbox": {
+        "param7": [
+          5.865692138671875,
+          0.00011542147694854066,
+          2.9388389587402344,
+          -0.5177979469299316,
+          -0.0017547521274536848,
+          0.15033483505249023,
+          -0.01974060758948326
+        ],
+        "size": [
+          5.865692138671875,
+          0.00011542147694854066,
+          2.9388389587402344
+        ],
+        "translation": [
+          -0.5177979469299316,
+          -0.0017547521274536848,
+          0.15033483505249023
+        ],
+        "yaw_degrees": -0.01974060758948326,
+        "up_axis": "Y",
+        "top_y": -0.0016393306505051441
+      },
+      "aabb": {
+        "min": [
+          -3.4511501139098444,
+          -0.0017547521274536848,
+          -1.3200950357577286
+        ],
+        "max": [
+          2.415554220049981,
+          -0.0016393306505051441,
+          1.620764705862709
+        ],
+        "size": [
+          5.8667043339598255,
+          0.00011542147694854066,
+          2.9408597416204376
+        ],
+        "center": [
+          -0.5177979469299316,
+          -0.0016970413889794145,
+          0.15033483505249023
+        ]
+      },
+      "corners": [
+        [
+          -3.4501375704729904,
+          -0.0017547521274536848,
+          -1.3200950357577286
+        ],
+        [
+          -3.4511501139098444,
+          -0.0017547521274536848,
+          1.618743748552356
+        ],
+        [
+          -3.4501375704729904,
+          -0.0016393306505051441,
+          -1.3200950357577286
+        ],
+        [
+          -3.4511501139098444,
+          -0.0016393306505051441,
+          1.618743748552356
+        ],
+        [
+          2.415554220049981,
+          -0.0017547521274536848,
+          -1.3180740784473755
+        ],
+        [
+          2.414541676613127,
+          -0.0017547521274536848,
+          1.620764705862709
+        ],
+        [
+          2.415554220049981,
+          -0.0016393306505051441,
+          -1.3180740784473755
+        ],
+        [
+          2.414541676613127,
+          -0.0016393306505051441,
+          1.620764705862709
+        ]
+      ],
+      "affordances": [
+        "architectural_surface"
+      ],
+      "support_surface": {
+        "enabled": false,
+        "height": -0.0016393306505051441,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      },
+      "source_model_path": null,
+      "source_scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 8,
+      "instance_id": null,
+      "category_id": 0,
+      "category": "_scene_",
+      "mesh_export_index": null,
+      "mesh_path": null,
+      "mesh_exists": false,
+      "mesh_coordinate_frame": "raw_object_mesh_fit_by_bbox",
+      "included_in_scene_mesh": false,
+      "bbox": {
+        "param7": [
+          0.06772467494010925,
+          3.8403490179916844e-05,
+          0.019604511559009552,
+          -5.670995712280273,
+          -0.0050078690983355045,
+          -5.718201637268066,
+          -57.2899284362793
+        ],
+        "size": [
+          0.06772467494010925,
+          3.8403490179916844e-05,
+          0.019604511559009552
+        ],
+        "translation": [
+          -5.670995712280273,
+          -0.0050078690983355045,
+          -5.718201637268066
+        ],
+        "yaw_degrees": -57.2899284362793,
+        "up_axis": "Y",
+        "top_y": -0.004969465608155588
+      },
+      "aabb": {
+        "min": [
+          -5.69754229397506,
+          -0.0050078690983355045,
+          -5.7519909668860985
+        ],
+        "max": [
+          -5.644449130585487,
+          -0.004969465608155588,
+          -5.684412307650034
+        ],
+        "size": [
+          0.053093163389572595,
+          3.8403490179916844e-05,
+          0.0675786592360641
+        ],
+        "center": [
+          -5.670995712280273,
+          -0.004988667353245546,
+          -5.718201637268066
+        ]
+      },
+      "corners": [
+        [
+          -5.681046748110807,
+          -0.0050078690983355045,
+          -5.7519909668860985
+        ],
+        [
+          -5.69754229397506,
+          -0.0050078690983355045,
+          -5.741396919495811
+        ],
+        [
+          -5.681046748110807,
+          -0.004969465608155588,
+          -5.7519909668860985
+        ],
+        [
+          -5.69754229397506,
+          -0.004969465608155588,
+          -5.741396919495811
+        ],
+        [
+          -5.644449130585487,
+          -0.0050078690983355045,
+          -5.695006355040322
+        ],
+        [
+          -5.6609446764497395,
+          -0.0050078690983355045,
+          -5.684412307650034
+        ],
+        [
+          -5.644449130585487,
+          -0.004969465608155588,
+          -5.695006355040322
+        ],
+        [
+          -5.6609446764497395,
+          -0.004969465608155588,
+          -5.684412307650034
+        ]
+      ],
+      "affordances": [
+        "architectural_surface"
+      ],
+      "support_surface": {
+        "enabled": false,
+        "height": -0.004969465608155588,
+        "up_axis": "Y"
+      },
+      "physics": {
+        "suggested_body_type": "static",
+        "mass_kg": null,
+        "friction": null,
+        "restitution": null,
+        "collider": "mesh_or_convex_decomposition"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "id": 0,
+      "subject_id": 5,
+      "predicate_id": 1,
+      "predicate": "left",
+      "object_id": 4,
+      "subject_category": "lamp",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 1,
+      "subject_id": 1,
+      "predicate_id": 14,
+      "predicate": "same super category as",
+      "object_id": 6,
+      "subject_category": "nightstand",
+      "object_category": "wardrobe"
+    },
+    {
+      "id": 2,
+      "subject_id": 4,
+      "predicate_id": 14,
+      "predicate": "same super category as",
+      "object_id": 1,
+      "subject_category": "cabinet",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 3,
+      "subject_id": 3,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 0,
+      "subject_category": "bed",
+      "object_category": "table"
+    },
+    {
+      "id": 4,
+      "subject_id": 6,
+      "predicate_id": 15,
+      "predicate": "same material as",
+      "object_id": 1,
+      "subject_category": "wardrobe",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 5,
+      "subject_id": 1,
+      "predicate_id": 5,
+      "predicate": "close by",
+      "object_id": 3,
+      "subject_category": "nightstand",
+      "object_category": "bed"
+    },
+    {
+      "id": 6,
+      "subject_id": 3,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 2,
+      "subject_category": "bed",
+      "object_category": "chair"
+    },
+    {
+      "id": 7,
+      "subject_id": 5,
+      "predicate_id": 6,
+      "predicate": "above",
+      "object_id": 0,
+      "subject_category": "lamp",
+      "object_category": "table",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 8,
+      "subject_id": 0,
+      "predicate_id": 1,
+      "predicate": "left",
+      "object_id": 4,
+      "subject_category": "table",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 9,
+      "subject_id": 2,
+      "predicate_id": 2,
+      "predicate": "right",
+      "object_id": 1,
+      "subject_category": "chair",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 10,
+      "subject_id": 3,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 0,
+      "subject_category": "bed",
+      "object_category": "table"
+    },
+    {
+      "id": 11,
+      "subject_id": 0,
+      "predicate_id": 1,
+      "predicate": "left",
+      "object_id": 5,
+      "subject_category": "table",
+      "object_category": "lamp"
+    },
+    {
+      "id": 12,
+      "subject_id": 6,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 5,
+      "subject_category": "wardrobe",
+      "object_category": "lamp"
+    },
+    {
+      "id": 13,
+      "subject_id": 1,
+      "predicate_id": 9,
+      "predicate": "smaller than",
+      "object_id": 4,
+      "subject_category": "nightstand",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 14,
+      "subject_id": 4,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 1,
+      "subject_category": "cabinet",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 15,
+      "subject_id": 1,
+      "predicate_id": 11,
+      "predicate": "shorter than",
+      "object_id": 0,
+      "subject_category": "nightstand",
+      "object_category": "table"
+    },
+    {
+      "id": 16,
+      "subject_id": 5,
+      "predicate_id": 6,
+      "predicate": "above",
+      "object_id": 2,
+      "subject_category": "lamp",
+      "object_category": "chair",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 17,
+      "subject_id": 6,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 4,
+      "subject_category": "wardrobe",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 18,
+      "subject_id": 6,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 0,
+      "subject_category": "wardrobe",
+      "object_category": "table"
+    },
+    {
+      "id": 19,
+      "subject_id": 3,
+      "predicate_id": 1,
+      "predicate": "left",
+      "object_id": 4,
+      "subject_category": "bed",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 20,
+      "subject_id": 0,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 1,
+      "subject_category": "table",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 21,
+      "subject_id": 6,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 2,
+      "subject_category": "wardrobe",
+      "object_category": "chair"
+    },
+    {
+      "id": 22,
+      "subject_id": 0,
+      "predicate_id": 15,
+      "predicate": "same material as",
+      "object_id": 2,
+      "subject_category": "table",
+      "object_category": "chair"
+    },
+    {
+      "id": 23,
+      "subject_id": 0,
+      "predicate_id": 5,
+      "predicate": "close by",
+      "object_id": 3,
+      "subject_category": "table",
+      "object_category": "bed"
+    },
+    {
+      "id": 24,
+      "subject_id": 5,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 2,
+      "subject_category": "lamp",
+      "object_category": "chair"
+    },
+    {
+      "id": 25,
+      "subject_id": 4,
+      "predicate_id": 4,
+      "predicate": "behind",
+      "object_id": 5,
+      "subject_category": "cabinet",
+      "object_category": "lamp"
+    },
+    {
+      "id": 26,
+      "subject_id": 1,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 2,
+      "subject_category": "nightstand",
+      "object_category": "chair"
+    },
+    {
+      "id": 27,
+      "subject_id": 3,
+      "predicate_id": 7,
+      "predicate": "standing on",
+      "object_id": 7,
+      "subject_category": "bed",
+      "object_category": "floor",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 28,
+      "subject_id": 6,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 2,
+      "subject_category": "wardrobe",
+      "object_category": "chair"
+    },
+    {
+      "id": 29,
+      "subject_id": 4,
+      "predicate_id": 14,
+      "predicate": "same super category as",
+      "object_id": 6,
+      "subject_category": "cabinet",
+      "object_category": "wardrobe"
+    },
+    {
+      "id": 30,
+      "subject_id": 3,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 5,
+      "subject_category": "bed",
+      "object_category": "lamp"
+    },
+    {
+      "id": 31,
+      "subject_id": 2,
+      "predicate_id": 11,
+      "predicate": "shorter than",
+      "object_id": 1,
+      "subject_category": "chair",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 32,
+      "subject_id": 5,
+      "predicate_id": 6,
+      "predicate": "above",
+      "object_id": 7,
+      "subject_category": "lamp",
+      "object_category": "floor",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 33,
+      "subject_id": 4,
+      "predicate_id": 11,
+      "predicate": "shorter than",
+      "object_id": 3,
+      "subject_category": "cabinet",
+      "object_category": "bed"
+    },
+    {
+      "id": 34,
+      "subject_id": 2,
+      "predicate_id": 5,
+      "predicate": "close by",
+      "object_id": 0,
+      "subject_category": "chair",
+      "object_category": "table"
+    },
+    {
+      "id": 35,
+      "subject_id": 2,
+      "predicate_id": 11,
+      "predicate": "shorter than",
+      "object_id": 0,
+      "subject_category": "chair",
+      "object_category": "table"
+    },
+    {
+      "id": 36,
+      "subject_id": 1,
+      "predicate_id": 1,
+      "predicate": "left",
+      "object_id": 4,
+      "subject_category": "nightstand",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 37,
+      "subject_id": 6,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 1,
+      "subject_category": "wardrobe",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 38,
+      "subject_id": 5,
+      "predicate_id": 6,
+      "predicate": "above",
+      "object_id": 3,
+      "subject_category": "lamp",
+      "object_category": "bed",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 39,
+      "subject_id": 6,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 2,
+      "subject_category": "wardrobe",
+      "object_category": "chair"
+    },
+    {
+      "id": 40,
+      "subject_id": 2,
+      "predicate_id": 4,
+      "predicate": "behind",
+      "object_id": 3,
+      "subject_category": "chair",
+      "object_category": "bed"
+    },
+    {
+      "id": 41,
+      "subject_id": 5,
+      "predicate_id": 4,
+      "predicate": "behind",
+      "object_id": 1,
+      "subject_category": "lamp",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 42,
+      "subject_id": 1,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 4,
+      "subject_category": "nightstand",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 43,
+      "subject_id": 4,
+      "predicate_id": 13,
+      "predicate": "same style as",
+      "object_id": 0,
+      "subject_category": "cabinet",
+      "object_category": "table"
+    },
+    {
+      "id": 44,
+      "subject_id": 3,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 0,
+      "subject_category": "bed",
+      "object_category": "table"
+    },
+    {
+      "id": 45,
+      "subject_id": 1,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 0,
+      "subject_category": "nightstand",
+      "object_category": "table"
+    },
+    {
+      "id": 46,
+      "subject_id": 4,
+      "predicate_id": 9,
+      "predicate": "smaller than",
+      "object_id": 0,
+      "subject_category": "cabinet",
+      "object_category": "table"
+    },
+    {
+      "id": 47,
+      "subject_id": 4,
+      "predicate_id": 9,
+      "predicate": "smaller than",
+      "object_id": 3,
+      "subject_category": "cabinet",
+      "object_category": "bed"
+    },
+    {
+      "id": 48,
+      "subject_id": 6,
+      "predicate_id": 13,
+      "predicate": "same style as",
+      "object_id": 1,
+      "subject_category": "wardrobe",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 49,
+      "subject_id": 3,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 1,
+      "subject_category": "bed",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 50,
+      "subject_id": 4,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 2,
+      "subject_category": "cabinet",
+      "object_category": "chair"
+    },
+    {
+      "id": 51,
+      "subject_id": 5,
+      "predicate_id": 2,
+      "predicate": "right",
+      "object_id": 2,
+      "subject_category": "lamp",
+      "object_category": "chair"
+    },
+    {
+      "id": 52,
+      "subject_id": 5,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 2,
+      "subject_category": "lamp",
+      "object_category": "chair"
+    },
+    {
+      "id": 53,
+      "subject_id": 0,
+      "predicate_id": 4,
+      "predicate": "behind",
+      "object_id": 5,
+      "subject_category": "table",
+      "object_category": "lamp"
+    },
+    {
+      "id": 54,
+      "subject_id": 6,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 0,
+      "subject_category": "wardrobe",
+      "object_category": "table"
+    },
+    {
+      "id": 55,
+      "subject_id": 5,
+      "predicate_id": 9,
+      "predicate": "smaller than",
+      "object_id": 6,
+      "subject_category": "lamp",
+      "object_category": "wardrobe"
+    },
+    {
+      "id": 56,
+      "subject_id": 1,
+      "predicate_id": 11,
+      "predicate": "shorter than",
+      "object_id": 3,
+      "subject_category": "nightstand",
+      "object_category": "bed"
+    },
+    {
+      "id": 57,
+      "subject_id": 1,
+      "predicate_id": 3,
+      "predicate": "front",
+      "object_id": 3,
+      "subject_category": "nightstand",
+      "object_category": "bed"
+    },
+    {
+      "id": 58,
+      "subject_id": 3,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 2,
+      "subject_category": "bed",
+      "object_category": "chair"
+    },
+    {
+      "id": 59,
+      "subject_id": 5,
+      "predicate_id": 6,
+      "predicate": "above",
+      "object_id": 1,
+      "subject_category": "lamp",
+      "object_category": "nightstand",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 60,
+      "subject_id": 0,
+      "predicate_id": 1,
+      "predicate": "left",
+      "object_id": 2,
+      "subject_category": "table",
+      "object_category": "chair"
+    },
+    {
+      "id": 61,
+      "subject_id": 3,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 6,
+      "subject_category": "bed",
+      "object_category": "wardrobe"
+    },
+    {
+      "id": 62,
+      "subject_id": 2,
+      "predicate_id": 1,
+      "predicate": "left",
+      "object_id": 4,
+      "subject_category": "chair",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 63,
+      "subject_id": 3,
+      "predicate_id": 4,
+      "predicate": "behind",
+      "object_id": 6,
+      "subject_category": "bed",
+      "object_category": "wardrobe"
+    },
+    {
+      "id": 64,
+      "subject_id": 6,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 3,
+      "subject_category": "wardrobe",
+      "object_category": "bed"
+    },
+    {
+      "id": 65,
+      "subject_id": 4,
+      "predicate_id": 9,
+      "predicate": "smaller than",
+      "object_id": 6,
+      "subject_category": "cabinet",
+      "object_category": "wardrobe"
+    },
+    {
+      "id": 66,
+      "subject_id": 1,
+      "predicate_id": 9,
+      "predicate": "smaller than",
+      "object_id": 5,
+      "subject_category": "nightstand",
+      "object_category": "lamp"
+    },
+    {
+      "id": 67,
+      "subject_id": 6,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 1,
+      "subject_category": "wardrobe",
+      "object_category": "nightstand"
+    },
+    {
+      "id": 68,
+      "subject_id": 1,
+      "predicate_id": 1,
+      "predicate": "left",
+      "object_id": 5,
+      "subject_category": "nightstand",
+      "object_category": "lamp"
+    },
+    {
+      "id": 69,
+      "subject_id": 2,
+      "predicate_id": 9,
+      "predicate": "smaller than",
+      "object_id": 0,
+      "subject_category": "chair",
+      "object_category": "table"
+    },
+    {
+      "id": 70,
+      "subject_id": 0,
+      "predicate_id": 7,
+      "predicate": "standing on",
+      "object_id": 7,
+      "subject_category": "table",
+      "object_category": "floor",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 71,
+      "subject_id": 6,
+      "predicate_id": 10,
+      "predicate": "taller than",
+      "object_id": 0,
+      "subject_category": "wardrobe",
+      "object_category": "table"
+    },
+    {
+      "id": 72,
+      "subject_id": 1,
+      "predicate_id": 7,
+      "predicate": "standing on",
+      "object_id": 7,
+      "subject_category": "nightstand",
+      "object_category": "floor",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 73,
+      "subject_id": 4,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 2,
+      "subject_category": "cabinet",
+      "object_category": "chair"
+    },
+    {
+      "id": 74,
+      "subject_id": 5,
+      "predicate_id": 8,
+      "predicate": "bigger than",
+      "object_id": 4,
+      "subject_category": "lamp",
+      "object_category": "cabinet"
+    },
+    {
+      "id": 75,
+      "subject_id": 5,
+      "predicate_id": 6,
+      "predicate": "above",
+      "object_id": 4,
+      "subject_category": "lamp",
+      "object_category": "cabinet",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 76,
+      "subject_id": 4,
+      "predicate_id": 4,
+      "predicate": "behind",
+      "object_id": 6,
+      "subject_category": "cabinet",
+      "object_category": "wardrobe"
+    },
+    {
+      "id": 77,
+      "subject_id": 2,
+      "predicate_id": 7,
+      "predicate": "standing on",
+      "object_id": 7,
+      "subject_category": "chair",
+      "object_category": "floor",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 78,
+      "subject_id": 4,
+      "predicate_id": 7,
+      "predicate": "standing on",
+      "object_id": 7,
+      "subject_category": "cabinet",
+      "object_category": "floor",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 79,
+      "subject_id": 6,
+      "predicate_id": 7,
+      "predicate": "standing on",
+      "object_id": 7,
+      "subject_category": "wardrobe",
+      "object_category": "floor",
+      "affordance_relation": "support"
+    },
+    {
+      "id": 80,
+      "subject_id": 0,
+      "predicate_id": 0,
+      "predicate": "in",
+      "object_id": 8,
+      "subject_category": "table",
+      "object_category": "_scene_"
+    },
+    {
+      "id": 81,
+      "subject_id": 1,
+      "predicate_id": 0,
+      "predicate": "in",
+      "object_id": 8,
+      "subject_category": "nightstand",
+      "object_category": "_scene_"
+    },
+    {
+      "id": 82,
+      "subject_id": 2,
+      "predicate_id": 0,
+      "predicate": "in",
+      "object_id": 8,
+      "subject_category": "chair",
+      "object_category": "_scene_"
+    },
+    {
+      "id": 83,
+      "subject_id": 3,
+      "predicate_id": 0,
+      "predicate": "in",
+      "object_id": 8,
+      "subject_category": "bed",
+      "object_category": "_scene_"
+    },
+    {
+      "id": 84,
+      "subject_id": 4,
+      "predicate_id": 0,
+      "predicate": "in",
+      "object_id": 8,
+      "subject_category": "cabinet",
+      "object_category": "_scene_"
+    },
+    {
+      "id": 85,
+      "subject_id": 5,
+      "predicate_id": 0,
+      "predicate": "in",
+      "object_id": 8,
+      "subject_category": "lamp",
+      "object_category": "_scene_"
+    },
+    {
+      "id": 86,
+      "subject_id": 6,
+      "predicate_id": 0,
+      "predicate": "in",
+      "object_id": 8,
+      "subject_category": "wardrobe",
+      "object_category": "_scene_"
+    },
+    {
+      "id": 87,
+      "subject_id": 7,
+      "predicate_id": 0,
+      "predicate": "in",
+      "object_id": 8,
+      "subject_category": "floor",
+      "object_category": "_scene_"
+    }
+  ],
+  "room_bounds": {
+    "min": [
+      -2.919384647987505,
+      -0.0008807294070720673,
+      -1.6992288668469357
+    ],
+    "max": [
+      1.0993817801658772,
+      2.811193823814392,
+      1.8008885788514286
+    ],
+    "size": [
+      4.018766428153382,
+      2.812074553221464,
+      3.5001174456983644
+    ],
+    "center": [
+      -0.9100014339108139,
+      1.40515654720366,
+      0.05082985600224643
+    ],
+    "source": "generated_object_aabbs",
+    "up_axis": "Y"
+  },
+  "architectural_surfaces": [
+    {
+      "id": "floor",
+      "type": "floor",
+      "aabb": {
+        "min": [
+          -2.919384647987505,
+          -0.0008807294070720673,
+          -1.6992288668469357
+        ],
+        "max": [
+          1.0993817801658772,
+          -0.0008807294070720673,
+          1.8008885788514286
+        ]
+      },
+      "affordances": [
+        "architectural_surface",
+        "support_surface"
+      ],
+      "suggested_body_type": "static"
+    },
+    {
+      "id": "ceiling",
+      "type": "ceiling",
+      "aabb": {
+        "min": [
+          -2.919384647987505,
+          2.811193823814392,
+          -1.6992288668469357
+        ],
+        "max": [
+          1.0993817801658772,
+          2.811193823814392,
+          1.8008885788514286
+        ]
+      },
+      "affordances": [
+        "architectural_surface"
+      ],
+      "suggested_body_type": "static"
+    },
+    {
+      "id": "walls",
+      "type": "walls",
+      "aabb": {
+        "min": [
+          -2.919384647987505,
+          -0.0008807294070720673,
+          -1.6992288668469357
+        ],
+        "max": [
+          1.0993817801658772,
+          2.811193823814392,
+          1.8008885788514286
+        ]
+      },
+      "affordances": [
+        "architectural_surface"
+      ],
+      "suggested_body_type": "static"
+    }
+  ],
+  "layout_guidance": {
+    "eval_type": "none"
+  }
+}
