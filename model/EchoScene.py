@@ -348,6 +348,8 @@ class Sg2ScDiffModel(nn.Module):
         return obj_cat_selected[:self.diffusion_bs], diff_dict
 
     def prepare_boxes(self, triples, obj_embed, relation_cond, scene_ids=None, obj_boxes=None, obj_angles=None, class_labels=None):
+        if scene_ids is None:
+            scene_ids = torch.zeros(obj_embed.shape[0], dtype=torch.long, device=obj_embed.device)
         if obj_boxes is not None and obj_angles is not None:
             obj_boxes = torch.cat((obj_boxes, obj_angles.reshape(-1,1)), dim=-1)
         diff_dict = {'preds': triples, 'box': obj_boxes, 'uc_b': obj_embed,

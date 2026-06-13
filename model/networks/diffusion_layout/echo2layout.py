@@ -52,13 +52,13 @@ class EchoToLayout(Module):
         # REPLACE with:
         inference_guidance_cfg = getattr(config.layout_branch, 'inference_guidance', None)
         num_classes = n_classes if n_classes else 16
-        self.df.physcene_optimizer = EchoGuidanceOptimizer(
+        self.df.diffusion.physcene_optimizer = EchoGuidanceOptimizer(
             cfg=inference_guidance_cfg,
             device=self.device,
             num_classes=num_classes,
         )
-        self.df.physcene_optimizer.d_bbox = 7
-        self.df.physcene_optimizer.d_class = num_classes
+        self.df.diffusion.physcene_optimizer.d_bbox = 7
+        self.df.diffusion.physcene_optimizer.d_class = num_classes
 
     def set_requires_grad(self, nets, requires_grad=False):
         """Set requies_grad=Fasle for all the networks to avoid unnecessary computations

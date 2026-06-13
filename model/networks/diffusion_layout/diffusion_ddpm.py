@@ -480,9 +480,9 @@ class GaussianDiffusion:
 
         # Prepare 3D tensors
         # PHYSCENE expects: [translations(3), sizes(3), angles(1), class_one_hot(d_class)]
-        d_physcene = 7 + d_class
+        d_physcene = 8 + d_class
         x_3d = torch.zeros((B, max_obj, d_physcene), device=pred_xstart.device)
-        variance_3d = torch.zeros((B, max_obj, 7), device=pred_xstart.device)
+        variance_3d = torch.zeros((B, max_obj, 8), device=pred_xstart.device)
         objectness = torch.zeros((B, max_obj, 1), device=pred_xstart.device)
 
         # 2. Scatter the data and SWAP bbox components
@@ -493,7 +493,7 @@ class GaussianDiffusion:
             # EchoScene format: [sizes(0:3), translations(3:6), angles(6:7)]
             sizes = pred_xstart[mask, 0:3]
             trans = pred_xstart[mask, 3:6]
-            angles = pred_xstart[mask, 6:7]
+            angles = pred_xstart[mask, 6:8]
             
             # Reconstruct for PHYSCENE: [translations, sizes, angles]
             bbox_physcene = torch.cat([trans, sizes, angles], dim=-1)
@@ -502,7 +502,7 @@ class GaussianDiffusion:
             labels_one_hot = torch.nn.functional.one_hot(class_labels[mask].long(), num_classes=d_class).float()
             
             x_3d[i, :num_items] = torch.cat([bbox_physcene, labels_one_hot], dim=-1)
-            variance_3d[i, :num_items] = torch.cat([model_variance[mask, 3:6], model_variance[mask, 0:3], model_variance[mask, 6:7]], dim=-1)
+            variance_3d[i, :num_items] = torch.cat([model_variance[mask, 3:6], model_variance[mask, 0:3], model_variance[mask, 6:8]], dim=-1)
             objectness[i, :num_items] = 1.0
 
         # 3. Ask PHYSCENE for gradients
@@ -523,7 +523,7 @@ class GaussianDiffusion:
                 # PHYSCENE guidance format: [trans_grad, sizes_grad, angles_grad]
                 g_trans = guidance_3d[i, :num_items, 0:3]
                 g_sizes = guidance_3d[i, :num_items, 3:6]
-                g_angles = guidance_3d[i, :num_items, 6:7]
+                g_angles = guidance_3d[i, :num_items, 6:8]
                 
                 # Back to EchoScene format: [sizes, trans, angles]
                 guidance_2d[mask] = torch.cat([g_sizes, g_trans, g_angles], dim=-1)
@@ -551,10 +551,10 @@ class GaussianDiffusion:
 
         applied_stats = [stat for stat in step_stats if stat.get('applied')]
         if applied_stats:
-            summary['avg_guided_scene_iou'] = float(np.mean([stat['avg_scene_iou'] for stat in applied_stats]))
+            summary['avg_guided_scene_iou'] = float(np.mean([stat.get('avg_scene_iou', 0.0) for stat in applied_stats]))
             summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
-            summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
-            summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
+            summary['avg_guided_collision_loss'] = float(np.mean([stat.get('collision_loss', 0.0) for stat in applied_stats]))
+            summary['avg_guided_grad_norm'] = float(np.mean([stat.get('guidance_norm', 0.0) for stat in applied_stats]))
             summary['avg_guided_variance_scale'] = float(np.mean([stat.get('variance_scale_mean', 0.0) for stat in applied_stats]))
         else:
             summary['avg_guided_scene_iou'] = 0.0
