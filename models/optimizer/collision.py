@@ -17,7 +17,7 @@ from kaolin.ops.mesh import check_sign
 from utils.utils import get_textured_objects
 from utils.overlap import bbox_overlap, voxel_grid_from_mesh
 import open3d as o3d
-#from datasets.gapartnet_dataset import MapThreedfuture2gparnet
+from datasets.gapartnet_dataset import MapThreedfuture2gparnet
 import random
 from tqdm import trange
 
@@ -26,7 +26,10 @@ def check_articulate( class_label, classes):
     if query_label=='start' or query_label == 'end' or query_label == 'empty':
         print("error")
 
-    isArticulated = False
+    if query_label in MapThreedfuture2gparnet:    
+        isArticulated = True
+    else:
+        isArticulated = False
     return isArticulated 
 
 def draw_2d_gaussian(center, size, angle, image_size = 256):
