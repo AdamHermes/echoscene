@@ -53,24 +53,22 @@ layout_branch:
     # NEW PHYSCENE CONFIGURATION
     # -----------------------------------------------
     inference_guidance:
-      scale: 1.0
-      scale_type: 'div_var'
-      collision: true
-      collision_weight: 1.0
-      collision_type: "bbox_IOU"   # Keep this to bbox_IOU for now!
-      clip_grad_by_value:
-        min: -0.1
-        max: 0.1
-      guidance: 
-        collision: true
-        weight_coll: 2.0
-        open: false
-        room_layout: false
-        weight_room: 300000.0
-        reachability: false
-        weight_reach: 100.0
-        robot_width_real: 0.2 
-        robot_hight_real: 1.5
+        enabled: true
+        interval: 10          # apply every 10 denoising steps → 100 total calls
+        start_ratio: 0.3      # start at 30% through denoising (t < 700)
+        weight_coll: 1.0
+        weight_layout: 0.0    # enable once you have room bounds
+        scale: 0.1
+        scale_type: normal
+        clip_grad_by_value: 0.1
+        constraints:
+        collision:
+            enabled: true
+            metric: aabb
+            iou_threshold: 0.0
+            iou_weight: 1.0
+            penetration_weight: 0.5
+            strength: 0.1
 
 shape_branch:
     model: sdfusion-txt2shape_mp

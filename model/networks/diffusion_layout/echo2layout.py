@@ -3,7 +3,9 @@ from torch.nn import Module
 
 from .diffusion_ddpm import DiffusionPoint
 from .denoise_net import UNet1DModel
-from model.optimizer.collision import CollisionOptimizer
+#from model.optimizer.collision import CollisionOptimizer
+from model.networks.diffusion_layout.echo_guidance import EchoGuidanceOptimizer
+
 class EchoToLayout(Module):
 
     def __init__(self, config, n_classes=None):
@@ -40,13 +42,23 @@ class EchoToLayout(Module):
 
         self.df.to(self.device)
         self.scene_ids=None
-        self.df.physcene_optimizer = CollisionOptimizer(
-            cfg=config.layout_branch.inference_guidance, # Assuming your config is here
-            device=self.device
+        # self.df.physcene_optimizer = CollisionOptimizer(
+        #     cfg=config.layout_branch.inference_guidance, # Assuming your config is here
+        #     device=self.device
+        # )
+        # # PHYSCENE needs to know tensor dimensions to slice correctly
+        # self.df.physcene_optimizer.d_bbox = 7
+        # self.df.physcene_optimizer.d_class = n_classes if n_classes else 16 # Replace with actual number of classes
+        # REPLACE with:
+        inference_guidance_cfg = getattr(config.layout_branch, 'inference_guidance', None)
+        num_classes = n_classes if n_classes else 16
+        self.df.physcene_optimizer = EchoGuidanceOptimizer(
+            cfg=inference_guidance_cfg,
+            device=self.device,
+            num_classes=num_classes,
         )
-        # PHYSCENE needs to know tensor dimensions to slice correctly
         self.df.physcene_optimizer.d_bbox = 7
-        self.df.physcene_optimizer.d_class = n_classes if n_classes else 16 # Replace with actual number of classes
+        self.df.physcene_optimizer.d_class = num_classes
 
     def set_requires_grad(self, nets, requires_grad=False):
         """Set requies_grad=Fasle for all the networks to avoid unnecessary computations
