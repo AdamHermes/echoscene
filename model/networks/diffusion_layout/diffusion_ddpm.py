@@ -478,8 +478,8 @@ class GaussianDiffusion:
                                 timestep, scene_ids, class_labels):
         stats = {'timestep': timestep, 'applied': False}
         
-        guidance_cfg = cfg_get(self.inference_guidance, 'guidance', {})
-        scale = float(cfg_get(guidance_cfg, 'scale', 0.1))
+        scale = float(cfg_get(self.inference_guidance, 'scale', 0.1))
+
         
         # ── 1. Group objects into scenes ──────────────────────────────────────────
         unique_scenes, inverse_indices, counts = torch.unique(
@@ -564,6 +564,50 @@ class GaussianDiffusion:
             variance=variance_3d,
             objectness=objectness,
         )
+        # ── Deep diagnostic — fires only at first guidance timestep ──────────────
+        if int(timestep) == 699:  # only log once to avoid spam
+            logger.debug("=" * 60)
+            logger.debug(f"[DIAG t=699] x_3d.shape        = {x_3d.shape}")
+            logger.debug(f"[DIAG t=699] x_3d.requires_grad = {x_3d.requires_grad}")
+            logger.debug(f"[DIAG t=699] x_3d.is_leaf       = {x_3d.is_leaf}")
+            logger.debug(f"[DIAG t=699] x_3d.grad_fn       = {x_3d.grad_fn}")
+            logger.debug(f"[DIAG t=699] objectness.sum()   = {objectness.sum().item()}")
+            logger.debug(f"[DIAG t=699] objectness shape   = {objectness.shape}")
+            
+            # Slice out what PhyScene will see
+            trans_in  = x_3d[:, :, 0:3]
+            sizes_in  = x_3d[:, :, 3:6]
+            angles_in = x_3d[:, :, 6:8]
+            logger.debug(f"[DIAG t=699] trans  = {trans_in[0]}")   # print actual values
+            logger.debug(f"[DIAG t=699] sizes  = {sizes_in[0]}")
+            logger.debug(f"[DIAG t=699] angles = {angles_in[0]}")
+            
+            # Are sizes positive? PhyScene likely clamps or rejects negative sizes
+            logger.debug(f"[DIAG t=699] sizes < 0: {(sizes_in < 0).sum().item()} / {sizes_in.numel()}")
+            logger.debug(f"[DIAG t=699] sizes min = {sizes_in.min().item():.4f}, max = {sizes_in.max().item():.4f}")
+            
+            # Are translations in expected room-scale range?
+            logger.debug(f"[DIAG t=699] trans  min = {trans_in.min().item():.4f}, max = {trans_in.max().item():.4f}")
+            
+            # Manually probe if loss can be computed at all
+            try:
+                test_loss = self.physcene_optimizer._compute_loss(x_3d, objectness)
+                logger.debug(f"[DIAG t=699] _compute_loss direct call = {test_loss}")
+            except Exception as e:
+                logger.error(f"[DIAG t=699] _compute_loss CRASHED: {type(e).__name__}: {e}")
+            
+            # Check what PhyScene's internal config expects
+            opt = self.physcene_optimizer
+            logger.debug(f"[DIAG t=699] physcene_optimizer type        = {type(opt)}")
+            logger.debug(f"[DIAG t=699] physcene_optimizer.d_class     = {opt.d_class}")
+            logger.debug(f"[DIAG t=699] physcene_optimizer attrs       = {[a for a in dir(opt) if not a.startswith('__')]}")
+            
+            # Check if collision constraint is even enabled inside PhyScene
+            if hasattr(opt, 'constraints') or hasattr(opt, 'cfg'):
+                cfg_attr = getattr(opt, 'constraints', None) or getattr(opt, 'cfg', None)
+                logger.debug(f"[DIAG t=699] physcene constraints cfg = {cfg_attr}")
+            
+            logger.debug("=" * 60)
 
         if guidance_3d is None:
             logger.warning(
@@ -689,18 +733,15 @@ class GaussianDiffusion:
             'applied': False,
             'skip_reason': 'guidance_disabled',
         }
-        if self._guidance_enabled():
+        
+        # ← USE the method that was already written
+        if self._guidance_active_for_timestep(int(t[0].item())):
             with torch.enable_grad():
                 guided_data = data.detach().clone().requires_grad_(True)
                 model_mean, model_variance, model_log_variance, pred_xstart = self.p_mean_variance(
-                    denoise_fn,
-                    data=guided_data,
-                    t=t,
-                    obj_embed=obj_embed,
-                    triples=triples,
-                    condition=condition,
-                    clip_denoised=clip_denoised,
-                    return_pred_xstart=True,
+                    denoise_fn, data=guided_data, t=t, obj_embed=obj_embed,
+                    triples=triples, condition=condition,
+                    clip_denoised=clip_denoised, return_pred_xstart=True,
                 )
                 model_mean, guidance_step_stats = self._apply_inference_guidance(
                     pred_xstart=pred_xstart,
@@ -713,15 +754,13 @@ class GaussianDiffusion:
                 pred_xstart = pred_xstart.detach()
                 model_log_variance = model_log_variance.detach()
         else:
+            guidance_step_stats['skip_reason'] = (
+                'before_start_ratio' if self._guidance_enabled() else 'guidance_disabled'
+            )
             model_mean, _, model_log_variance, pred_xstart = self.p_mean_variance(
-                denoise_fn,
-                data=data,
-                t=t,
-                obj_embed=obj_embed,
-                triples=triples,
-                condition=condition,
-                clip_denoised=clip_denoised,
-                return_pred_xstart=True,
+                denoise_fn, data=data, t=t, obj_embed=obj_embed,
+                triples=triples, condition=condition,
+                clip_denoised=clip_denoised, return_pred_xstart=True,
             )
         noise = noise_fn(size=data.shape, dtype=data.dtype, device=data.device)
         assert noise.shape == data.shape
