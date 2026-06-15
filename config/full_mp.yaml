@@ -62,13 +62,13 @@ layout_branch:
         scale_type: normal
         clip_grad_by_value: 0.1
         constraints:
-        collision:
-            enabled: true
-            metric: aabb
-            iou_threshold: 0.0
-            iou_weight: 1.0
-            penetration_weight: 0.5
-            strength: 0.1
+            collision:
+                enabled: true
+                metric: aabb
+                iou_threshold: 0.0
+                iou_weight: 1.0
+                penetration_weight: 0.5
+                strength: 0.1
 
 shape_branch:
     model: sdfusion-txt2shape_mp

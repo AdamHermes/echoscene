@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.optim as optim
@@ -469,71 +472,147 @@ class GaussianDiffusion:
         }
         return loss, stats
 
-    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids, class_labels):
+
+
+    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, 
+                                timestep, scene_ids, class_labels):
         stats = {'timestep': timestep, 'applied': False}
         
-        # 1. Group 2D flat objects into 3D scenes
-        unique_scenes, inverse_indices, counts = torch.unique(scene_ids, return_inverse=True, return_counts=True)
-        B = len(unique_scenes)
-        max_obj = counts.max().item()
+        guidance_cfg = cfg_get(self.inference_guidance, 'guidance', {})
+        scale = float(cfg_get(guidance_cfg, 'scale', 0.1))
+        
+        # ── 1. Group objects into scenes ──────────────────────────────────────────
+        unique_scenes, inverse_indices, counts = torch.unique(
+            scene_ids, return_inverse=True, return_counts=True
+        )
+        B, max_obj = len(unique_scenes), counts.max().item()
         d_class = self.physcene_optimizer.d_class
-
-        # Prepare 3D tensors
-        # PHYSCENE expects: [translations(3), sizes(3), angles(1), class_one_hot(d_class)]
         d_physcene = 8 + d_class
-        x_3d = torch.zeros((B, max_obj, d_physcene), device=pred_xstart.device)
-        variance_3d = torch.zeros((B, max_obj, 8), device=pred_xstart.device)
-        objectness = torch.zeros((B, max_obj, 1), device=pred_xstart.device)
 
-        # 2. Scatter the data and SWAP bbox components
-        for i in range(B):
-            mask = (scene_ids == unique_scenes[i])
-            num_items = mask.sum()
-            
-            # EchoScene format: [sizes(0:3), translations(3:6), angles(6:7)]
-            sizes = pred_xstart[mask, 0:3]
-            trans = pred_xstart[mask, 3:6]
-            angles = pred_xstart[mask, 6:8]
-            
-            # Reconstruct for PHYSCENE: [translations, sizes, angles]
-            bbox_physcene = torch.cat([trans, sizes, angles], dim=-1)
-            
-            # Convert class labels to one-hot
-            labels_one_hot = torch.nn.functional.one_hot(class_labels[mask].long(), num_classes=d_class).float()
-            
-            x_3d[i, :num_items] = torch.cat([bbox_physcene, labels_one_hot], dim=-1)
-            variance_3d[i, :num_items] = torch.cat([model_variance[mask, 3:6], model_variance[mask, 0:3], model_variance[mask, 6:8]], dim=-1)
-            objectness[i, :num_items] = 1.0
-
-        # 3. Ask PHYSCENE for gradients
-        guidance_3d = self.physcene_optimizer.gradient(
-            x=x_3d, 
-            data=None, 
-            variance=variance_3d, 
-            objectness=objectness
+        logger.debug(
+            f"[Guidance t={timestep:4d}] scenes={B}, max_obj={max_obj}, "
+            f"pred_xstart shape={tuple(pred_xstart.shape)}, "
+            f"model_variance shape={tuple(model_variance.shape) if hasattr(model_variance, 'shape') else model_variance}"
         )
 
-        if guidance_3d is not None:
-            # 4. Flatten back to 2D and un-swap the bounding box!
-            guidance_2d = torch.zeros_like(pred_xstart)
-            for i in range(B):
-                mask = (scene_ids == unique_scenes[i])
-                num_items = mask.sum()
-                
-                # PHYSCENE guidance format: [trans_grad, sizes_grad, angles_grad]
-                g_trans = guidance_3d[i, :num_items, 0:3]
-                g_sizes = guidance_3d[i, :num_items, 3:6]
-                g_angles = guidance_3d[i, :num_items, 6:8]
-                
-                # Back to EchoScene format: [sizes, trans, angles]
-                guidance_2d[mask] = torch.cat([g_sizes, g_trans, g_angles], dim=-1)
+        # ── 2. Build x_3d keeping autograd graph intact ───────────────────────────
+        # VERIFY: confirm EchoScene bbox order is [trans(0:3), sizes(3:6), angles(6:8)]
+        scene_rows = []
+        scene_var_rows = []
+        scene_masks = []
 
-            model_mean = model_mean + guidance_2d
-            stats['applied'] = True
-            stats['guidance_norm'] = guidance_2d.norm().item()
-        else:
-            stats['skip_reason'] = 'guidance_zero'
+        for i in range(B):
+            mask = (scene_ids == unique_scenes[i])
+            scene_masks.append(mask)
+            num_items = mask.sum().item()
 
+            # Correct order: trans first, then sizes (verify against dataset preprocessing)
+            trans  = pred_xstart[mask, 0:3]   # x, y, z
+            sizes  = pred_xstart[mask, 3:6]   # l, h, w
+            angles = pred_xstart[mask, 6:8]   # sin θ, cos θ
+
+            logger.debug(
+                f"[Guidance t={timestep:4d}] scene {i}: {num_items} objects | "
+                f"trans range [{trans.min():.3f}, {trans.max():.3f}] | "
+                f"sizes range [{sizes.min():.3f}, {sizes.max():.3f}] | "
+                f"angles range [{angles.min():.3f}, {angles.max():.3f}]"
+            )
+
+            # PhyScene format: [trans, sizes, angles, class_one_hot]
+            bbox_physcene = torch.cat([trans, sizes, angles], dim=-1)
+            labels_one_hot = torch.nn.functional.one_hot(
+                class_labels[mask].long(), num_classes=d_class
+            ).float()
+            row = torch.cat([bbox_physcene, labels_one_hot], dim=-1)
+
+            # Pad to max_obj
+            pad = max_obj - num_items
+            if pad > 0:
+                row = torch.cat([row, torch.zeros(pad, d_physcene, device=row.device)], dim=0)
+            scene_rows.append(row)
+
+            # Variance: handle both scalar and tensor cases
+            if model_variance.dim() == 0 or model_variance.shape[-1] == 1:
+                # Scalar variance — broadcast
+                var_row = model_variance.expand(num_items, 8)
+            else:
+                var_row = torch.cat([
+                    model_variance[mask, 0:3],   # trans variance
+                    model_variance[mask, 3:6],   # sizes variance
+                    model_variance[mask, 6:8],   # angle variance
+                ], dim=-1)
+            if pad > 0:
+                var_row = torch.cat([var_row, torch.zeros(pad, 8, device=var_row.device)], dim=0)
+            scene_var_rows.append(var_row)
+
+        x_3d = torch.stack(scene_rows).requires_grad_(True)   # (B, max_obj, d_physcene)
+        variance_3d = torch.stack(scene_var_rows)              # (B, max_obj, 8)
+        objectness = torch.zeros(B, max_obj, 1, device=pred_xstart.device)
+        for i, mask in enumerate(scene_masks):
+            objectness[i, :mask.sum().item()] = 1.0
+
+        logger.debug(
+            f"[Guidance t={timestep:4d}] x_3d shape={tuple(x_3d.shape)}, "
+            f"requires_grad={x_3d.requires_grad}, "
+            f"x_3d norm={x_3d.norm():.4f}"
+        )
+
+        # ── 3. PhyScene gradient ──────────────────────────────────────────────────
+        guidance_3d = self.physcene_optimizer.gradient(
+            x=x_3d,
+            data=None,
+            variance=variance_3d,
+            objectness=objectness,
+        )
+
+        if guidance_3d is None:
+            logger.warning(
+                f"[Guidance t={timestep:4d}] physcene_optimizer.gradient() returned None — "
+                f"check x_3d.requires_grad and PhyScene loss computation"
+            )
+            stats['skip_reason'] = 'gradient_none'
+            return model_mean, stats
+
+        logger.debug(
+            f"[Guidance t={timestep:4d}] guidance_3d norm={guidance_3d.norm():.4f}, "
+            f"max={guidance_3d.abs().max():.4f}, "
+            f"nonzero={guidance_3d.abs().gt(1e-6).sum().item()}/{guidance_3d.numel()}"
+        )
+
+        # ── 4. Flatten back and apply — with correct sign and scale ───────────────
+        guidance_2d = torch.zeros_like(pred_xstart)
+        for i, mask in enumerate(scene_masks):
+            num_items = mask.sum().item()
+
+            # PhyScene grad format: [trans_grad(0:3), sizes_grad(3:6), angles_grad(6:8)]
+            g_trans  = guidance_3d[i, :num_items, 0:3]
+            g_sizes  = guidance_3d[i, :num_items, 3:6]
+            g_angles = guidance_3d[i, :num_items, 6:8]
+
+            # Back to EchoScene format: [trans, sizes, angles]  ← same order now
+            guidance_2d[mask] = torch.cat([g_trans, g_sizes, g_angles], dim=-1)
+
+        pre_norm  = model_mean.norm().item()
+        # Gradient DESCENT: subtract to minimize collision loss
+        model_mean = model_mean - scale * guidance_2d
+        post_norm = model_mean.norm().item()
+
+        logger.info(
+            f"[Guidance t={timestep:4d}] APPLIED | "
+            f"scale={scale} | "
+            f"guidance_2d norm={guidance_2d.norm():.4f} | "
+            f"model_mean norm {pre_norm:.4f} → {post_norm:.4f} | "
+            f"delta norm={(model_mean - (model_mean + scale*guidance_2d)).norm():.4f}"
+        )
+
+        stats.update({
+            'applied': True,
+            'guidance_norm': guidance_2d.norm().item(),
+            'guidance_max': guidance_2d.abs().max().item(),
+            'model_mean_pre': pre_norm,
+            'model_mean_post': post_norm,
+            'scale': scale,
+        })
         return model_mean, stats
 
     def _summarize_guidance_stats(self, step_stats, final_sample, scene_ids):
