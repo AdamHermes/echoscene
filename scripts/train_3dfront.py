@@ -143,7 +143,7 @@ def parse_data(data):
 def train():
     """ Train the network based on the provided argparse parameters
     """
-    args.manualSeed = random.randint(1, 10000)
+    args.manualSeed = 42
     print("Random Seed: ", args.manualSeed)
 
     print(torch.__version__)

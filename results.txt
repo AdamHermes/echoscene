@@ -127,3 +127,52 @@ KID fake : 100%|█████████████████████�
 iter: 0, kid: -0.000893
 iter: 0, kid avg: -0.000893
 iter: 0, kid std: 0.000000
+
+
+
+
+
+
+
+FID real : 100%|█████████████████████████████████████████| 3/3 [00:24<00:00,  8.25s/it]
+Found 20 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████| 1/1 [00:22<00:00, 22.20s/it]
+iter: 0, fid :120.529530
+iter: 0, fid avg: 120.529530
+iter: 0, fid std: 0.000000
+compute FID between two folders
+Found 83 images in the folder ../fid_kid_tmp/real
+FID real : 100%|█████████████████████████████████████████| 3/3 [00:02<00:00,  1.43it/s]
+Found 20 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████| 1/1 [00:01<00:00,  1.39s/it]
+iter: 0, fid-clip :13.296246
+compute KID between two folders
+Found 83 images in the folder ../fid_kid_tmp/real
+KID real : 100%|█████████████████████████████████████████| 3/3 [00:24<00:00,  8.04s/it]
+Found 20 images in the folder ../fid_kid_tmp/fake
+KID fake : 100%|█████████████████████████████████████████| 1/1 [00:23<00:00, 23.62s/it]
+iter: 0, kid: 0.013379
+iter: 0, kid avg: 0.013379
+iter: 0, kid std: 0.000000
+
+
+FID real : 100%|█████████████████████████████████████████| 3/3 [00:24<00:00,  8.06s/it]
+Found 20 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████| 1/1 [00:22<00:00, 22.79s/it]
+iter: 0, fid :120.321107
+iter: 0, fid avg: 120.321107
+iter: 0, fid std: 0.000000
+compute FID between two folders
+Found 83 images in the folder ../fid_kid_tmp/real
+FID real : 100%|█████████████████████████████████████████| 3/3 [00:01<00:00,  1.77it/s]
+Found 20 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████| 1/1 [00:01<00:00,  1.53s/it]
+iter: 0, fid-clip :12.900689
+compute KID between two folders
+Found 83 images in the folder ../fid_kid_tmp/real
+KID real : 100%|█████████████████████████████████████████| 3/3 [00:23<00:00,  7.94s/it]
+Found 20 images in the folder ../fid_kid_tmp/fake
+KID fake : 100%|█████████████████████████████████████████| 1/1 [00:24<00:00, 24.25s/it]
+iter: 0, kid: 0.009078
+iter: 0, kid avg: 0.009078
+iter: 0, kid std: 0.000000
