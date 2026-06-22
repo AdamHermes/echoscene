@@ -66,12 +66,12 @@ class EchoGuidanceOptimizer:
             x_in = x.detach().requires_grad_(True)
             loss = self._compute_loss(x_in, objectness)
             loss = self._compute_loss(x_in, objectness)
-            logger.debug(
-                f"[EchoGuidance] loss={'None' if loss is None else f'{loss.item():.6f}'}, "
-                f"objectness_sum={objectness.sum().item()}, "
-                f"sizes_mean={x_in[:,:,3:6].mean().item():.4f}, "
-                f"trans_range=[{x_in[:,:,0:3].min().item():.3f}, {x_in[:,:,0:3].max().item():.3f}]"
-            )
+            # logger.debug(
+            #     f"[EchoGuidance] loss={'None' if loss is None else f'{loss.item():.6f}'}, "
+            #     f"objectness_sum={objectness.sum().item()}, "
+            #     f"sizes_mean={x_in[:,:,3:6].mean().item():.4f}, "
+            #     f"trans_range=[{x_in[:,:,0:3].min().item():.3f}, {x_in[:,:,0:3].max().item():.3f}]"
+            # )
             if loss is None or (isinstance(loss, torch.Tensor) and loss.item() < 1e-8):
                 return None
 

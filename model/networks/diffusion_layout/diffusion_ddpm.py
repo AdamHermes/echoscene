@@ -489,11 +489,11 @@ class GaussianDiffusion:
         d_class = self.physcene_optimizer.d_class
         d_physcene = 8 + d_class
 
-        logger.debug(
-            f"[Guidance t={timestep:4d}] scenes={B}, max_obj={max_obj}, "
-            f"pred_xstart shape={tuple(pred_xstart.shape)}, "
-            f"model_variance shape={tuple(model_variance.shape) if hasattr(model_variance, 'shape') else model_variance}"
-        )
+        # logger.debug(
+        #     f"[Guidance t={timestep:4d}] scenes={B}, max_obj={max_obj}, "
+        #     f"pred_xstart shape={tuple(pred_xstart.shape)}, "
+        #     f"model_variance shape={tuple(model_variance.shape) if hasattr(model_variance, 'shape') else model_variance}"
+        # )
 
         # ── 2. Build x_3d keeping autograd graph intact ───────────────────────────
         # VERIFY: confirm EchoScene bbox order is [trans(0:3), sizes(3:6), angles(6:8)]
@@ -511,12 +511,12 @@ class GaussianDiffusion:
             sizes  = pred_xstart[mask, 3:6]   # l, h, w
             angles = pred_xstart[mask, 6:8]   # sin θ, cos θ
 
-            logger.debug(
-                f"[Guidance t={timestep:4d}] scene {i}: {num_items} objects | "
-                f"trans range [{trans.min():.3f}, {trans.max():.3f}] | "
-                f"sizes range [{sizes.min():.3f}, {sizes.max():.3f}] | "
-                f"angles range [{angles.min():.3f}, {angles.max():.3f}]"
-            )
+            # logger.debug(
+            #     f"[Guidance t={timestep:4d}] scene {i}: {num_items} objects | "
+            #     f"trans range [{trans.min():.3f}, {trans.max():.3f}] | "
+            #     f"sizes range [{sizes.min():.3f}, {sizes.max():.3f}] | "
+            #     f"angles range [{angles.min():.3f}, {angles.max():.3f}]"
+            # )
 
             # PhyScene format: [trans, sizes, angles, class_one_hot]
             bbox_physcene = torch.cat([trans, sizes, angles], dim=-1)
@@ -551,11 +551,11 @@ class GaussianDiffusion:
         for i, mask in enumerate(scene_masks):
             objectness[i, :mask.sum().item()] = 1.0
 
-        logger.debug(
-            f"[Guidance t={timestep:4d}] x_3d shape={tuple(x_3d.shape)}, "
-            f"requires_grad={x_3d.requires_grad}, "
-            f"x_3d norm={x_3d.norm():.4f}"
-        )
+        # logger.debug(
+        #     f"[Guidance t={timestep:4d}] x_3d shape={tuple(x_3d.shape)}, "
+        #     f"requires_grad={x_3d.requires_grad}, "
+        #     f"x_3d norm={x_3d.norm():.4f}"
+        # )
 
         # ── 3. PhyScene gradient ──────────────────────────────────────────────────
         guidance_3d = self.physcene_optimizer.gradient(
@@ -565,63 +565,63 @@ class GaussianDiffusion:
             objectness=objectness,
         )
         # ── Deep diagnostic — fires only at first guidance timestep ──────────────
-        if int(timestep) == 699:  # only log once to avoid spam
-            logger.debug("=" * 60)
-            logger.debug(f"[DIAG t=699] x_3d.shape        = {x_3d.shape}")
-            logger.debug(f"[DIAG t=699] x_3d.requires_grad = {x_3d.requires_grad}")
-            logger.debug(f"[DIAG t=699] x_3d.is_leaf       = {x_3d.is_leaf}")
-            logger.debug(f"[DIAG t=699] x_3d.grad_fn       = {x_3d.grad_fn}")
-            logger.debug(f"[DIAG t=699] objectness.sum()   = {objectness.sum().item()}")
-            logger.debug(f"[DIAG t=699] objectness shape   = {objectness.shape}")
+        # if int(timestep) == 699:  # only log once to avoid spam
+        #     logger.debug("=" * 60)
+        #     logger.debug(f"[DIAG t=699] x_3d.shape        = {x_3d.shape}")
+        #     logger.debug(f"[DIAG t=699] x_3d.requires_grad = {x_3d.requires_grad}")
+        #     logger.debug(f"[DIAG t=699] x_3d.is_leaf       = {x_3d.is_leaf}")
+        #     logger.debug(f"[DIAG t=699] x_3d.grad_fn       = {x_3d.grad_fn}")
+        #     logger.debug(f"[DIAG t=699] objectness.sum()   = {objectness.sum().item()}")
+        #     logger.debug(f"[DIAG t=699] objectness shape   = {objectness.shape}")
             
-            # Slice out what PhyScene will see
-            trans_in  = x_3d[:, :, 0:3]
-            sizes_in  = x_3d[:, :, 3:6]
-            angles_in = x_3d[:, :, 6:8]
-            logger.debug(f"[DIAG t=699] trans  = {trans_in[0]}")   # print actual values
-            logger.debug(f"[DIAG t=699] sizes  = {sizes_in[0]}")
-            logger.debug(f"[DIAG t=699] angles = {angles_in[0]}")
+        #     # Slice out what PhyScene will see
+        #     trans_in  = x_3d[:, :, 0:3]
+        #     sizes_in  = x_3d[:, :, 3:6]
+        #     angles_in = x_3d[:, :, 6:8]
+        #     logger.debug(f"[DIAG t=699] trans  = {trans_in[0]}")   # print actual values
+        #     logger.debug(f"[DIAG t=699] sizes  = {sizes_in[0]}")
+        #     logger.debug(f"[DIAG t=699] angles = {angles_in[0]}")
             
-            # Are sizes positive? PhyScene likely clamps or rejects negative sizes
-            logger.debug(f"[DIAG t=699] sizes < 0: {(sizes_in < 0).sum().item()} / {sizes_in.numel()}")
-            logger.debug(f"[DIAG t=699] sizes min = {sizes_in.min().item():.4f}, max = {sizes_in.max().item():.4f}")
+        #     # Are sizes positive? PhyScene likely clamps or rejects negative sizes
+        #     logger.debug(f"[DIAG t=699] sizes < 0: {(sizes_in < 0).sum().item()} / {sizes_in.numel()}")
+        #     logger.debug(f"[DIAG t=699] sizes min = {sizes_in.min().item():.4f}, max = {sizes_in.max().item():.4f}")
             
-            # Are translations in expected room-scale range?
-            logger.debug(f"[DIAG t=699] trans  min = {trans_in.min().item():.4f}, max = {trans_in.max().item():.4f}")
+        #     # Are translations in expected room-scale range?
+        #     logger.debug(f"[DIAG t=699] trans  min = {trans_in.min().item():.4f}, max = {trans_in.max().item():.4f}")
             
-            # Manually probe if loss can be computed at all
-            try:
-                test_loss = self.physcene_optimizer._compute_loss(x_3d, objectness)
-                logger.debug(f"[DIAG t=699] _compute_loss direct call = {test_loss}")
-            except Exception as e:
-                logger.error(f"[DIAG t=699] _compute_loss CRASHED: {type(e).__name__}: {e}")
+        #     # Manually probe if loss can be computed at all
+        #     try:
+        #         test_loss = self.physcene_optimizer._compute_loss(x_3d, objectness)
+        #         logger.debug(f"[DIAG t=699] _compute_loss direct call = {test_loss}")
+        #     except Exception as e:
+        #         logger.error(f"[DIAG t=699] _compute_loss CRASHED: {type(e).__name__}: {e}")
             
-            # Check what PhyScene's internal config expects
-            opt = self.physcene_optimizer
-            logger.debug(f"[DIAG t=699] physcene_optimizer type        = {type(opt)}")
-            logger.debug(f"[DIAG t=699] physcene_optimizer.d_class     = {opt.d_class}")
-            logger.debug(f"[DIAG t=699] physcene_optimizer attrs       = {[a for a in dir(opt) if not a.startswith('__')]}")
+        #     # Check what PhyScene's internal config expects
+        #     opt = self.physcene_optimizer
+        #     logger.debug(f"[DIAG t=699] physcene_optimizer type        = {type(opt)}")
+        #     logger.debug(f"[DIAG t=699] physcene_optimizer.d_class     = {opt.d_class}")
+        #     logger.debug(f"[DIAG t=699] physcene_optimizer attrs       = {[a for a in dir(opt) if not a.startswith('__')]}")
             
-            # Check if collision constraint is even enabled inside PhyScene
-            if hasattr(opt, 'constraints') or hasattr(opt, 'cfg'):
-                cfg_attr = getattr(opt, 'constraints', None) or getattr(opt, 'cfg', None)
-                logger.debug(f"[DIAG t=699] physcene constraints cfg = {cfg_attr}")
+        #     # Check if collision constraint is even enabled inside PhyScene
+        #     if hasattr(opt, 'constraints') or hasattr(opt, 'cfg'):
+        #         cfg_attr = getattr(opt, 'constraints', None) or getattr(opt, 'cfg', None)
+        #         logger.debug(f"[DIAG t=699] physcene constraints cfg = {cfg_attr}")
             
-            logger.debug("=" * 60)
+        #     logger.debug("=" * 60)
 
         if guidance_3d is None:
-            logger.warning(
-                f"[Guidance t={timestep:4d}] physcene_optimizer.gradient() returned None — "
-                f"check x_3d.requires_grad and PhyScene loss computation"
-            )
+            # logger.warning(
+            #     f"[Guidance t={timestep:4d}] physcene_optimizer.gradient() returned None — "
+            #     f"check x_3d.requires_grad and PhyScene loss computation"
+            # )
             stats['skip_reason'] = 'gradient_none'
             return model_mean, stats
 
-        logger.debug(
-            f"[Guidance t={timestep:4d}] guidance_3d norm={guidance_3d.norm():.4f}, "
-            f"max={guidance_3d.abs().max():.4f}, "
-            f"nonzero={guidance_3d.abs().gt(1e-6).sum().item()}/{guidance_3d.numel()}"
-        )
+        # logger.debug(
+        #     f"[Guidance t={timestep:4d}] guidance_3d norm={guidance_3d.norm():.4f}, "
+        #     f"max={guidance_3d.abs().max():.4f}, "
+        #     f"nonzero={guidance_3d.abs().gt(1e-6).sum().item()}/{guidance_3d.numel()}"
+        # )
 
         # ── 4. Flatten back and apply — with correct sign and scale ───────────────
         guidance_2d = torch.zeros_like(pred_xstart)
@@ -641,13 +641,13 @@ class GaussianDiffusion:
         model_mean = model_mean - scale * guidance_2d
         post_norm = model_mean.norm().item()
 
-        logger.info(
-            f"[Guidance t={timestep:4d}] APPLIED | "
-            f"scale={scale} | "
-            f"guidance_2d norm={guidance_2d.norm():.4f} | "
-            f"model_mean norm {pre_norm:.4f} → {post_norm:.4f} | "
-            f"delta norm={(model_mean - (model_mean + scale*guidance_2d)).norm():.4f}"
-        )
+        # logger.info(
+        #     f"[Guidance t={timestep:4d}] APPLIED | "
+        #     f"scale={scale} | "
+        #     f"guidance_2d norm={guidance_2d.norm():.4f} | "
+        #     f"model_mean norm {pre_norm:.4f} → {post_norm:.4f} | "
+        #     f"delta norm={(model_mean - (model_mean + scale*guidance_2d)).norm():.4f}"
+        # )
 
         stats.update({
             'applied': True,
