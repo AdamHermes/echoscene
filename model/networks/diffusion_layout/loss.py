@@ -4,6 +4,50 @@ import torch
  https://github.com/open-mmlab/mmdetection3d/blob/master/mmdet3d/core/bbox/iou_calculators/iou3d_calculator.py
 '''
 
+
+def differentiable_aabb_collision_loss(
+    boxes,
+    scene_ids=None,
+    reduction='mean',
+    eps=1e-6,
+):
+    """Differentiable pairwise AABB penetration volume loss.
+
+    boxes is expected in [size_x, size_y, size_z, center_x, center_y, center_z, ...]
+    format. Extra dimensions such as angle are ignored.
+    """
+    if boxes.numel() == 0 or boxes.shape[0] < 2:
+        return boxes.new_zeros(())
+
+    sizes = boxes[:, :3].clamp(min=eps)
+    centers = boxes[:, 3:6]
+    half_sizes = sizes * 0.5
+    overlap = torch.relu(
+        half_sizes[:, None, :] + half_sizes[None, :, :] -
+        torch.abs(centers[:, None, :] - centers[None, :, :])
+    )
+    pair_loss = overlap[..., 0] * overlap[..., 1] * overlap[..., 2]
+
+    pair_mask = torch.triu(
+        torch.ones(pair_loss.shape, dtype=torch.bool, device=pair_loss.device),
+        diagonal=1,
+    )
+    if scene_ids is not None:
+        if not isinstance(scene_ids, torch.Tensor):
+            scene_ids = torch.as_tensor(scene_ids, dtype=torch.long, device=boxes.device)
+        else:
+            scene_ids = scene_ids.to(device=boxes.device, dtype=torch.long)
+        pair_mask = pair_mask & (scene_ids[:, None] == scene_ids[None, :])
+
+    valid_losses = pair_loss[pair_mask]
+    if valid_losses.numel() == 0:
+        return boxes.new_zeros(())
+    if reduction == 'sum':
+        return valid_losses.sum()
+    if reduction == 'none':
+        return valid_losses
+    return valid_losses.mean()
+
 def axis_aligned_bbox_overlaps_3d(bboxes1,
                                   bboxes2,
                                   mode='iou',

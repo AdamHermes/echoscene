@@ -6,6 +6,14 @@ from model.networks.diffusion_layout.echo2layout import EchoToLayout
 import numpy as np
 from helpers.lr_scheduler import *
 
+
+def cfg_get(cfg, key, default=None):
+    if cfg is None:
+        return default
+    if hasattr(cfg, 'get'):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
 class Sg2BoxDiffModel(nn.Module):
     def __init__(self, vocab, diff_opt, diffusion_bs=8, embedding_dim=128, batch_size=32,
                  gconv_pooling='avg', gconv_num_layers=5,
@@ -85,6 +93,12 @@ class Sg2BoxDiffModel(nn.Module):
 
         # layout branch
         self.LayoutDiff = EchoToLayout(self.diff_cfg)
+        lora_cfg = cfg_get(self.diff_cfg.layout_branch, 'lora', None)
+        self.lora_finetune = self.LayoutDiff.lora_enabled and bool(cfg_get(lora_cfg, 'freeze_non_lora', True))
+        if self.lora_finetune:
+            for param in self.parameters():
+                param.requires_grad = False
+            self.LayoutDiff.prepare_trainable_params()
 
         # initialization
         self.lr_init = self.diff_cfg.hyper.lr_init
@@ -107,7 +121,16 @@ class Sg2BoxDiffModel(nn.Module):
             return self.lr_evo[2] / self.lr_init
 
     def optimizer_ini(self):
+        if self.lora_finetune:
+            self.LayoutDiff.prepare_trainable_params()
         gcn_layout_df_params = [p for p in self.parameters() if p.requires_grad == True]
+        trainable_count = sum(p.numel() for p in gcn_layout_df_params)
+        total_count = sum(p.numel() for p in self.parameters())
+        print('Optimizer trainable params: {}/{} ({:.4f}%).'.format(
+            trainable_count,
+            total_count,
+            100.0 * trainable_count / max(total_count, 1),
+        ))
         self.optimizerFULL = optim.AdamW(gcn_layout_df_params, lr=self.lr_init)
         self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizerFULL, lr_lambda=self.lr_lambda)
         self.optimizers = [self.optimizerFULL]
@@ -283,7 +306,10 @@ class Sg2BoxDiffModel(nn.Module):
         box_diff_dict = self.prepare_input(dec_triples, obj_embed_, obj_boxes=dec_boxes, obj_angles=dec_angles, relation_cond=latent_obj_vecs, scene_ids=dec_objs_to_scene)
 
         self.LayoutDiff.set_input(box_diff_dict)
-        self.LayoutDiff.set_requires_grad([self.LayoutDiff.df], requires_grad=True)
+        if self.lora_finetune:
+            self.LayoutDiff.prepare_trainable_params()
+        else:
+            self.LayoutDiff.set_requires_grad([self.LayoutDiff.df], requires_grad=True)
         Layout_loss, Layout_loss_dict = self.LayoutDiff.forward()
 
         return None, 0, Layout_loss, Layout_loss_dict

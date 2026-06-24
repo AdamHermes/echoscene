@@ -5,6 +5,15 @@ from .diffusion_ddpm import DiffusionPoint
 from .denoise_net import UNet1DModel
 #from model.optimizer.collision import CollisionOptimizer
 from model.networks.diffusion_layout.echo_guidance import EchoGuidanceOptimizer
+from model.lora import inject_lora, mark_only_lora_as_trainable
+
+
+def cfg_get(cfg, key, default=None):
+    if cfg is None:
+        return default
+    if hasattr(cfg, 'get'):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 class EchoToLayout(Module):
 
@@ -26,6 +35,31 @@ class EchoToLayout(Module):
         )
         self.n_classes = n_classes # not used
         self.config = config
+        self.lora_enabled = False
+        self.lora_injected = 0
+        self.lora_trainable_params = 0
+        self.lora_total_params = 0
+
+        lora_cfg = cfg_get(config.layout_branch, 'lora', None)
+        if lora_cfg is not None and bool(cfg_get(lora_cfg, 'enabled', False)):
+            self.lora_enabled = True
+            self.lora_injected = inject_lora(
+                self.df.model,
+                rank=int(cfg_get(lora_cfg, 'rank', 8)),
+                alpha=float(cfg_get(lora_cfg, 'alpha', 16.0)),
+                dropout=float(cfg_get(lora_cfg, 'dropout', 0.0)),
+            )
+            if self.lora_injected == 0:
+                raise RuntimeError('LoRA is enabled, but no attention projections were injected.')
+            self.lora_trainable_params, self.lora_total_params = mark_only_lora_as_trainable(self.df)
+            print(
+                'LoRA enabled: injected {} modules, trainable params {}/{} ({:.4f}%).'.format(
+                    self.lora_injected,
+                    self.lora_trainable_params,
+                    self.lora_total_params,
+                    100.0 * self.lora_trainable_params / max(self.lora_total_params, 1),
+                )
+            )
         
         # read object property dimension
         self.translation_dim = config.layout_branch.get("translation_dim", 3)
@@ -72,6 +106,12 @@ class EchoToLayout(Module):
             if net is not None:
                 for param in net.parameters():
                     param.requires_grad = requires_grad
+        if self.lora_enabled:
+            self.lora_trainable_params, self.lora_total_params = mark_only_lora_as_trainable(self.df)
+
+    def prepare_trainable_params(self):
+        if self.lora_enabled:
+            self.lora_trainable_params, self.lora_total_params = mark_only_lora_as_trainable(self.df)
 
     def set_input(self, data_dict):
         vars_list = []

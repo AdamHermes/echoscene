@@ -15,7 +15,7 @@ import json
 import torch.nn.functional as F
 from einops import rearrange, reduce
 from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_sincos2arctan
-from .loss import axis_aligned_bbox_overlaps_3d
+from .loss import axis_aligned_bbox_overlaps_3d, differentiable_aabb_collision_loss
 #from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
 def cfg_get(cfg, key, default=None):
@@ -127,7 +127,7 @@ def discretized_gaussian_log_likelihood(x, *, means, log_scales):
     return log_probs
 
 class GaussianDiffusion:
-    def __init__(self, config, betas, loss_type, model_mean_type, model_var_type, loss_separate, loss_iou, iou_type, train_stats_file):
+    def __init__(self, config, betas, loss_type, model_mean_type, model_var_type, loss_separate, loss_iou, iou_type, train_stats_file, training_collision=None):
         # read object property dimension
         self.translation_dim = config.get("translation_dim", 3)
         self.size_dim = config.get("size_dim", 3)
@@ -138,6 +138,7 @@ class GaussianDiffusion:
         self.loss_separate = loss_separate
         self.loss_iou = loss_iou
         self.iou_type = iou_type
+        self.training_collision = training_collision if training_collision is not None else cfg_get(config, "training_collision", None)
         self.inference_guidance = cfg_get(config, "inference_guidance", None)
         self.loss_type = loss_type
         self.model_mean_type = model_mean_type
@@ -936,13 +937,34 @@ class GaussianDiffusion:
             loss_iou_valid = torch.zeros(len(denoise_out)).to(data_t.device)
             bbox_iou_valid = torch.zeros(len(denoise_out)).to(data_t.device)
 
-        return losses.mean() + loss_iou_valid.mean(), {
+        collision_loss = denoise_out.new_zeros(())
+        collision_weight = 0.0
+        if self.training_collision is not None and bool(cfg_get(self.training_collision, 'enabled', False)):
+            collision_weight = float(cfg_get(self.training_collision, 'weight', 0.0))
+            if collision_weight > 0.0:
+                if self.model_mean_type == 'eps':
+                    pred_xstart = self._predict_xstart_from_eps(data_t, t=t, eps=denoise_out)
+                elif self.model_mean_type == 'x0':
+                    pred_xstart = denoise_out
+                else:
+                    raise NotImplementedError(self.model_mean_type)
+
+                pred_boxes = self._denormalize_box_params(pred_xstart)
+                collision_loss = differentiable_aabb_collision_loss(
+                    pred_boxes,
+                    scene_ids=scene_ids,
+                    reduction=str(cfg_get(self.training_collision, 'reduction', 'mean')),
+                )
+
+        total_loss = losses.mean() + loss_iou_valid.mean() + collision_weight * collision_loss
+        return total_loss, {
             'loss.bbox': loss_bbox.mean(),
             'loss.trans': loss_trans.mean(),
             'loss.size': loss_size.mean(),
             'loss.angle': loss_angle.mean(),
             'loss.liou': loss_iou_valid.mean(),
             'loss.bbox_iou': bbox_iou_valid.mean(),
+            'loss.collision': collision_loss,
         }
 
     def p_losses(self, denoise_fn, data_start, obj_embed, triples, t, condition_cross=None, scene_ids=None):
@@ -1020,14 +1042,14 @@ class GaussianDiffusion:
 
 class DiffusionPoint(nn.Module):
     def __init__(self, denoise_net, config, conditioning_key=None, schedule_type='linear', beta_start=0.0001, beta_end=0.02, time_num=1000,
-            loss_type='mse', model_mean_type='eps', model_var_type ='fixedsmall', loss_separate=False, loss_iou=False, iou_type = 'obb', train_stats_file=None):
+            loss_type='mse', model_mean_type='eps', model_var_type ='fixedsmall', loss_separate=False, loss_iou=False, iou_type = 'obb', train_stats_file=None, training_collision=None):
           
         super(DiffusionPoint, self).__init__()
         
         betas = get_betas(schedule_type, beta_start, beta_end, time_num)
 
         
-        self.diffusion = GaussianDiffusion(config, betas, loss_type, model_mean_type, model_var_type, loss_separate, loss_iou, iou_type, train_stats_file)
+        self.diffusion = GaussianDiffusion(config, betas, loss_type, model_mean_type, model_var_type, loss_separate, loss_iou, iou_type, train_stats_file, training_collision=training_collision)
         self.model = denoise_net
 
 

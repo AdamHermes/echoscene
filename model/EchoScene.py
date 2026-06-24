@@ -11,6 +11,14 @@ from helpers.lr_scheduler import *
 from omegaconf import OmegaConf
 
 
+def cfg_get(cfg, key, default=None):
+    if cfg is None:
+        return default
+    if hasattr(cfg, 'get'):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 class Sg2ScDiffModel(nn.Module):
     def __init__(self, vocab, diff_opt, diffusion_bs=8, embedding_dim=128, batch_size=32,
                  gconv_pooling='avg', gconv_num_layers=5,
@@ -105,6 +113,12 @@ class Sg2ScDiffModel(nn.Module):
 
         ## layout branch
         self.LayoutDiff = EchoToLayout(self.diff_cfg)
+        lora_cfg = cfg_get(self.diff_cfg.layout_branch, 'lora', None)
+        self.lora_finetune = self.LayoutDiff.lora_enabled and bool(cfg_get(lora_cfg, 'freeze_non_lora', True))
+        if self.lora_finetune:
+            for param in self.parameters():
+                param.requires_grad = False
+            self.LayoutDiff.prepare_trainable_params()
 
         # initialization
         self.rel_s_mlp.apply(_init_weights)
@@ -128,9 +142,20 @@ class Sg2ScDiffModel(nn.Module):
             return self.lr_evo[2] / self.lr_init
 
     def optimizer_ini(self):
-        gcn_layout_df_params = [p for p in self.parameters() if p.requires_grad == True]
-        shape_df_params = self.ShapeDiff.trainable_params
-        trainable_params = gcn_layout_df_params + shape_df_params
+        if self.lora_finetune:
+            self.LayoutDiff.prepare_trainable_params()
+            trainable_params = [p for p in self.parameters() if p.requires_grad == True]
+        else:
+            gcn_layout_df_params = [p for p in self.parameters() if p.requires_grad == True]
+            shape_df_params = self.ShapeDiff.trainable_params
+            trainable_params = gcn_layout_df_params + shape_df_params
+        trainable_count = sum(p.numel() for p in trainable_params)
+        total_count = sum(p.numel() for p in self.parameters())
+        print('Optimizer trainable params: {}/{} ({:.4f}%).'.format(
+            trainable_count,
+            total_count,
+            100.0 * trainable_count / max(total_count, 1),
+        ))
         self.optimizerFULL = optim.AdamW(trainable_params, lr=1e-4)
         self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizerFULL, lr_lambda=self.lr_lambda)
         self.optimizers = [self.optimizerFULL]
@@ -402,13 +427,17 @@ class Sg2ScDiffModel(nn.Module):
 
         obj_selected, shape_diff_dict = self.select_sdfs(dec_objs_to_scene, dec_objs, dec_objs_grained, dec_triples, dec_sdfs, uc_rel_feat_s, c_rel_feat_s, sample_type=self.sample_obj, scan_ids=scan_ids)
         self.ShapeDiff.set_input(shape_diff_dict)
-        self.ShapeDiff.set_requires_grad([self.ShapeDiff.df], requires_grad=True)
+        if not self.lora_finetune:
+            self.ShapeDiff.set_requires_grad([self.ShapeDiff.df], requires_grad=True)
         Shape_loss, Shape_loss_dict = self.ShapeDiff.forward()
 
         box_diff_dict = self.prepare_boxes(dec_triples, obj_embed_, obj_boxes=dec_boxes, obj_angles=dec_angles,
                                            relation_cond=latent_obj_vecs, scene_ids=dec_objs_to_scene, class_labels=dec_objs)
         self.LayoutDiff.set_input(box_diff_dict)
-        self.LayoutDiff.set_requires_grad([self.LayoutDiff.df], requires_grad=True)
+        if self.lora_finetune:
+            self.LayoutDiff.prepare_trainable_params()
+        else:
+            self.LayoutDiff.set_requires_grad([self.LayoutDiff.df], requires_grad=True)
         Layout_loss, Layout_loss_dict = self.LayoutDiff.forward()
 
 

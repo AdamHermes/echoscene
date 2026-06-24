@@ -48,6 +48,17 @@ layout_branch:
       loss_iou: false
       iou_type: obb
       train_stats_file: null
+      training_collision:
+        enabled: false
+        weight: 0.05
+        reduction: mean
+
+    lora:
+        enabled: false
+        rank: 8
+        alpha: 16.0
+        dropout: 0.0
+        freeze_non_lora: true
       
     # -----------------------------------------------
     # NEW PHYSCENE CONFIGURATION
