@@ -21,11 +21,18 @@ pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --e
 pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu113_pyt1110/download.html
 
 
-
+mkdir -p scripts/checkpoint
+wget https://www.campar.in.tum.de/public_datasets/2023_commonscenes_zhai/vqvae_threedfront_best.pth -P scripts/checkpoint
 
 gdown --id 13p_1wUHH0G0sEHzViXmF7RVuO6WGeb_5
+apt update
 apt install unzip
 unzip FRONT.zip
+
+rm -f checkpoint.zip
+
+wget https://www.campar.in.tum.de/public_datasets/2024_echoscene/released_full_model.zip -O released_full_model.zip
+unzip released_full_model.zip
 
 cd scripts
 python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT --residual True --network_type echoscene --with_SDF True --with_CLIP True --batchSize 64 --workers 8 --loadmodel False --nepoch 100 --large False --use_scene_rels True
@@ -57,3 +64,18 @@ Working with z of shape (1, 3, 16, 16, 16) = 12288 dimensions.
 [*] setting ddim_steps=100
 [*] create image directory:
 /content/echoscene/full_mp/diff_crossattn/images...
+
+
+python -m scripts.train_3dfront \
+  --diff_yaml config/full_mp.yaml \
+  --network_type echoscene \
+  --loadmodel True \
+  --exp ./released_full_model \
+  --loadepoch 2050 \
+  --dataset ./FRONT \
+  --batchSize 8 \
+  --workers 8 \
+  --residual True \
+  --separated False \
+  --with_SDF True \
+  --room_type all

@@ -49,12 +49,12 @@ layout_branch:
       iou_type: obb
       train_stats_file: null
       training_collision:
-        enabled: false
+        enabled: true
         weight: 0.05
         reduction: mean
 
     lora:
-        enabled: false
+        enabled: true
         rank: 8
         alpha: 16.0
         dropout: 0.0
@@ -85,15 +85,16 @@ shape_branch:
     model: sdfusion-txt2shape_mp
     sampling: greedy
     ckpt: null
-    df_cfg: ../config/sdfusion-txt2shape_mp.yaml
     ddim_steps: 100
     ddim_eta: 0.0
-    uc_scale: 3.0
+    uc_scale: 3.0s
     vq_model: vqvae
-    vq_cfg: ../config/vqvae_snet.yaml
     vq_dset: None
     vq_cat: None
-    vq_ckpt: ./checkpoint/vqvae_threedfront_best.pth
+    shape_branch:
+    df_cfg: config/sdfusion-txt2shape_mp.yaml
+    vq_cfg: config/vqvae_snet.yaml
+    vq_ckpt: scripts/checkpoint/vqvae_threedfront_best.pth
 misc:
     debug: 0
     seed: 111
