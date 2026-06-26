@@ -49,14 +49,18 @@ class SGDiff(nn.Module):
     def load_networks(self, exp, epoch, strict=True, restart_optim=False, load_shape_branch=True):
         # Load checkpoints on CPU first to avoid a large temporary GPU memory spike
         # during evaluation on smaller cards, then move the model to CUDA later.
-        ckpt = torch.load(os.path.join(exp, 'checkpoint', 'model{}.pth'.format(epoch)), map_location='cpu')
+        from model.load_with_progress import torch_load_with_progress
+        ckpt_path = os.path.join(exp, 'checkpoint', 'model{}.pth'.format(epoch))
+        ckpt = torch_load_with_progress(ckpt_path, map_location='cpu')
         diff_state_dict = {}
         diff_state_dict['opt'] = ckpt.pop('opt')
         if load_shape_branch:
             try:
                 diff_state_dict['vqvae'] = ckpt.pop('vqvae')
                 diff_state_dict['shape_df'] = ckpt.pop('shape_df')
+                print('[*] loading vqvae state dict...', flush=True)
                 self.diff.ShapeDiff.vqvae.load_state_dict(diff_state_dict['vqvae'])
+                print('[*] loading shape_df (diffusion) state dict...', flush=True)
                 self.diff.ShapeDiff.df.load_state_dict(diff_state_dict['shape_df'])
                 self.diff.ShapeDiff.df_module = self.diff.ShapeDiff.df
                 self.diff.ShapeDiff.vqvae_module = self.diff.ShapeDiff.vqvae
@@ -74,6 +78,7 @@ class SGDiff(nn.Module):
 
         ckpt.pop('vqvae', None)
         ckpt.pop('shape_df', None)
+        print('[*] loading GCN/layout branch state dict (strict={})...'.format(strict), flush=True)
         self.diff.load_state_dict(ckpt, strict=strict) # layout branch only
         print(colored('[*] GCN and layout branch has successfully been restored from: %s' % os.path.join(exp, 'checkpoint',
                                                                                     'model{}.pth'.format(epoch)),

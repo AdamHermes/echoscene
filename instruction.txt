@@ -72,8 +72,9 @@ python -m scripts.train_3dfront \
   --loadmodel True \
   --exp ./released_full_model \
   --loadepoch 2050 \
+  --nepoch 2150 \
   --dataset ./FRONT \
-  --batchSize 8 \
+  --batchSize 1 \
   --workers 8 \
   --residual True \
   --separated False \
