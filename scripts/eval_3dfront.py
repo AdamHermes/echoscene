@@ -33,6 +33,8 @@ parser.add_argument('--gen_shape', default=False, type=bool_flag, help='infer di
 parser.add_argument('--visualize', default=False, type=bool_flag)
 parser.add_argument('--export_3d', default=False, type=bool_flag, help='Export the generated shapes and boxes in json files for future use')
 parser.add_argument('--room_type', default='all', help='all, bedroom, livingroom, diningroom, library')
+parser.add_argument('--max_samples', type=int, default=-1, help='Max number of samples to evaluate (default -1 means all)')
+parser.add_argument('--start_idx', type=int, default=0, help='Start index for evaluation')
 
 args = parser.parse_args()
 
@@ -81,6 +83,12 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         accuracy[k] = []
 
     for i, data in enumerate(test_dataloader_changes, 0):
+        if i < args.start_idx:
+            continue
+        if args.max_samples > 0 and (i - args.start_idx) >= args.max_samples:
+            print(f"Reached max_samples ({args.max_samples}). Stopping evaluation.")
+            break
+            
         print(data['scan_id'][0])
 
         try:
@@ -248,6 +256,12 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         accuracy[k] = []
 
     for i, data in enumerate(test_dataloader_no_changes, 0):
+        if i < args.start_idx:
+            continue
+        if args.max_samples > 0 and (i - args.start_idx) >= args.max_samples:
+            print(f"Reached max_samples ({args.max_samples}). Stopping evaluation.")
+            break
+            
         print(data['scan_id'])
 
         try:
