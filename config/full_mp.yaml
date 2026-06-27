@@ -1,5 +1,5 @@
 hyper:
-    batch_size: 64
+    batch_size: 16
     gpu_ids: 0
     logs_dir: ../full_mp/diff_crossattn
     results_dir: ../full_mp/diff_crossattn
@@ -49,6 +49,21 @@ layout_branch:
       loss_iou: false
       iou_type: obb
       train_stats_file: null
+    inference_guidance:
+      enabled: false
+      interval: 5
+      start_ratio: 0.7
+      grad_clip: 0.1
+      clip_to_bounds: true
+      constraints:
+        collision:
+          enabled: true
+          strength: 0.08
+          iou_threshold: 0.02
+          penetration_threshold: 0.0
+          iou_weight: 0.5
+          penetration_weight: 2.0
+          metric: aabb
 
 shape_branch:
     model: sdfusion-txt2shape_mp

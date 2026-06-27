@@ -117,6 +117,13 @@ python eval_3dfront.py --exp /path/to/trained_model --dataset /path/to/dataset -
 This metric aims to evaluate scene-level fidelity. To evaluate FID/KID, you first need to download top-down [gt rendered images](https://www.campar.in.tum.de/public_datasets/2023_commonscenes_zhai/gt_fov90_h8_wo_lamp_no_stool.zip) for retrieval methods and [sdf rendered images](https://www.campar.in.tum.de/public_datasets/2023_commonscenes_zhai/sdf_fov90_h8_wo_lamp_no_stool.zip) for generative methods, or collect renderings by modifying and running `collect_gt_sdf_images.py`. Note that the flag `without_lamp` is set to `True` in our experiment.
 
 Then, the renderings of generated scenes can be obtained inside `eval_3dfront.py`.
+cd echoscene
+pip install -r requirements.txt
+pip install einops omegaconf tensorboardx open3d
+pip install ftfy regex tqdm
+pip install git+https://github.com/openai/CLIP.git
+pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu113_pyt1110/download.html
 
 After obtaining both ground truth images and generated scenes renderings, run `compute_fid_scores_3dfront.py`.
 ### MMD/COV/1-NN

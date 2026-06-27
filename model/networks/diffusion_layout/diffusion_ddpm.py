@@ -6,7 +6,7 @@ from torch.distributions import Normal
 import torch.distributed as dist
 import math
 import numpy as np
-import torch.distributed as dist
+import torch.distributed as dist    
 from tqdm.auto import tqdm
 import json
 import torch.nn.functional as F
@@ -133,9 +133,11 @@ class GaussianDiffusion:
         self.angle_dim = config.get("angle_dim", 1)
         self.bbox_dim = self.translation_dim + self.size_dim + self.angle_dim
         self.bbox_norm_file = train_stats_file
+        self.box_stats = np.loadtxt(train_stats_file).astype(np.float32) if train_stats_file is not None else None
         self.loss_separate = loss_separate
         self.loss_iou = loss_iou
         self.iou_type = iou_type
+        self.inference_guidance = cfg_get(config, "inference_guidance", None)
         self.loss_type = loss_type
         self.model_mean_type = model_mean_type
         self.model_var_type = model_var_type
@@ -174,6 +176,7 @@ class GaussianDiffusion:
         # borrowed from SDFusion
         logvar_init = 0.
         self.logvar = torch.full(fill_value=logvar_init, size=(self.num_timesteps,))
+        self.latest_sampling_stats = None
 
     @staticmethod
     def _extract(a, t, x_shape):
@@ -650,7 +653,9 @@ class GaussianDiffusion:
 
         sample = model_mean + nonzero_mask * torch.exp(0.5 * model_log_variance) * noise
         assert sample.shape == pred_xstart.shape
-        return (sample, pred_xstart) if return_pred_xstart else sample
+        if return_pred_xstart:
+            return sample, pred_xstart, guidance_step_stats
+        return sample, guidance_step_stats
 
 
     def p_sample_loop(self, denoise_fn, shape, device, condition, condition_cross,
@@ -680,6 +685,7 @@ class GaussianDiffusion:
 
         assert isinstance(shape, (tuple, list))
         x_t = noise_fn(size=shape, dtype=torch.float, device=device)
+        step_stats = []
         for t in tqdm(reversed(range(0, self.num_timesteps if not keep_running else len(self.betas)))):
             t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
             # [MODIFIED] Pass floor_plan and room_outer_box
@@ -689,6 +695,7 @@ class GaussianDiffusion:
                 step_stats.append(guidance_step_stats)
 
         assert x_t.shape == shape
+        self.latest_sampling_stats = self._summarize_guidance_stats(step_stats, x_t, scene_ids)
         return x_t
 
     def p_sample_loop_trajectory(self, denoise_fn, shape, device, freq, condition, condition_cross,
@@ -966,6 +973,9 @@ class DiffusionPoint(nn.Module):
         # [MODIFIED] Pass floor_plan and room_outer_box
         return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
                                             clip_denoised=clip_denoised, keep_running=keep_running, floor_plan=floor_plan, room_outer_box=room_outer_box)
+
+    def get_latest_sampling_stats(self):
+        return self.diffusion.latest_sampling_stats
 
     def gen_sample_traj(self, shape, device, freq, condition=None, condition_cross=None, noise_fn=torch.randn,
                     clip_denoised=True,keep_running=False):

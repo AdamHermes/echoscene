@@ -18,6 +18,7 @@ from dataset.threedfront_dataset import ThreedFrontDatasetSceneGraph
 from helpers.util import bool_flag, preprocess_angle2sincos, batch_torch_destandardize_box_params, descale_box_params, postprocess_sincos2arctan, sample_points
 from helpers.metrics_3dfront import validate_constrains, validate_constrains_changes, estimate_angular_std
 from helpers.visualize_scene import render_full, render_box
+from helpers.structured_scene_export import export_structured_scene
 from omegaconf import OmegaConf
 import json
 
@@ -26,25 +27,32 @@ parser.add_argument('--dataset', required=False, type=str, default="/media/ymxlz
 parser.add_argument('--with_CLIP', type=bool_flag, default=True, help="Load Feats directly instead of points.")
 
 parser.add_argument('--manipulate', default=True, type=bool_flag)
-parser.add_argument('--exp', default='../experiments/layout_test', help='experiment name')
+parser.add_argument('--exp', default='../released_full_model', help='experiment name')
 parser.add_argument('--epoch', type=str, default='100', help='saved epoch')
 parser.add_argument('--render_type', type=str, default='txt2shape', help='retrieval, txt2shape, onlybox, echoscene')
 parser.add_argument('--gen_shape', default=False, type=bool_flag, help='infer diffusion')
 parser.add_argument('--visualize', default=False, type=bool_flag)
 parser.add_argument('--export_3d', default=False, type=bool_flag, help='Export the generated shapes and boxes in json files for future use')
 parser.add_argument('--room_type', default='all', help='all, bedroom, livingroom, diningroom, library')
-parser.add_argument('--max_samples', type=int, default=-1, help='Max number of samples to evaluate (default -1 means all)')
-parser.add_argument('--start_idx', type=int, default=0, help='Start index for evaluation')
-
+parser.add_argument('--max_samples', type=int, default=None, help='Limit evaluation to the first N samples')
+parser.add_argument('--start_idx', type=int, default=0, help='Start evaluation from this sample index')
+parser.add_argument('--save_3d', default=False, type=bool_flag, help='Save .obj and .glb files')
+parser.add_argument('--default_exp', default='../released_full_model', help='default exp load arguments')
 args = parser.parse_args()
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
 
 
-def reseed(num):
-    np.random.seed(num)
-    torch.manual_seed(num)
-    random.seed(num)
+def reseed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def normalize(vertices, scale=1):
     xmin, xmax = np.amin(vertices[:, 0]), np.amax(vertices[:, 0])
@@ -60,6 +68,48 @@ def normalize(vertices, scale=1):
 
     vertices = vertices / scalars * scale
     return vertices
+
+
+def export_echoscene_sidecar(modelArgs, test_dataset, data, dec_objs, dec_triples, boxes_pred_den, angles_pred,
+                             classes, epoch=None, render_type='echoscene'):
+    scan_id = data['scan_id'][0]
+    instance_ids = data['instance_id'][0] if len(data['instance_id']) > 0 else []
+    scene_dir = os.path.join(modelArgs['store_path'], render_type)
+    mesh_dir = os.path.join(scene_dir, 'object_meshes', scan_id)
+    scene_mesh_path = os.path.join(scene_dir, "{0}_{1}.glb".format(scan_id, render_type))
+    output_dir = os.path.join(modelArgs['store_path'], 'structured_scenes')
+
+    source_object_metadata = None
+    if hasattr(test_dataset, 'tight_boxes_json') and scan_id in test_dataset.tight_boxes_json:
+        source_object_metadata = test_dataset.tight_boxes_json[scan_id]
+
+    layout_guidance = None
+    if hasattr(test_dataset, 'eval_type'):
+        layout_guidance = {'eval_type': test_dataset.eval_type}
+
+    export_path = export_structured_scene(
+        output_dir=output_dir,
+        scan_id=scan_id,
+        cat_ids=dec_objs.detach().cpu(),
+        boxes=boxes_pred_den.detach().cpu(),
+        angles=angles_pred.detach().cpu(),
+        triples=dec_triples.detach().cpu(),
+        classes=classes,
+        predicate_names=test_dataset.vocab['pred_idx_to_name'],
+        instance_ids=instance_ids,
+        mesh_dir=mesh_dir,
+        scene_mesh_path=scene_mesh_path,
+        render_type=render_type,
+        room_type=getattr(test_dataset, 'room_type', None),
+        epoch=epoch,
+        exp_path=args.exp,
+        dataset_path=args.dataset,
+        source_object_metadata=source_object_metadata,
+        excluded_render_categories={'lamp'},
+        layout_guidance=layout_guidance,
+    )
+    print("structured scene exported:", export_path)
+    return export_path
 
 def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized_file=None, bin_angles=False, cat2objs=None, datasize='large', gen_shape=False):
 
@@ -164,17 +214,15 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                 print('no shape, only run layout branch.')
 
             if modelArgs['bin_angle']:
-                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1)* 15.0 # angle (previously minus 1, now add it back)
-                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file) # mean, std
+                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1)* 15.0
+                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file)
             else:
                 angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
-                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file) # min, max
+                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
 
             if args.visualize:
-                # layout and shape visualization through open3d
                 print("rendering", [obj_classes[i].strip('\n') for i in dec_objs])
                 if model.type_ == 'echoscene':
-                    # before manipulation
                     if original:
                         if original_shapes_pred is not None:
                             original_shapes_pred = original_shapes_pred.cpu().detach()
@@ -183,28 +231,25 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                                     classes=obj_classes, render_type=args.render_type, shapes_pred=original_shapes_pred,
                                     store_img=True,
                                     render_boxes=False, visual=True, demo=True, without_lamp=True,
-                                    store_path=modelArgs['store_path']+"_before")
+                                    store_path=modelArgs['store_path']+"_before",save_3d=args.save_3d)
 
-                    # after manipulation
                     if shapes_pred is not None:
                         shapes_pred = shapes_pred.cpu().detach()
                     render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred,
                                 datasize=datasize,
                                 classes=obj_classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True,
                                 render_boxes=False, visual=True, demo=True, without_lamp=True,
-                                store_path=modelArgs['store_path']+"_after")
+                                store_path=modelArgs['store_path']+"_after",save_3d=args.save_3d)
                 else:
                     raise NotImplementedError
 
         bp_box, bp_angle = [], []
         for i in range(len(keep)):
             if keep[i] == 0:
-                # manipulated / added node
                 bp_box.append(boxes_pred_den[i:i+1].cpu().detach())
                 bp_angle.append(angles_pred[i:i+1].cpu().detach())
             else:
-                # original node
-                dec_tight_boxes[i:i+1,:6] = descale_box_params(dec_tight_boxes[i:i+1,:6], file=normalized_file)  # min, max
+                dec_tight_boxes[i:i+1,:6] = descale_box_params(dec_tight_boxes[i:i+1,:6], file=normalized_file)
                 bp_box.append(dec_tight_boxes[i:i+1,:6].cpu().detach())
                 angle = dec_tight_boxes[i:i+1, 6:7] / np.pi * 180
                 bp_angle.append(angle.cpu().detach())
@@ -212,8 +257,6 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         all_pred_boxes.append(boxes_pred_den.cpu().detach())
         all_pred_angles.append(angles_pred.cpu().detach())
 
-        # compute relationship constraints accuracy through simple geometric rules
-        # TODO boxes_pred_den with angle
         accuracy = validate_constrains_changes(dec_triples, boxes_pred_den, angles_pred, keep, model.vocab, accuracy)
         accuracy_unchanged = validate_constrains(dec_triples, boxes_pred_den, angles_pred, keep, model.vocab, accuracy_unchanged)
 
@@ -252,7 +295,6 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
 
     accuracy = {}
     for k in ['left', 'right', 'front', 'behind', 'smaller', 'bigger', 'shorter', 'taller', 'standing on', 'close by', 'symmetrical to', 'total']:
-        # compute validation for these relation categories
         accuracy[k] = []
 
     for i, data in enumerate(test_dataloader_no_changes, 0):
@@ -291,31 +333,35 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             except:
                 print('no shape, only run layout branch.')
             if modelArgs['bin_angle']:
-                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1)* 15.0 # angle (previously minus 1, now add it back)
-                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file) # mean, std
+                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1)* 15.0
+                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file)
             else:
                 angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
-                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file) # min, max
-
+                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
 
         if args.visualize:
             classes = sorted(list(set(vocab['object_idx_to_name'])))
-            # layout and shape visualization through open3d
             print("rendering", [classes[i].strip('\n') for i in dec_objs])
             if model.type_ == 'echolayout':
                 render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=True, store_path=modelArgs['store_path'])
+                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
             elif model.type_ == 'echoscene':
                 if shapes_pred is not None:
                     shapes_pred = shapes_pred.cpu().detach()
                 render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=True, store_path=modelArgs['store_path'])
+                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                if args.export_3d:
+                    if not args.save_3d:
+                        print("Skipping structured scene export because --save_3d is False.")
+                    else:
+                        export_echoscene_sidecar(modelArgs, test_dataset, data, dec_objs, dec_triples,
+                                                 boxes_pred_den, angles_pred, classes, epoch=epoch,
+                                                 render_type=args.render_type)
             else:
                 raise NotImplementedError
 
         all_pred_boxes.append(boxes_pred_den.cpu().detach())
         all_pred_angles.append(angles_pred.cpu().detach())
-        # compute constraints accuracy through simple geometric rules
         accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_pred, None, model.vocab, accuracy)
 
     keys = list(accuracy.keys())
@@ -342,38 +388,37 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             file.write('means of mean: {:.2f}\n\n'.format(means_of_mean))
 
 def evaluate():
-    random.seed(48)
-    torch.manual_seed(48)
+    reseed(48)
 
     argsJson = os.path.join(args.exp, 'args.json')
     assert os.path.exists(argsJson), 'Could not find args.json for experiment {}'.format(args.exp)
     with open(argsJson) as j:
         modelArgs = json.load(j)
     normalized_file = os.path.join(args.dataset, 'centered_bounds_{}_trainval.txt').format(modelArgs['room_type'])
-    test_dataset_rels_changes = ThreedFrontDatasetSceneGraph(
-        root=args.dataset,
-        split='val_scans',
-        use_scene_rels=modelArgs['use_scene_rels'],
-        with_changes=True,
-        eval=True,
-        eval_type='relationship',
-        with_CLIP=modelArgs['with_CLIP'],
-        use_SDF=modelArgs['with_SDF'],
-        large=modelArgs['large'],
-        room_type=args.room_type,
-        recompute_clip=False)
+    # test_dataset_rels_changes = ThreedFrontDatasetSceneGraph(
+        # root=args.dataset,
+        # split='val_scans',
+        # use_scene_rels=modelArgs['use_scene_rels'],
+        # with_changes=True,
+        # eval=True,
+        # eval_type='relationship',
+        # with_CLIP=modelArgs['with_CLIP'],
+        # use_SDF=modelArgs['with_SDF'],
+        # large=modelArgs['large'],
+        # room_type=args.room_type,
+        # recompute_clip=False)
 
-    test_dataset_addition_changes = ThreedFrontDatasetSceneGraph(
-        root=args.dataset,
-        split='val_scans',
-        use_scene_rels=modelArgs['use_scene_rels'],
-        with_changes=True,
-        eval=True,
-        eval_type='addition',
-        with_CLIP=modelArgs['with_CLIP'],
-        use_SDF=modelArgs['with_SDF'],
-        large=modelArgs['large'],
-        room_type=args.room_type)
+    # test_dataset_addition_changes = ThreedFrontDatasetSceneGraph(
+    #     root=args.dataset,
+    #     split='val_scans',
+    #     use_scene_rels=modelArgs['use_scene_rels'],
+    #     with_changes=True,
+    #     eval=True,
+    #     eval_type='addition',
+    #     with_CLIP=modelArgs['with_CLIP'],
+    #     use_SDF=modelArgs['with_SDF'],
+    #     large=modelArgs['large'],
+    #     room_type=args.room_type)
 
     test_dataset_no_changes = ThreedFrontDatasetSceneGraph(
         root=args.dataset,
@@ -387,13 +432,17 @@ def evaluate():
         large=modelArgs['large'],
         room_type=args.room_type)
 
+    # apply start_idx and max_samples slicing only if specified
+    if args.max_samples is not None:
+        test_dataset_no_changes.scans = test_dataset_no_changes.scans[args.start_idx:args.start_idx + args.max_samples]
+        #test_dataset_rels_changes.scans = test_dataset_rels_changes.scans[args.start_idx:args.start_idx + args.max_samples]
+        #test_dataset_addition_changes.scans = test_dataset_addition_changes.scans[args.start_idx:args.start_idx + args.max_samples]
+
     modeltype_ = modelArgs['network_type']
     modelArgs['store_path'] = os.path.join(args.exp, "vis", args.epoch)
     replacelatent_ = modelArgs['replace_latent'] if 'replace_latent' in modelArgs else None
     with_changes_ = modelArgs['with_changes'] if 'with_changes' in modelArgs else None
-    # args.visualize = False if args.gen_shape == False else args.visualize
 
-    # instantiate the model
     diff_opt = modelArgs['diff_yaml']
     diff_cfg = OmegaConf.load(diff_opt)
     diff_cfg.layout_branch.diffusion_kwargs.train_stats_file = test_dataset_no_changes.box_normalized_stats
@@ -408,6 +457,8 @@ def evaluate():
 
     model = model.eval()
     cat2objs = None
+
+    print('Evaluating {} sample(s)'.format(len(test_dataset_no_changes)))
 
     print('\nEditing Mode - Additions')
     reseed(47)

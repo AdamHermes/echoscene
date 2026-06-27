@@ -770,6 +770,19 @@ class UNet1DModel(nn.Module):
         box_rel_embed, _ = self.box_graph_cov(obj_box_embed, pred_embed, edges)
         return box_rel_embed
 
+    def _match_context_dim(self, context, target_dim):
+        if context.dim() == 2:
+            context = context.unsqueeze(1)
+
+        context_dim = context.shape[-1]
+        if context_dim == target_dim:
+            return context
+        if context_dim > target_dim:
+            return context[..., :target_dim]
+
+        pad_dim = target_dim - context_dim
+        return F.pad(context, (0, pad_dim))
+
     def forward(self, box_t, obj_embed, triples, timesteps=None, context=None,**kwargs):
         """
         Apply the model to an input batch.
@@ -786,10 +799,16 @@ class UNet1DModel(nn.Module):
 
         latent_box_rel = self.box_messsage_passing(obj_embed, triples, box_t, t_emb=emb, enable_t_emb=self.enable_t_emb)
         box_t, latent_box_rel = box_t.unsqueeze(1), latent_box_rel.unsqueeze(1)
+
         if self.conditioning_key in ['concat', 'hybrid']:
             box_t = torch.cat([box_t, latent_box_rel], dim=-1)
-        elif self.conditioning_key in ['crossattn', 'hybrid']:
-            context = latent_box_rel
+
+        if self.conditioning_key in ['crossattn', 'hybrid']:
+            if context is not None:
+                context = self._match_context_dim(context, latent_box_rel.shape[-1])
+                context = context + latent_box_rel
+            else:
+                context = latent_box_rel
 
         # import pdb; pdb.set_trace()
         # h = x.type(self.dtype)

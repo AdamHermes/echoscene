@@ -7,9 +7,9 @@ pyrender
 seaborn
 trimesh
 h5py
-PyMCubes
+PyMCubes==0.1.4
 imageio
 scikit-image
 fvcore
 opencv-python==4.8.0.76
-pyyaml==6.0
+PyYAML==6.0.2

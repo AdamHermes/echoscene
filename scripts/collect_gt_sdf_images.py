@@ -1,30 +1,34 @@
 import glob
 import numpy as np
-import os
 import json
 import trimesh
-import pyrender
 import cv2
 import h5py
 import torch
 import seaborn as sns
 from model.diff_utils.util_3d import render_sdf, render_mesh, sdf_to_mesh
 from helpers.util import pytorch3d_to_trimesh, fit_shapes_to_box_v2
+import os
+os.environ["PYOPENGL_PLATFORM"] = "egl"
 
+import pyrender
 ## Need to download 3D-FUTURE-SDF
 # files from SG-FRONT
-obj_info_path_test = "/media/ymxlzgy/Data/Dataset/3D-FRONT/obj_boxes_all_test.json"
-obj_info_path_trainval = "/media/ymxlzgy/Data/Dataset/3D-FRONT/obj_boxes_all_trainval.json"
-rel_trainval_file = "/media/ymxlzgy/Data/Dataset/3D-FRONT/relationships_all_trainval.json"
-rel_test_file = "/media/ymxlzgy/Data/Dataset/3D-FRONT/relationships_all_test.json"
-class_file = "/media/ymxlzgy/Data/Dataset/3D-FRONT/classes_all.txt"
+dataset_root = "./FRONT"
 
-bath = '/media/ymxlzgy/Data/graphto3d_v2_test/sdf_fov90_h8'
+obj_info_path_test = f"{dataset_root}/obj_boxes_all_test.json"
+obj_info_path_trainval = f"{dataset_root}/obj_boxes_all_trainval.json"
+rel_trainval_file = f"{dataset_root}/relationships_all_trainval.json"
+rel_test_file = f"{dataset_root}/relationships_all_test.json"
+class_file = f"{dataset_root}/classes_all.txt"
+
+bath = './output'
 cat = {}
 large = False
-without_lamp = False
-no_stool = True
-mapping_file = "/media/ymxlzgy/Data/Dataset/3D-FRONT/mapping.json" if not no_stool else "/media/ymxlzgy/Data/Dataset/3D-FRONT/mapping_no_stool.json"
+without_lamp = True
+no_stool = False
+mapping_file = f"{dataset_root}/mapping.json" if not no_stool else f"{dataset_root}/mapping_no_stool.json"
+
 if without_lamp:
     bath += '_wo_lamp'
 if no_stool:
@@ -134,7 +138,8 @@ for info in rel['scans']:
         color = color_palette[class_id]
 
         # the base of the model path should be changed to your own path
-        sdf_path = obj_info[scan_id][k]['model_path'].replace('3D-FUTURE-model','3D-FUTURE-SDF').replace('raw_model.obj', 'ori_sample_grid.h5')
+        model_id = obj_info[scan_id][k]['model_path'].split('3D-FUTURE-model/')[-1].split('/')[0]
+        sdf_path = os.path.join(dataset_root, '3D-FUTURE-SDF', model_id, 'ori_sample_grid.h5')  
         h5_f = h5py.File(sdf_path, 'r')
         obj_sdf = h5_f['pc_sdf_sample'][:].astype(np.float32)
         sdf = torch.Tensor(obj_sdf).view(1, 64, 64, 64)

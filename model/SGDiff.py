@@ -18,11 +18,11 @@ class SGDiff(nn.Module):
         assert replace_latent is not None and with_changes is not None
         if self.type_ == 'echoscene':
             from model.EchoScene import Sg2ScDiffModel
-            self.diff = Sg2ScDiffModel(vocab, self.diff_opt, diffusion_bs=16, embedding_dim=64, mlp_normalization="batch", separated=separated,
+            self.diff = Sg2ScDiffModel(vocab, self.diff_opt, diffusion_bs=32, embedding_dim=64, mlp_normalization="batch", separated=separated,
                               gconv_num_layers=5, use_angles=with_angles, replace_latent=replace_latent, residual=residual, use_clip=clip)
         elif self.type_ == 'echolayout':
             from model.EchoLayout import Sg2BoxDiffModel
-            self.diff = Sg2BoxDiffModel(vocab, self.diff_opt, diffusion_bs=16, embedding_dim=64, mlp_normalization="batch", separated=separated,
+            self.diff = Sg2BoxDiffModel(vocab, self.diff_opt, diffusion_bs=32, embedding_dim=64, mlp_normalization="batch", separated=separated,
                               gconv_num_layers=5, use_angles=with_angles, replace_latent=replace_latent, residual=residual, use_clip=clip)
         else:
             raise NotImplementedError
@@ -31,13 +31,13 @@ class SGDiff(nn.Module):
 
     def forward_mani(self, enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat, dec_objs, dec_objs_grained,
                      dec_triples, dec_boxes, dec_angles, dec_sdfs, encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, missing_nodes,
-                     manipulated_nodes):
+                     manipulated_nodes, scan_ids=None):
 
         if self.type_ == 'echoscene':
             obj_selected, shape_loss, layout_loss, loss_dict = self.diff.forward(
                 enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat, dec_objs, dec_objs_grained, dec_triples, dec_boxes,
                 encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, missing_nodes,
-                manipulated_nodes, dec_sdfs, dec_angles)
+                manipulated_nodes, dec_sdfs, dec_angles, scan_ids=scan_ids)
         elif self.type_ == 'echolayout':
             obj_selected, shape_loss, layout_loss, loss_dict = self.diff.forward(enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat, dec_objs, dec_triples, dec_boxes, encoded_dec_text_feat, encoded_dec_rel_feat, dec_objs_to_scene, missing_nodes,
                 manipulated_nodes, dec_angles)
@@ -47,7 +47,9 @@ class SGDiff(nn.Module):
         return obj_selected, shape_loss, layout_loss, loss_dict
 
     def load_networks(self, exp, epoch, strict=True, restart_optim=False, load_shape_branch=True):
-        ckpt = torch.load(os.path.join(exp, 'checkpoint', 'model{}.pth'.format(epoch)))
+        # Load checkpoints on CPU first to avoid a large temporary GPU memory spike
+        # during evaluation on smaller cards, then move the model to CUDA later.
+        ckpt = torch.load(os.path.join(exp, 'checkpoint', 'model{}.pth'.format(epoch)), map_location='cpu')
         diff_state_dict = {}
         diff_state_dict['opt'] = ckpt.pop('opt')
         if load_shape_branch:

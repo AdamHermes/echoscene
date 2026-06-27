@@ -85,14 +85,14 @@ def get_closest_furniture_to_box(box_dict, query_size):
 
 def get_database_objects(boxes, datasize, cat_ids, classes, mesh_dir, render_boxes=False, colors=None, without_lamp=False):
     os.makedirs(mesh_dir, exist_ok=True)
-    bbox_file = "/media/ymxlzgy/Data/Dataset/FRONT/cat_jid_trainval.json" if datasize == 'large' else "/media/ymxlzgy/Data/Dataset/FRONT/cat_jid_trainval_small.json"
+    bbox_file = "../FRONT/cat_jid_trainval.json" if datasize == 'large' else "../FRONT/cat_jid_trainval_small.json"
     colors = iter(colors)
     with open(bbox_file, "r") as read_file:
         box_data = json.load(read_file)
     lamp_mesh_list = []
     trimesh_meshes = []
     raw_meshes = []
-    model_base_path = "/media/ymxlzgy/Data/Dataset/FRONT/3D-FUTURE-model"
+    model_base_path = "../FRONT/3D-FUTURE-SDF"
     instance_id = 1
     for j in range(0, boxes.shape[0]):
         query_size = boxes[j, 0:3]
@@ -104,7 +104,7 @@ def get_database_objects(boxes, datasize, cat_ids, classes, mesh_dir, render_box
             box_data[query_label], query_size
         )
 
-        model_path = os.path.join(model_base_path,furniture_id,"raw_model.obj")
+        model_path = os.path.join(model_base_path,furniture_id,"ori_sample_grid.obj")
         texture_path = os.path.join(model_base_path, furniture_id, "texture.png")
         color = next(colors)
 
@@ -313,7 +313,9 @@ def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes
         obj.visual.vertex_colors = color
         obj.visual.face_colors = color
         raw_obj_list.append(obj.copy())
-        obj.export(os.path.join(mesh_dir, query_label + '_' + str(cat_ids[j]) + "_" + str(instance_id)+".obj"))
+
+        if mesh_dir is not None:  # <-- add this guard
+            obj.export(os.path.join(mesh_dir, query_label + '_' + str(cat_ids[j]) + "_" + str(instance_id) + ".obj"))
         instance_id += 1
 
         box_points, obj = fit_shapes_to_box_v2(obj, boxes[j], degrees=True)
@@ -360,7 +362,8 @@ def get_sdfusion_models(boxes, cat_ids, classes, mesh_dir, render_boxes=False, c
         obj.visual.vertex_colors = color
         obj.visual.face_colors = color
         raw_obj_list.append(obj.copy())
-        obj.export(os.path.join(mesh_dir, query_label + '_' + str(cat_ids[j]) + "_" + str(instance_id)+".obj"))
+        if mesh_dir is not None:  # <-- add this guard
+            obj.export(os.path.join(mesh_dir, query_label + '_' + str(cat_ids[j]) + "_" + str(instance_id)+".obj"))
         instance_id += 1
         box_points, obj = fit_shapes_to_box_v2(obj, boxes[j], degrees=True)
         obj_list.append(obj)

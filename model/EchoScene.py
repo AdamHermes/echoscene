@@ -73,7 +73,7 @@ class Sg2ScDiffModel(nn.Module):
         self.gconv_net_manipulation = GraphTripleConvNet(**gconv_kwargs_manipulation)
 
         self.diff_cfg = diff_opt
-        self.diffusion_bs = diffusion_bs if self.diff_cfg.hyper.batch_size is None else self.diff_cfg.hyper.batch_size
+        self.diffusion_bs = diffusion_bs
         self.s_l_separated = separated
         if self.s_l_separated:
             gconv_kwargs_ec_rel = {
@@ -243,7 +243,7 @@ class Sg2ScDiffModel(nn.Module):
         # Sort the indices to return them in the original order
         return sorted(selected_indices), selected_values, current_sum
 
-    def select_sdfs(self, dec_objs_to_scene, obj_cats, obj_cats_grained, triples, sdfs, s_feat_ucon, s_feat_con, sample_type='balance'):
+    def select_sdfs(self, dec_objs_to_scene, obj_cats, obj_cats_grained, triples, sdfs, s_feat_ucon, s_feat_con, sample_type='balance', scan_ids=None):
         dec_objs_to_scene = dec_objs_to_scene.detach().cpu().numpy()
         batch_size = np.max(dec_objs_to_scene) + 1
         scene_ids = []
@@ -307,10 +307,39 @@ class Sg2ScDiffModel(nn.Module):
             triples_mask = (triples[:, 0] < num) & (triples[:, 2] < num)
             triples_selected = triples[triples_mask]
 
-        sdf_selected = torch.cat(sdf_selected, dim=0).cuda()
-        uc_rel_s_selected = torch.cat(uc_rel_s_selected, dim=0).cuda()
-        c_rel_s_selected = torch.cat(c_rel_s_selected, dim=0).cuda()
-        obj_cat_selected = torch.cat(obj_cat_selected, dim=0)
+        if len(sdf_selected) == 0:
+            scene_sizes = [int(np.sum(dec_objs_to_scene == i)) for i in np.unique(dec_objs_to_scene)]
+            nonzero_sdf_counts = []
+            for i in np.unique(dec_objs_to_scene):
+                scene_i_ids = np.where(dec_objs_to_scene == i)[0]
+                sdf_candidates = sdfs[scene_i_ids]
+                zeros_tensor = torch.zeros_like(sdf_candidates[0])
+                mask = torch.ne(sdf_candidates, zeros_tensor)
+                nonzero_sdf_counts.append(int(len(torch.unique(torch.where(mask)[0]))))
+            raise RuntimeError(
+                'select_sdfs produced no tensors: scan_ids={}, sample_type={}, diffusion_bs={}, '
+                'scene_sizes={}, nonzero_sdf_counts={}'.format(
+                    scan_ids, sample_type, self.diffusion_bs, scene_sizes, nonzero_sdf_counts
+                )
+            )
+
+        try:
+            sdf_selected = torch.cat(sdf_selected, dim=0).cuda()
+            uc_rel_s_selected = torch.cat(uc_rel_s_selected, dim=0).cuda()
+            c_rel_s_selected = torch.cat(c_rel_s_selected, dim=0).cuda()
+            obj_cat_selected = torch.cat(obj_cat_selected, dim=0)
+        except Exception as e:
+            sdf_shapes = [tuple(x.shape) for x in sdf_selected]
+            uc_shapes = [tuple(x.shape) for x in uc_rel_s_selected]
+            c_shapes = [tuple(x.shape) for x in c_rel_s_selected]
+            obj_shapes = [tuple(x.shape) for x in obj_cat_selected]
+            raise RuntimeError(
+                'select_sdfs failed for scan_ids={}. sample_type={}, diffusion_bs={}, '
+                'num_chunks={}, sdf_shapes={}, uc_shapes={}, c_shapes={}, obj_shapes={}. Original error: {}'.format(
+                    scan_ids, sample_type, self.diffusion_bs, len(sdf_selected),
+                    sdf_shapes, uc_shapes, c_shapes, obj_shapes, e
+                )
+            ) from e
         scene_ids = np.concatenate(scene_ids, axis=0)
         diff_dict = {'sdf': sdf_selected[:self.diffusion_bs], 'uc_s': uc_rel_s_selected[:self.diffusion_bs],
                      'c_s': c_rel_s_selected[:self.diffusion_bs], "scene_ids": scene_ids[:self.diffusion_bs]}
@@ -326,7 +355,7 @@ class Sg2ScDiffModel(nn.Module):
         return diff_dict
 
     def forward(self, enc_objs, enc_triples, enc_text_feat, enc_rel_feat, dec_objs, dec_objs_grained,
-                dec_triples, dec_boxes, dec_text_feat, dec_rel_feat, dec_objs_to_scene, missing_nodes, manipulated_nodes, dec_sdfs, dec_angles):
+                dec_triples, dec_boxes, dec_text_feat, dec_rel_feat, dec_objs_to_scene, missing_nodes, manipulated_nodes, dec_sdfs, dec_angles, scan_ids=None):
 
         obj_embed, _, latent_obj_vecs, latent_pred_vecs = self.init_encoder(enc_objs, enc_triples, enc_text_feat, enc_rel_feat)
 
@@ -369,7 +398,7 @@ class Sg2ScDiffModel(nn.Module):
         c_rel_feat_s = self.rel_s_mlp(c_rel_feat_s)
         c_rel_feat_s = torch.unsqueeze(c_rel_feat_s, dim=1)
 
-        obj_selected, shape_diff_dict = self.select_sdfs(dec_objs_to_scene, dec_objs, dec_objs_grained, dec_triples, dec_sdfs, uc_rel_feat_s, c_rel_feat_s, sample_type=self.sample_obj)
+        obj_selected, shape_diff_dict = self.select_sdfs(dec_objs_to_scene, dec_objs, dec_objs_grained, dec_triples, dec_sdfs, uc_rel_feat_s, c_rel_feat_s, sample_type=self.sample_obj, scan_ids=scan_ids)
         self.ShapeDiff.set_input(shape_diff_dict)
         self.ShapeDiff.set_requires_grad([self.ShapeDiff.df], requires_grad=True)
         Shape_loss, Shape_loss_dict = self.ShapeDiff.forward()
