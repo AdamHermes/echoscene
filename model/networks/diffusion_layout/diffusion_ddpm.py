@@ -490,14 +490,29 @@ class GaussianDiffusion:
         room_outer_loss = compute_room_outer_loss(pred_xstart, room_outer_box)
         walkable_loss = compute_walkable_loss(pred_xstart, floor_plan)
         
-        total_guidance_loss = collision_loss + room_outer_loss + walkable_loss
+        # [MODIFIED] Handle the case where collision_loss is None
+        total_guidance_loss = 0.0
+        if collision_loss is not None:
+            total_guidance_loss = total_guidance_loss + collision_loss
+            
+        total_guidance_loss = total_guidance_loss + room_outer_loss + walkable_loss
 
-        if total_guidance_loss is None or not torch.isfinite(total_guidance_loss):
+        # Ensure that if all losses were effectively 0 or None, we don't try to compute grads if not required
+        if isinstance(total_guidance_loss, float) and total_guidance_loss == 0.0:
+            step_stats['skip_reason'] = step_stats.get('skip_reason', 'zero_loss')
+            return model_mean, step_stats
+        elif total_guidance_loss is None or not torch.isfinite(total_guidance_loss):
             step_stats['skip_reason'] = step_stats.get('skip_reason', 'invalid_loss')
             return model_mean, step_stats
 
         # [MODIFIED] Compute gradient using total_guidance_loss instead of just collision_loss
-        guidance_grad = torch.autograd.grad(total_guidance_loss, pred_xstart, allow_unused=False)[0]
+        guidance_grad_tuple = torch.autograd.grad(total_guidance_loss, pred_xstart, allow_unused=True)
+        guidance_grad = guidance_grad_tuple[0]
+        
+        if guidance_grad is None:
+            step_stats['skip_reason'] = step_stats.get('skip_reason', 'unused_grad')
+            return model_mean, step_stats
+            
         grad_norm = guidance_grad.norm(p=2, dim=1, keepdim=True)
         grad_clip = float(cfg_get(self.inference_guidance, 'grad_clip', 0.0))
         if grad_clip > 0.0:
