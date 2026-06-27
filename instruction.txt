@@ -1,0 +1,48 @@
+python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT --residual True --network_type echoscene --with_SDF True --with_CLIP True --batchSize 4 --workers 2 --loadmodel False --nepoch 1 --large False --use_scene_rels True
+
+python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True
+
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh  
+
+source ~/.bashrc
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+conda create -n echoscene python=3.8 -y
+conda activate echoscene
+
+cd echoscene
+pip install -r requirements.txt
+pip install einops omegaconf tensorboardx open3d
+pip install ftfy regex tqdm
+pip install git+https://github.com/openai/CLIP.git
+pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu113_pyt1110/download.html
+
+
+
+
+gdown --id 13p_1wUHH0G0sEHzViXmF7RVuO6WGeb_5
+apt install unzip
+unzip FRONT.zip
+
+cd scripts
+python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT --residual True --network_type echoscene --with_SDF True --with_CLIP True --batchSize 64 --workers 8 --loadmodel False --nepoch 100 --large False --use_scene_rels True
+
+python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT/ --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True --max_samples 13 --start_idx 174
+
+
+
+zip -r checkpoints.zip checkpoints
+
+apt update && apt install -y rclone
+
+rclone config
+rclone copy checkpoints.zip drive:/backup/
+
+
+!zip -r released_full_model.zip /content/echoscene/released_full_model
+
+from google.colab import files
+files.download('released_full_model.zip')
