@@ -68,6 +68,11 @@ class EchoToLayout(Module):
         self.rel = data_dict['c_b']
         self.uc_rel = data_dict['uc_b']
         vars_list += ['preds', 'rel', 'uc_rel']
+        
+        # [MODIFIED] Added floor_plan and room_outer_box for PhyScene physical guidance
+        self.floor_plan = data_dict.get('floor_plan', None)
+        self.room_outer_box = data_dict.get('room_outer_box', None)
+        
         self.tocuda(var_names=vars_list)
 
     def tocuda(self, var_names):
@@ -99,13 +104,14 @@ class EchoToLayout(Module):
 
         return loss, loss_dict
 
-    def sample(self, box_dim, batch_size, obj_embed=None, obj_triples=None, text=None, rel=None, ret_traj=False, ddim=False, clip_denoised=False, freq=40, batch_seeds=None):
+    def sample(self, box_dim, batch_size, obj_embed=None, obj_triples=None, text=None, rel=None, ret_traj=False, ddim=False, clip_denoised=False, freq=40, batch_seeds=None, floor_plan=None, room_outer_box=None):
 
         noise_shape = (batch_size, box_dim)
         condition = rel if self.rel_condition else None
         condition_cross = None
         # reverse sampling
-        samples = self.df.gen_samples_sg(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, clip_denoised=clip_denoised)
+        # [MODIFIED] Passing floor_plan and room_outer_box down to the diffusion process for physical guidance
+        samples = self.df.gen_samples_sg(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, clip_denoised=clip_denoised, scene_ids=self.scene_ids, floor_plan=floor_plan, room_outer_box=room_outer_box)
         
         return samples
 
@@ -116,7 +122,8 @@ class EchoToLayout(Module):
         obj_embed = self.uc_rel
         triples = self.preds
 
-        samples = self.sample(box_dim, batch_size=len(obj_embed), obj_embed=obj_embed, obj_triples=triples, text=text, rel=rel, ret_traj=ret_traj, ddim=ddim, clip_denoised=clip_denoised, batch_seeds=batch_seeds)
+        # [MODIFIED] Pass floor_plan and room_outer_box stored during set_input to the sample method
+        samples = self.sample(box_dim, batch_size=len(obj_embed), obj_embed=obj_embed, obj_triples=triples, text=text, rel=rel, ret_traj=ret_traj, ddim=ddim, clip_denoised=clip_denoised, batch_seeds=batch_seeds, floor_plan=self.floor_plan, room_outer_box=self.room_outer_box)
         samples_dict = {
             "sizes": samples[:, 0:self.size_dim].contiguous(),
             "translations": samples[:, self.size_dim:self.size_dim + self.translation_dim].contiguous(),

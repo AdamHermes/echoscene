@@ -12,7 +12,17 @@ import json
 import torch.nn.functional as F
 from einops import rearrange, reduce
 from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_sincos2arctan
-# from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
+from .loss import axis_aligned_bbox_overlaps_3d
+from .physical_guidance import compute_room_outer_loss, compute_walkable_loss
+#from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
+
+
+def cfg_get(cfg, key, default=None):
+    if cfg is None:
+        return default
+    if hasattr(cfg, 'get'):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 def norm(v, f):
     v = (v - v.min())/(v.max() - v.min()) - 0.5
@@ -276,6 +286,286 @@ class GaussianDiffusion:
             self._extract(self.sqrt_recipm1_alphas_cumprod.to(x_t.device), t, x_t.shape)
         )
 
+    def _scene_ids_tensor(self, scene_ids, num_boxes, device):
+        if scene_ids is None:
+            return torch.zeros(num_boxes, dtype=torch.long, device=device)
+        if isinstance(scene_ids, torch.Tensor):
+            return scene_ids.to(device=device, dtype=torch.long)
+        return torch.as_tensor(scene_ids, dtype=torch.long, device=device)
+
+    def _denormalize_box_params(self, box_params):
+        if self.box_stats is None:
+            raise ValueError('train_stats_file must be set for inference-time physical guidance.')
+        stats = torch.as_tensor(self.box_stats, dtype=box_params.dtype, device=box_params.device)
+        min_lhw, max_lhw = stats[:3], stats[3:6]
+        min_xyz, max_xyz = stats[6:9], stats[9:12]
+
+        sizes = ((box_params[:, :3] + 1.0) / 2.0) * (max_lhw - min_lhw) + min_lhw
+        translations = ((box_params[:, 3:6] + 1.0) / 2.0) * (max_xyz - min_xyz) + min_xyz
+        angles = postprocess_sincos2arctan(box_params[:, -2:])
+        return torch.cat((sizes, translations, angles), dim=-1)
+
+    def _boxes_to_axis_aligned_corners(self, denorm_boxes):
+        half_sizes = denorm_boxes[:, :3].clamp(min=1e-4) * 0.5
+        centers = denorm_boxes[:, 3:6]
+        return torch.cat((centers - half_sizes, centers + half_sizes), dim=-1)
+
+    def _guidance_enabled(self):
+        return bool(cfg_get(self.inference_guidance, 'enabled', False))
+
+    def _guidance_active_for_timestep(self, timestep):
+        if not self._guidance_enabled():
+            return False
+        interval = max(int(cfg_get(self.inference_guidance, 'interval', 1)), 1)
+        start_ratio = float(cfg_get(self.inference_guidance, 'start_ratio', 0.0))
+        start_ratio = min(max(start_ratio, 0.0), 1.0)
+        denoise_step = (self.num_timesteps - 1) - int(timestep)
+        if self.num_timesteps > 1:
+            denoise_progress = denoise_step / float(self.num_timesteps - 1)
+        else:
+            denoise_progress = 1.0
+        return denoise_progress >= start_ratio and denoise_step % interval == 0
+
+    def _collision_guidance_cfg(self):
+        constraints_cfg = cfg_get(self.inference_guidance, 'constraints', None)
+        return cfg_get(constraints_cfg, 'collision', None)
+
+    def _compute_pairwise_penetration(self, scene_boxes):
+        half_sizes = scene_boxes[:, :3].clamp(min=1e-4) * 0.5
+        centers = scene_boxes[:, 3:6]
+        center_delta = torch.abs(centers[:, None, :] - centers[None, :, :])
+        overlap_delta = torch.relu(half_sizes[:, None, :] + half_sizes[None, :, :] - center_delta)
+        penetration_volume = overlap_delta[..., 0] * overlap_delta[..., 1] * overlap_delta[..., 2]
+        max_penetration_depth = overlap_delta.max(dim=-1).values
+        return penetration_volume, max_penetration_depth
+
+    def _compute_collision_guidance_loss(self, box_params, scene_ids, ignore_enabled=False):
+        collision_cfg = self._collision_guidance_cfg()
+        if not ignore_enabled and (collision_cfg is None or not bool(cfg_get(collision_cfg, 'enabled', False))):
+            return None, {
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'constraint_disabled',
+            }
+        if self.box_stats is None:
+            return None, {
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'missing_train_stats',
+            }
+
+        metric = str(cfg_get(collision_cfg, 'metric', 'aabb') if collision_cfg is not None else 'aabb').lower()
+        if metric != 'aabb':
+            raise NotImplementedError('Inference-time collision guidance currently supports metric="aabb" only.')
+
+        iou_threshold = float(cfg_get(collision_cfg, 'iou_threshold', 0.0) if collision_cfg is not None else 0.0)
+        penetration_threshold = float(cfg_get(collision_cfg, 'penetration_threshold', 0.0) if collision_cfg is not None else 0.0)
+        iou_weight = float(cfg_get(collision_cfg, 'iou_weight', 1.0) if collision_cfg is not None else 1.0)
+        penetration_weight = float(cfg_get(collision_cfg, 'penetration_weight', 0.0) if collision_cfg is not None else 0.0)
+        denorm_boxes = self._denormalize_box_params(box_params)
+        scene_ids = self._scene_ids_tensor(scene_ids, box_params.shape[0], box_params.device)
+
+        scene_losses = []
+        per_scene_mean_ious = []
+        per_scene_max_ious = []
+        per_scene_penetration = []
+        per_scene_max_penetration = []
+        total_pairs = 0
+        total_pairs_above_threshold = 0
+        total_pairs_with_penetration = 0
+
+        for scene_id in torch.unique(scene_ids):
+            scene_mask = scene_ids == scene_id
+            if int(scene_mask.sum().item()) < 2:
+                continue
+
+            scene_boxes = denorm_boxes[scene_mask]
+            scene_corners = self._boxes_to_axis_aligned_corners(scene_boxes).unsqueeze(0)
+            iou_matrix = axis_aligned_bbox_overlaps_3d(scene_corners, scene_corners).squeeze(0)
+            iou_matrix = torch.nan_to_num(iou_matrix, nan=0.0, posinf=0.0, neginf=0.0)
+
+            pair_mask = torch.triu(
+                torch.ones_like(iou_matrix, dtype=torch.bool),
+                diagonal=1,
+            )
+            pair_iou = iou_matrix[pair_mask]
+            penetration_matrix, penetration_depth_matrix = self._compute_pairwise_penetration(scene_boxes)
+            pair_penetration = penetration_matrix[pair_mask]
+            pair_penetration_depth = penetration_depth_matrix[pair_mask]
+            if pair_iou.numel() == 0:
+                continue
+
+            active_pair_iou = torch.relu(pair_iou - iou_threshold)
+            active_pair_penetration = torch.relu(pair_penetration - penetration_threshold)
+            total_pairs += int(pair_iou.numel())
+            total_pairs_above_threshold += int((pair_iou > iou_threshold).sum().item())
+            total_pairs_with_penetration += int((pair_penetration > penetration_threshold).sum().item())
+            per_scene_mean_ious.append(pair_iou.mean())
+            per_scene_max_ious.append(pair_iou.max())
+            per_scene_penetration.append(pair_penetration.mean())
+            per_scene_max_penetration.append(pair_penetration_depth.max())
+
+            scene_loss_terms = []
+            if iou_weight > 0.0 and torch.any(active_pair_iou > 0):
+                scene_loss_terms.append(iou_weight * active_pair_iou.mean())
+            if penetration_weight > 0.0 and torch.any(active_pair_penetration > 0):
+                scene_loss_terms.append(penetration_weight * active_pair_penetration.mean())
+            if len(scene_loss_terms) > 0:
+                scene_losses.append(torch.stack(scene_loss_terms).sum())
+
+        if len(per_scene_mean_ious) == 0:
+            return None, {
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'insufficient_pairs',
+                'num_pairs': 0,
+                'pairs_above_threshold': 0,
+                'pairs_with_penetration': 0,
+                'avg_scene_iou': 0.0,
+                'max_pair_iou': 0.0,
+                'avg_scene_penetration': 0.0,
+                'max_pair_penetration': 0.0,
+                'iou_threshold': iou_threshold,
+                'penetration_threshold': penetration_threshold,
+                'metric': metric,
+            }
+
+        if len(scene_losses) == 0:
+            return None, {
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'below_threshold',
+                'num_pairs': total_pairs,
+                'pairs_above_threshold': total_pairs_above_threshold,
+                'pairs_with_penetration': total_pairs_with_penetration,
+                'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
+                'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
+                'avg_scene_penetration': float(torch.stack(per_scene_penetration).mean().detach().item()),
+                'max_pair_penetration': float(torch.stack(per_scene_max_penetration).max().detach().item()),
+                'iou_threshold': iou_threshold,
+                'penetration_threshold': penetration_threshold,
+                'iou_weight': iou_weight,
+                'penetration_weight': penetration_weight,
+                'metric': metric,
+            }
+
+        loss = torch.stack(scene_losses).mean()
+        stats = {
+            'constraint': 'collision',
+            'skipped': False,
+            'num_pairs': total_pairs,
+            'pairs_above_threshold': total_pairs_above_threshold,
+            'pairs_with_penetration': total_pairs_with_penetration,
+            'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
+            'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
+            'avg_scene_penetration': float(torch.stack(per_scene_penetration).mean().detach().item()),
+            'max_pair_penetration': float(torch.stack(per_scene_max_penetration).max().detach().item()),
+            'iou_threshold': iou_threshold,
+            'penetration_threshold': penetration_threshold,
+            'iou_weight': iou_weight,
+            'penetration_weight': penetration_weight,
+            'metric': metric,
+        }
+        return loss, stats
+
+    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids, floor_plan=None, room_outer_box=None):
+        step_stats = {
+            'timestep': int(timestep),
+            'applied': False,
+        }
+        if not self._guidance_active_for_timestep(timestep):
+            step_stats['skip_reason'] = 'schedule_inactive'
+            return model_mean, step_stats
+
+        collision_cfg = self._collision_guidance_cfg()
+        strength = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
+        if strength <= 0.0:
+            step_stats['skip_reason'] = 'zero_strength'
+            return model_mean, step_stats
+
+        collision_loss, collision_stats = self._compute_collision_guidance_loss(pred_xstart, scene_ids)
+        step_stats.update(collision_stats)
+        
+        # [MODIFIED] Add room outer loss and walkable loss from PhyScene physical guidance
+        room_outer_loss = compute_room_outer_loss(pred_xstart, room_outer_box)
+        walkable_loss = compute_walkable_loss(pred_xstart, floor_plan)
+        
+        total_guidance_loss = collision_loss + room_outer_loss + walkable_loss
+
+        if total_guidance_loss is None or not torch.isfinite(total_guidance_loss):
+            step_stats['skip_reason'] = step_stats.get('skip_reason', 'invalid_loss')
+            return model_mean, step_stats
+
+        # [MODIFIED] Compute gradient using total_guidance_loss instead of just collision_loss
+        guidance_grad = torch.autograd.grad(total_guidance_loss, pred_xstart, allow_unused=False)[0]
+        grad_norm = guidance_grad.norm(p=2, dim=1, keepdim=True)
+        grad_clip = float(cfg_get(self.inference_guidance, 'grad_clip', 0.0))
+        if grad_clip > 0.0:
+            clip_scale = torch.clamp(grad_clip / (grad_norm + 1e-12), max=1.0)
+            guidance_grad = guidance_grad * clip_scale
+
+        variance_preconditioned_grad = model_variance * guidance_grad
+        guided_mean = model_mean - strength * variance_preconditioned_grad
+
+        step_stats.update({
+            'applied': True,
+            'guidance_strength': strength,
+            'collision_loss': float(collision_loss.detach().item()),
+            'variance_scale_mean': float(model_variance.mean().detach().item()),
+            'variance_scale_max': float(model_variance.max().detach().item()),
+            'grad_norm_mean': float(grad_norm.mean().detach().item()),
+            'grad_norm_max': float(grad_norm.max().detach().item()),
+        })
+        return guided_mean.detach(), step_stats
+
+    def _summarize_guidance_stats(self, step_stats, final_sample, scene_ids):
+        summary = {
+            'enabled': self._guidance_enabled(),
+            'scheduled_steps': len(step_stats),
+            'applied_steps': sum(1 for stat in step_stats if stat.get('applied')),
+            'step_stats': step_stats,
+        }
+
+        collision_cfg = self._collision_guidance_cfg()
+        summary['guidance_strength'] = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
+        summary['interval'] = int(cfg_get(self.inference_guidance, 'interval', 1)) if self._guidance_enabled() else 0
+        summary['start_ratio'] = float(cfg_get(self.inference_guidance, 'start_ratio', 0.0)) if self._guidance_enabled() else 0.0
+
+        applied_stats = [stat for stat in step_stats if stat.get('applied')]
+        if applied_stats:
+            summary['avg_guided_scene_iou'] = float(np.mean([stat['avg_scene_iou'] for stat in applied_stats]))
+            summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
+            summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
+            summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
+            summary['avg_guided_variance_scale'] = float(np.mean([stat.get('variance_scale_mean', 0.0) for stat in applied_stats]))
+        else:
+            summary['avg_guided_scene_iou'] = 0.0
+            summary['avg_guided_scene_penetration'] = 0.0
+            summary['avg_guided_collision_loss'] = 0.0
+            summary['avg_guided_grad_norm'] = 0.0
+            summary['avg_guided_variance_scale'] = 0.0
+
+        try:
+            _, final_collision_stats = self._compute_collision_guidance_loss(final_sample.detach(), scene_ids, ignore_enabled=True)
+            summary['final_avg_scene_iou'] = float(final_collision_stats.get('avg_scene_iou', 0.0))
+            summary['final_max_pair_iou'] = float(final_collision_stats.get('max_pair_iou', 0.0))
+            summary['final_avg_scene_penetration'] = float(final_collision_stats.get('avg_scene_penetration', 0.0))
+            summary['final_max_pair_penetration'] = float(final_collision_stats.get('max_pair_penetration', 0.0))
+            summary['final_pairs_above_threshold'] = int(final_collision_stats.get('pairs_above_threshold', 0))
+            summary['final_pairs_with_penetration'] = int(final_collision_stats.get('pairs_with_penetration', 0))
+            summary['final_num_pairs'] = int(final_collision_stats.get('num_pairs', 0))
+        except ValueError as exc:
+            summary['final_avg_scene_iou'] = 0.0
+            summary['final_max_pair_iou'] = 0.0
+            summary['final_avg_scene_penetration'] = 0.0
+            summary['final_max_pair_penetration'] = 0.0
+            summary['final_pairs_above_threshold'] = 0
+            summary['final_pairs_with_penetration'] = 0
+            summary['final_num_pairs'] = 0
+            summary['final_metrics_error'] = str(exc)
+
+        return summary
+
     ''' samples '''
 
     def p_sample(self, denoise_fn, data, t, condition, condition_cross, noise_fn, clip_denoised=False, return_pred_xstart=False):
@@ -293,12 +583,51 @@ class GaussianDiffusion:
         assert sample.shape == pred_xstart.shape
         return (sample, pred_xstart) if return_pred_xstart else sample
 
-    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, noise_fn, clip_denoised=False, return_pred_xstart=False):
+    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=False, return_pred_xstart=False, floor_plan=None, room_outer_box=None):
         """
         Sample from the model
         """
-        model_mean, _, model_log_variance, pred_xstart = self.p_mean_variance(denoise_fn, data=data, t=t, obj_embed=obj_embed, triples=triples, condition=condition, clip_denoised=clip_denoised,
-                                                                 return_pred_xstart=True)
+        guidance_step_stats = {
+            'timestep': int(t[0].item()),
+            'applied': False,
+            'skip_reason': 'guidance_disabled',
+        }
+        if self._guidance_enabled():
+            with torch.enable_grad():
+                guided_data = data.detach().clone().requires_grad_(True)
+                model_mean, model_variance, model_log_variance, pred_xstart = self.p_mean_variance(
+                    denoise_fn,
+                    data=guided_data,
+                    t=t,
+                    obj_embed=obj_embed,
+                    triples=triples,
+                    condition=condition,
+                    clip_denoised=clip_denoised,
+                    return_pred_xstart=True,
+                )
+                # [MODIFIED] Pass floor_plan and room_outer_box down to apply_inference_guidance
+                model_mean, guidance_step_stats = self._apply_inference_guidance(
+                    pred_xstart=pred_xstart,
+                    model_mean=model_mean,
+                    model_variance=model_variance,
+                    timestep=int(t[0].item()),
+                    scene_ids=scene_ids,
+                    floor_plan=floor_plan,
+                    room_outer_box=room_outer_box
+                )
+                pred_xstart = pred_xstart.detach()
+                model_log_variance = model_log_variance.detach()
+        else:
+            model_mean, _, model_log_variance, pred_xstart = self.p_mean_variance(
+                denoise_fn,
+                data=data,
+                t=t,
+                obj_embed=obj_embed,
+                triples=triples,
+                condition=condition,
+                clip_denoised=clip_denoised,
+                return_pred_xstart=True,
+            )
         noise = noise_fn(size=data.shape, dtype=data.dtype, device=data.device)
         assert noise.shape == data.shape
         # no noise when t == 0
@@ -327,7 +656,7 @@ class GaussianDiffusion:
         assert img_t.shape == shape
         return img_t
 
-    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, noise_fn=torch.randn, clip_denoised=True, keep_running=False):
+    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=True, keep_running=False, floor_plan=None, room_outer_box=None):
         """
         Generate samples
         keep_running: True if we run 2 x num_timesteps, False if we just run num_timesteps
@@ -338,8 +667,11 @@ class GaussianDiffusion:
         x_t = noise_fn(size=shape, dtype=torch.float, device=device)
         for t in tqdm(reversed(range(0, self.num_timesteps if not keep_running else len(self.betas)))):
             t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
-            x_t = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, noise_fn=noise_fn,
-                                  clip_denoised=clip_denoised, return_pred_xstart=False)
+            # [MODIFIED] Pass floor_plan and room_outer_box
+            x_t, guidance_step_stats = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
+                                  clip_denoised=clip_denoised, return_pred_xstart=False, floor_plan=floor_plan, room_outer_box=room_outer_box)
+            if self._guidance_enabled():
+                step_stats.append(guidance_step_stats)
 
         assert x_t.shape == shape
         return x_t
@@ -615,9 +947,10 @@ class DiffusionPoint(nn.Module):
                                             keep_running=keep_running)
 
     def gen_samples_sg(self, shape, device, obj_embed, triples=None, condition=None, noise_fn=torch.randn,
-                    clip_denoised=True, keep_running=False):
-        return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, noise_fn=noise_fn,
-                                            clip_denoised=clip_denoised, keep_running=keep_running)
+                    clip_denoised=True, keep_running=False, scene_ids=None, floor_plan=None, room_outer_box=None):
+        # [MODIFIED] Pass floor_plan and room_outer_box
+        return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
+                                            clip_denoised=clip_denoised, keep_running=keep_running, floor_plan=floor_plan, room_outer_box=room_outer_box)
 
     def gen_sample_traj(self, shape, device, freq, condition=None, condition_cross=None, noise_fn=torch.randn,
                     clip_denoised=True,keep_running=False):
