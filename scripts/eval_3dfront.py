@@ -133,12 +133,6 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         accuracy[k] = []
 
     for i, data in enumerate(test_dataloader_changes, 0):
-        if i < args.start_idx:
-            continue
-        if args.max_samples > 0 and (i - args.start_idx) >= args.max_samples:
-            print(f"Reached max_samples ({args.max_samples}). Stopping evaluation.")
-            break
-            
         print(data['scan_id'][0])
 
         try:
@@ -296,14 +290,11 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
     accuracy = {}
     for k in ['left', 'right', 'front', 'behind', 'smaller', 'bigger', 'shorter', 'taller', 'standing on', 'close by', 'symmetrical to', 'total']:
         accuracy[k] = []
-
+    physcene_export = {
+        "class_labels": [], "translations": [], "sizes": [],
+        "angles": [], "objfeats_32": [], "objectness": [], "scene_ids": []
+    }
     for i, data in enumerate(test_dataloader_no_changes, 0):
-        if i < args.start_idx:
-            continue
-        if args.max_samples > 0 and (i - args.start_idx) >= args.max_samples:
-            print(f"Reached max_samples ({args.max_samples}). Stopping evaluation.")
-            break
-            
         print(data['scan_id'])
 
         try:
@@ -339,6 +330,20 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                 angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
                 boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
 
+        entry = build_physcene_json_entry(
+            dec_objs        = dec_objs,
+            boxes_pred_den  = boxes_pred_den,
+            angles_pred     = angles_pred,     # degrees, shape (N,1)
+            vocab           = vocab,
+            scan_id         = data['scan_id'][0],
+        )
+        physcene_export["class_labels"].append(entry["class_labels"])
+        physcene_export["translations"].append(entry["translations"])
+        physcene_export["sizes"].append(entry["sizes"])
+        physcene_export["angles"].append(entry["angles"])
+        physcene_export["objfeats_32"].append(entry["objfeats_32"])
+        physcene_export["objectness"].append(entry["objectness"])
+        physcene_export["scene_ids"].append(entry["scene_id"])
         if args.visualize:
             classes = sorted(list(set(vocab['object_idx_to_name'])))
             print("rendering", [classes[i].strip('\n') for i in dec_objs])
@@ -365,6 +370,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_pred, None, model.vocab, accuracy)
 
     keys = list(accuracy.keys())
+
     file_path_for_output = os.path.join(modelArgs['store_path'], f'{test_dataset.eval_type}_accuracy_analysis.txt')
     with open(file_path_for_output, 'w') as file:
         for dic, typ in [(accuracy, "acc")]:
@@ -386,7 +392,69 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                 '{} & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}\n'.format(
                     typ, lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean, total_mean))
             file.write('means of mean: {:.2f}\n\n'.format(means_of_mean))
+    export_path = os.path.join(
+        modelArgs['store_path'], 'physcene_collision_input.json'
+    )
+    os.makedirs(modelArgs['store_path'], exist_ok=True)
+    with open(export_path, 'w') as f:
+        json.dump(physcene_export, f)
+    print(f"PhyScene input saved to: {export_path}")
 
+def build_physcene_json_entry(
+    dec_objs,        # (N_obj,) int tensor — class indices
+    boxes_pred_den,  # (N_obj, 6) float tensor — [l,h,w,x,y,z] denormalized
+    angles_pred,     # (N_obj, 1) float tensor — degrees (from postprocess_sincos2arctan)
+    vocab,
+    scan_id,
+):
+    """
+    Convert EchoScene per-scene output to PhyScene JSON format.
+    Returns dict with numpy arrays ready for JSON serialization.
+    """
+    obj_classes = sorted(list(set(vocab['object_idx_to_name'])))
+    n_classes   = len(obj_classes)
+    N           = dec_objs.shape[0]
+
+    # ── Sizes: EchoScene boxes_pred_den = [l, h, w, x, y, z]
+    sizes_np = boxes_pred_den[:, 0:3].cpu().numpy()        # (N, 3) in meters
+
+    # ── Translations
+    trans_np = boxes_pred_den[:, 3:6].cpu().numpy()        # (N, 3) in meters
+
+    # ── Angles: EchoScene gives degrees → convert to radians
+    angles_deg = angles_pred.cpu().numpy()                  # (N, 1) degrees
+    angles_rad = angles_deg / 180.0 * np.pi                # (N, 1) radians
+
+    # ── Class labels: integer → one-hot (N, n_classes+1)
+    #    last column = empty/padding class (PhyScene convention)
+    class_idx  = dec_objs.cpu().numpy().astype(int)        # (N,)
+    one_hot    = np.zeros((N, n_classes + 1), dtype=np.float32)
+    for i, idx in enumerate(class_idx):
+        label = obj_classes[idx].strip('\n')
+        if label in ['_scene_', 'floor']:
+            one_hot[i, n_classes] = 1.0    # mark as empty/padding
+        else:
+            one_hot[i, idx] = 1.0
+
+    # ── Objectness: 0 for _scene_/floor, 1 for real objects
+    objectness = np.zeros((N, 1), dtype=np.float32)
+    for i, idx in enumerate(class_idx):
+        label = obj_classes[idx].strip('\n')
+        if label not in ['_scene_', 'floor']:
+            objectness[i, 0] = 1.0
+
+    # ── objfeats_32: zeros (PhyScene uses this for mesh retrieval only)
+    objfeats = np.zeros((N, 32), dtype=np.float32)
+
+    return {
+        "class_labels": one_hot.tolist(),    # (N, n_classes+1)
+        "translations": trans_np.tolist(),   # (N, 3)
+        "sizes":        sizes_np.tolist(),   # (N, 3)
+        "angles":       angles_rad.tolist(), # (N, 1)
+        "objfeats_32":  objfeats.tolist(),   # (N, 32)
+        "objectness":   objectness.tolist(), # (N, 1)
+        "scene_id":     scan_id,
+    }
 def evaluate():
     reseed(48)
 
