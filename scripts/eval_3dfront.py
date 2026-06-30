@@ -36,7 +36,7 @@ parser.add_argument('--export_3d', default=False, type=bool_flag, help='Export t
 parser.add_argument('--room_type', default='all', help='all, bedroom, livingroom, diningroom, library')
 parser.add_argument('--max_samples', type=int, default=None, help='Limit evaluation to the first N samples')
 parser.add_argument('--start_idx', type=int, default=0, help='Start evaluation from this sample index')
-parser.add_argument('--save_3d', default=False, type=bool_flag, help='Save .obj and .glb files')
+parser.add_argument('--save_3d', default=True, type=bool_flag, help='Save .obj and .glb files')
 parser.add_argument('--default_exp', default='../released_full_model', help='default exp load arguments')
 args = parser.parse_args()
 
