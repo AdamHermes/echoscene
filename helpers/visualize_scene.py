@@ -305,6 +305,27 @@ def render_full(scene_id, cats, predBoxes, predAngles=None, datasize='small', cl
         trimesh_meshes.append(walls_mesh)
         for i, mesh in enumerate(trimesh_meshes):
             mesh.export(os.path.join(mesh_dir_shifted, f"{i}.obj"))
+
+        # --------------------------------------------------
+    # Add invisible room geometry
+    # --------------------------------------------------
+
+    floor_mesh = create_bg(box_and_angle, cats, classes, type='floor')
+    ceiling_mesh = create_bg(box_and_angle, cats, classes, type='ceiling')
+    walls_mesh = create_bg(box_and_angle, cats, classes, type='walls')
+
+    # optional: transparent-ish coloring
+    walls_mesh.visual.vertex_colors = [180, 180, 180, 40]
+    floor_mesh.visual.vertex_colors = [200, 200, 200, 30]
+    ceiling_mesh.visual.vertex_colors = [200, 200, 200, 30]
+
+    # add to exported scene
+    trimesh_meshes.append(floor_mesh)
+    trimesh_meshes.append(ceiling_mesh)
+    trimesh_meshes.append(walls_mesh)
+
+    # --------------------------------------------------
+
     scene = trimesh.Scene(trimesh_meshes)
     if len(str_append) > 0:
         # render_type_ = render_type + str_append
