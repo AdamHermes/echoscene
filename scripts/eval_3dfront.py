@@ -19,6 +19,7 @@ from helpers.util import bool_flag, preprocess_angle2sincos, batch_torch_destand
 from helpers.metrics_3dfront import validate_constrains, validate_constrains_changes, estimate_angular_std
 from helpers.visualize_scene import render_full, render_box
 from helpers.structured_scene_export import export_structured_scene
+from helpers.resolve_obb import resolve_bbox_collisions_obb
 from omegaconf import OmegaConf
 import json
 
@@ -403,8 +404,9 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
 
                 mask = torch.tensor(mask, device=boxes_pred_den.device)
 
-                boxes_pred_den = resolve_bbox_collisions(
+                boxes_pred_den = resolve_bbox_collisions_obb(
                     boxes_pred_den,
+                    angles_pred,          # ← the yaw angles in degrees, already computed above
                     objectness_mask=mask
                 )
         # ── BBOX DEBUG PRINT ──────────────────────────────────────────────
