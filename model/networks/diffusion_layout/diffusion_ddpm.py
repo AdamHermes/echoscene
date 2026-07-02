@@ -13,6 +13,7 @@ import torch.nn.functional as F
 from einops import rearrange, reduce
 from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_sincos2arctan
 from .loss import axis_aligned_bbox_overlaps_3d
+from .oriented_iou_loss import cal_iou_3d
 from .physical_guidance import compute_room_outer_loss, compute_walkable_loss
 #from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
@@ -358,8 +359,6 @@ class GaussianDiffusion:
             }
 
         metric = str(cfg_get(collision_cfg, 'metric', 'aabb') if collision_cfg is not None else 'aabb').lower()
-        if metric != 'aabb':
-            raise NotImplementedError('Inference-time collision guidance currently supports metric="aabb" only.')
 
         iou_threshold = float(cfg_get(collision_cfg, 'iou_threshold', 0.0) if collision_cfg is not None else 0.0)
         penetration_threshold = float(cfg_get(collision_cfg, 'penetration_threshold', 0.0) if collision_cfg is not None else 0.0)
@@ -383,8 +382,13 @@ class GaussianDiffusion:
                 continue
 
             scene_boxes = denorm_boxes[scene_mask]
-            scene_corners = self._boxes_to_axis_aligned_corners(scene_boxes).unsqueeze(0)
-            iou_matrix = axis_aligned_bbox_overlaps_3d(scene_corners, scene_corners).squeeze(0)
+            
+            # Map to cal_iou_3d format: (x, y, z, w, h, l, alpha) -> (3, 5, 4, 0, 2, 1, 6)
+            mapped_boxes = scene_boxes[:, [3, 5, 4, 0, 2, 1, 6]]
+            mapped_boxes1 = mapped_boxes.unsqueeze(1).repeat(1, mapped_boxes.size(0), 1)
+            mapped_boxes2 = mapped_boxes.unsqueeze(0).repeat(mapped_boxes.size(0), 1, 1)
+            
+            iou_matrix = cal_iou_3d(mapped_boxes1, mapped_boxes2)
             iou_matrix = torch.nan_to_num(iou_matrix, nan=0.0, posinf=0.0, neginf=0.0)
 
             pair_mask = torch.triu(
@@ -496,7 +500,7 @@ class GaussianDiffusion:
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0
         if collision_loss is not None:
-            total_guidance_loss = total_guidance_loss + collision_loss
+            total_guidance_loss = total_guidance_loss + collision_loss * 10
             
         total_guidance_loss = total_guidance_loss + room_outer_loss + walkable_loss
 
@@ -746,18 +750,11 @@ class GaussianDiffusion:
         descale_bbox = descale_box_params(self.x_recon, file=self.bbox_norm_file, angle=False)
         angle = postprocess_sincos2arctan(self.x_recon[:,-2:])
         descale_bbox = torch.concat((descale_bbox[:,:-2],angle),dim=-1)
-        if self.iou_type == 'aabb':
-            # get the aabb bbox corners
-            axis_aligned_bbox_corn = torch.cat(
-                [descale_bbox[:, 3:6] - descale_bbox[:3] / 2, descale_bbox[:, 3:6] + descale_bbox[:3] / 2],
-                dim=-1)
-            assert axis_aligned_bbox_corn.shape[-1] == 6
-            # TODO implement this
-            bbox_iou = axis_aligned_bbox_overlaps_3d(axis_aligned_bbox_corn, axis_aligned_bbox_corn)
-        elif self.iou_type == 'obb':
-            bbox_iou = bbox_overlaps_3d(descale_bbox, descale_bbox)  # symmetric matrix
-        else:
-            raise NotImplementedError
+        # Map to cal_iou_3d format: (x, y, z, w, h, l, alpha) -> (3, 5, 4, 0, 2, 1, 6)
+        mapped_bbox = descale_bbox[:, [3, 5, 4, 0, 2, 1, 6]]
+        mapped_boxes1 = mapped_bbox.unsqueeze(1).repeat(1, mapped_bbox.size(0), 1)
+        mapped_boxes2 = mapped_bbox.unsqueeze(0).repeat(mapped_bbox.size(0), 1, 1)
+        bbox_iou = cal_iou_3d(mapped_boxes1, mapped_boxes2)
 
         bbox_iou = torch.where(torch.isnan(bbox_iou), torch.zeros_like(bbox_iou), bbox_iou)
 

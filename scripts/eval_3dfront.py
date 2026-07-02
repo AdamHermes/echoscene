@@ -38,6 +38,7 @@ parser.add_argument('--max_samples', type=int, default=None, help='Limit evaluat
 parser.add_argument('--start_idx', type=int, default=0, help='Start evaluation from this sample index')
 parser.add_argument('--save_3d', default=True, type=bool_flag, help='Save .obj and .glb files')
 parser.add_argument('--default_exp', default='../released_full_model', help='default exp load arguments')
+parser.add_argument('--debug', default=False, type=bool_flag, help='Print debug bbox info')
 args = parser.parse_args()
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
@@ -329,6 +330,59 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             else:
                 angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
                 boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
+
+        if args.debug:
+            # ── BBOX DEBUG PRINT ──────────────────────────────────────────────
+            debug_log_path = os.path.join(modelArgs['store_path'], 'debug_bbox.txt')
+            os.makedirs(modelArgs['store_path'], exist_ok=True)
+            
+            with open(debug_log_path, 'a' if i > 0 else 'w') as dbg_file:
+                def dprint(msg):
+                    print(msg)
+                    dbg_file.write(msg + '\n')
+
+                classes_sorted = sorted(list(set(vocab['object_idx_to_name'])))
+                obj_ids = dec_objs.detach().cpu().numpy()
+                boxes_np  = boxes_pred_den.detach().cpu().numpy()   # (N, 6): [l, h, w, x, y, z]
+                angles_np = angles_pred.detach().cpu().numpy()      # (N, 1): degrees
+
+                dprint(f"\n{'='*60}")
+                dprint(f"SCENE: {data['scan_id'][0]}  |  {len(obj_ids)} objects")
+                dprint(f"{'='*60}")
+                dprint(f"{'Obj':<20} {'l':>6} {'h':>6} {'w':>6}  {'x':>7} {'y':>7} {'z':>7}  {'angle':>7}")
+                dprint(f"{'-'*70}")
+                for n in range(len(obj_ids)):
+                    name = classes_sorted[obj_ids[n]].strip('\n')
+                    l, h, w = boxes_np[n, 0], boxes_np[n, 1], boxes_np[n, 2]
+                    x, y, z = boxes_np[n, 3], boxes_np[n, 4], boxes_np[n, 5]
+                    a = float(angles_np[n])
+                    dprint(f"{name:<20} {l:>6.3f} {h:>6.3f} {w:>6.3f}  {x:>7.3f} {y:>7.3f} {z:>7.3f}  {a:>7.2f}°")
+
+                # pairwise bounding-box IoU to flag colliders immediately
+                dprint(f"\n  Pairwise overlap check (axis-aligned bbox):")
+                any_collision = False
+                for ni in range(len(obj_ids)):
+                    for nj in range(ni + 1, len(obj_ids)):
+                        bi = boxes_np[ni]   # [l,h,w,x,y,z]
+                        bj = boxes_np[nj]
+                        # compute axis-aligned extents
+                        min_i = bi[3:6] - bi[0:3] / 2.0
+                        max_i = bi[3:6] + bi[0:3] / 2.0
+                        min_j = bj[3:6] - bj[0:3] / 2.0
+                        max_j = bj[3:6] + bj[0:3] / 2.0
+                        overlap = np.all(max_i > min_j) and np.all(max_j > min_i)
+                        if overlap:
+                            any_collision = True
+                            name_i = classes_sorted[obj_ids[ni]].strip('\n')
+                            name_j = classes_sorted[obj_ids[nj]].strip('\n')
+                            # compute overlap depth on each axis as a rough severity measure
+                            depth = np.minimum(max_i, max_j) - np.maximum(min_i, min_j)
+                            dprint(f"  !! OVERLAP: {name_i} <-> {name_j}  "
+                                  f"depth=[{depth[0]:.3f}, {depth[1]:.3f}, {depth[2]:.3f}]")
+                if not any_collision:
+                    dprint("  (no axis-aligned overlaps)")
+                dprint(f"{'='*60}\n")
+            # ── END BBOX DEBUG ────────────────────────────────────────────────
 
         entry = build_physcene_json_entry(
             dec_objs        = dec_objs,
