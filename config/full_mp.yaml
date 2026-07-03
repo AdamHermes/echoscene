@@ -58,7 +58,7 @@ layout_branch:
       constraints:
         collision:
           enabled: true
-          strength: 10.0
+          strength: 20.0
           iou_threshold: 0.02
           penetration_threshold: 0.0
           iou_weight: 0.5
