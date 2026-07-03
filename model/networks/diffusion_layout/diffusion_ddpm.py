@@ -335,7 +335,18 @@ class GaussianDiffusion:
         return cfg_get(constraints_cfg, 'collision', None)
 
     def _compute_pairwise_penetration(self, scene_boxes):
-        half_sizes = scene_boxes[:, :3].clamp(min=1e-4) * 0.5
+        sizes = scene_boxes[:, :3].clamp(min=1e-4)
+        dx, dy, dz = sizes[:, 0], sizes[:, 1], sizes[:, 2]
+        angle = scene_boxes[:, 6]
+        
+        cos_a = torch.abs(torch.cos(angle))
+        sin_a = torch.abs(torch.sin(angle))
+        
+        new_dx = dx * cos_a + dz * sin_a
+        new_dz = dx * sin_a + dz * cos_a
+        
+        half_sizes = torch.stack([new_dx, dy, new_dz], dim=-1) * 0.5
+        
         centers = scene_boxes[:, 3:6]
         center_delta = torch.abs(centers[:, None, :] - centers[None, :, :])
         overlap_delta = torch.relu(half_sizes[:, None, :] + half_sizes[None, :, :] - center_delta)
@@ -383,8 +394,12 @@ class GaussianDiffusion:
 
             scene_boxes = denorm_boxes[scene_mask]
             
+            # Clamp sizes to prevent negative volumes which zero out the IoU
+            clamped_scene_boxes = scene_boxes.clone()
+            clamped_scene_boxes[:, :3] = clamped_scene_boxes[:, :3].clamp(min=1e-4)
+
             # Map to cal_iou_3d format: (x, y, z, w, h, l, alpha) -> (3, 5, 4, 0, 2, 1, 6)
-            mapped_boxes = scene_boxes[:, [3, 5, 4, 0, 2, 1, 6]]
+            mapped_boxes = clamped_scene_boxes[:, [3, 5, 4, 0, 2, 1, 6]]
             mapped_boxes1 = mapped_boxes.unsqueeze(1).repeat(1, mapped_boxes.size(0), 1)
             mapped_boxes2 = mapped_boxes.unsqueeze(0).repeat(mapped_boxes.size(0), 1, 1)
             
