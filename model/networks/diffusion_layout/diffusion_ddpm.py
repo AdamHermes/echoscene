@@ -354,7 +354,7 @@ class GaussianDiffusion:
         max_penetration_depth = overlap_delta.max(dim=-1).values
         return penetration_volume, max_penetration_depth
 
-    def _compute_collision_guidance_loss(self, box_params, scene_ids, ignore_enabled=False):
+    def _compute_collision_guidance_loss(self, box_params, scene_ids, ignore_enabled=False, objectness=None):
         collision_cfg = self._collision_guidance_cfg()
         if not ignore_enabled and (collision_cfg is None or not bool(cfg_get(collision_cfg, 'enabled', False))):
             return None, {
