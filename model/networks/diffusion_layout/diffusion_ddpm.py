@@ -395,8 +395,8 @@ class GaussianDiffusion:
             scene_boxes = denorm_boxes[scene_mask]
             
             # Clamp sizes to prevent negative volumes which zero out the IoU
-            clamped_scene_boxes = scene_boxes.clone()
-            clamped_scene_boxes[:, :3] = clamped_scene_boxes[:, :3].clamp(min=1e-4)
+            clamped_sizes = scene_boxes[:, :3].clamp(min=1e-4)
+            clamped_scene_boxes = torch.cat([clamped_sizes, scene_boxes[:, 3:]], dim=-1)
 
             # Map to cal_iou_3d format: (x, y, z, w, h, l, alpha) -> (3, 5, 4, 0, 2, 1, 6)
             mapped_boxes = clamped_scene_boxes[:, [3, 5, 4, 0, 2, 1, 6]]
