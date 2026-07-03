@@ -355,7 +355,9 @@ class Sg2ScDiffModel(nn.Module):
         if dec_objs is not None:
             objectness = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
             for i, idx in enumerate(dec_objs):
-                label = self.classes_r.get(idx.item(), '')
+                label = self.vocab['object_idx_to_name'][idx.item()]
+                if isinstance(label, str):
+                    label = label.strip('\n')
                 if label in ['floor', '_scene_']:
                     objectness[i] = False
             diff_dict['objectness'] = objectness
