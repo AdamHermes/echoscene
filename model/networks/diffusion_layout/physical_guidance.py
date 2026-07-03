@@ -67,6 +67,10 @@ def compute_room_outer_loss(bbox, room_outer_box):
     bbox: [B, N, 7] (translations, sizes, angle) in denormalized physical coordinates
     room_outer_box: [B, W, 7] walls (if None, we penalize exceeding a 6m x 6m bounds: [-3, 3] in X/Z)
     """
+    if len(bbox.shape) == 2:
+        bbox = bbox.unsqueeze(0)
+    if room_outer_box is not None and len(room_outer_box.shape) == 2:
+        room_outer_box = room_outer_box.unsqueeze(0)
     if room_outer_box is not None:
         loss_room_outer = 0.0
         bbox_cnt_room = room_outer_box.shape[1]
@@ -118,6 +122,8 @@ def compute_walkable_loss(bbox, floor_plan, robot_width_real=0.5, robot_hight_re
     If floor_plan is None, we apply a soft penalty to objects placed directly in the center (0,0)
     to enforce a walkable central area.
     """
+    if len(bbox.shape) == 2:
+        bbox = bbox.unsqueeze(0)
     centers_obj = bbox[:, :, 3:6]
     
     # Penalize objects based on Gaussian distance to origin (X=0, Z=0)
