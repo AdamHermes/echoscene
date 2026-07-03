@@ -377,7 +377,11 @@ class GaussianDiffusion:
         penetration_weight = float(cfg_get(collision_cfg, 'penetration_weight', 0.0) if collision_cfg is not None else 0.0)
         denorm_boxes = self._denormalize_box_params(box_params)
         scene_ids = self._scene_ids_tensor(scene_ids, box_params.shape[0], box_params.device)
-
+        # Modify to remove scene/floor
+        if objectness is None:
+            objectness = torch.ones(box_params.shape[0], dtype=torch.bool, device=box_params.device)
+        else:
+            objectness = objectness.to(device=box_params.device, dtype=torch.bool)
         scene_losses = []
         per_scene_mean_ious = []
         per_scene_max_ious = []
@@ -388,7 +392,7 @@ class GaussianDiffusion:
         total_pairs_with_penetration = 0
 
         for scene_id in torch.unique(scene_ids):
-            scene_mask = scene_ids == scene_id
+            scene_mask = (scene_ids == scene_id) & objectness 
             if int(scene_mask.sum().item()) < 2:
                 continue
 
@@ -497,7 +501,7 @@ class GaussianDiffusion:
         }
         return loss, stats
 
-    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids, floor_plan=None, room_outer_box=None):
+    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids, floor_plan=None, room_outer_box=None, objectness=None):
         step_stats = {
             'timestep': int(timestep),
             'applied': False,
@@ -512,13 +516,18 @@ class GaussianDiffusion:
             step_stats['skip_reason'] = 'zero_strength'
             return model_mean, step_stats
 
-        collision_loss, collision_stats = self._compute_collision_guidance_loss(pred_xstart, scene_ids)
+        collision_loss, collision_stats = self._compute_collision_guidance_loss(pred_xstart, scene_ids, objectness=objectness)
         step_stats.update(collision_stats)
         
         # [MODIFIED] Add room outer loss and walkable loss from PhyScene physical guidance
         denorm_boxes = self._denormalize_box_params(pred_xstart)
-        room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box)
-        walkable_loss = compute_walkable_loss(denorm_boxes, floor_plan)
+        if objectness is not None:
+            obj_mask = objectness.to(device=denorm_boxes.device, dtype=torch.bool)
+            denorm_boxes_for_room = denorm_boxes[obj_mask]
+        else:
+            denorm_boxes_for_room = denorm_boxes
+        room_outer_loss = compute_room_outer_loss(denorm_boxes_for_room, room_outer_box)
+        walkable_loss = compute_walkable_loss(denorm_boxes_for_room, floor_plan)
         
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0
@@ -565,7 +574,7 @@ class GaussianDiffusion:
         })
         return guided_mean.detach(), step_stats
 
-    def _summarize_guidance_stats(self, step_stats, final_sample, scene_ids):
+    def _summarize_guidance_stats(self, step_stats, final_sample, scene_ids, objectness=None):
         summary = {
             'enabled': self._guidance_enabled(),
             'scheduled_steps': len(step_stats),
@@ -593,7 +602,7 @@ class GaussianDiffusion:
             summary['avg_guided_variance_scale'] = 0.0
 
         try:
-            _, final_collision_stats = self._compute_collision_guidance_loss(final_sample.detach(), scene_ids, ignore_enabled=True)
+            _, final_collision_stats = self._compute_collision_guidance_loss(final_sample.detach(), scene_ids, ignore_enabled=True, objectness=objectness)
             summary['final_avg_scene_iou'] = float(final_collision_stats.get('avg_scene_iou', 0.0))
             summary['final_max_pair_iou'] = float(final_collision_stats.get('max_pair_iou', 0.0))
             summary['final_avg_scene_penetration'] = float(final_collision_stats.get('avg_scene_penetration', 0.0))
@@ -630,7 +639,7 @@ class GaussianDiffusion:
         assert sample.shape == pred_xstart.shape
         return (sample, pred_xstart) if return_pred_xstart else sample
 
-    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=False, return_pred_xstart=False, floor_plan=None, room_outer_box=None):
+    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=False, return_pred_xstart=False, floor_plan=None, room_outer_box=None, objectness=None):
         """
         Sample from the model
         """
@@ -660,7 +669,8 @@ class GaussianDiffusion:
                     timestep=int(t[0].item()),
                     scene_ids=scene_ids,
                     floor_plan=floor_plan,
-                    room_outer_box=room_outer_box
+                    room_outer_box=room_outer_box,
+                    objectness=objectness
                 )
                 pred_xstart = pred_xstart.detach()
                 model_log_variance = model_log_variance.detach()
@@ -705,7 +715,7 @@ class GaussianDiffusion:
         assert img_t.shape == shape
         return img_t
 
-    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=True, keep_running=False, floor_plan=None, room_outer_box=None):
+    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=True, keep_running=False, floor_plan=None, room_outer_box=None,objectness=None):
         """
         Generate samples
         keep_running: True if we run 2 x num_timesteps, False if we just run num_timesteps
@@ -719,12 +729,12 @@ class GaussianDiffusion:
             t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
             # [MODIFIED] Pass floor_plan and room_outer_box
             x_t, guidance_step_stats = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
-                                  clip_denoised=clip_denoised, return_pred_xstart=False, floor_plan=floor_plan, room_outer_box=room_outer_box)
+                                  clip_denoised=clip_denoised, return_pred_xstart=False, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
             if self._guidance_enabled():
                 step_stats.append(guidance_step_stats)
 
         assert x_t.shape == shape
-        self.latest_sampling_stats = self._summarize_guidance_stats(step_stats, x_t, scene_ids)
+        self.latest_sampling_stats = self._summarize_guidance_stats(step_stats, x_t, scene_ids, objectness=objectness)
         return x_t
 
     def p_sample_loop_trajectory(self, denoise_fn, shape, device, freq, condition, condition_cross,
@@ -991,10 +1001,10 @@ class DiffusionPoint(nn.Module):
                                             keep_running=keep_running)
 
     def gen_samples_sg(self, shape, device, obj_embed, triples=None, condition=None, noise_fn=torch.randn,
-                    clip_denoised=True, keep_running=False, scene_ids=None, floor_plan=None, room_outer_box=None):
+                    clip_denoised=True, keep_running=False, scene_ids=None, floor_plan=None, room_outer_box=None, objectness=None):
         # [MODIFIED] Pass floor_plan and room_outer_box
         return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
-                                            clip_denoised=clip_denoised, keep_running=keep_running, floor_plan=floor_plan, room_outer_box=room_outer_box)
+                                            clip_denoised=clip_denoised, keep_running=keep_running, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
 
     def get_latest_sampling_stats(self):
         return self.diffusion.latest_sampling_stats
