@@ -225,7 +225,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                                     datasize=datasize,
                                     classes=obj_classes, render_type=args.render_type, shapes_pred=original_shapes_pred,
                                     store_img=True,
-                                    render_boxes=False, visual=True, demo=True, without_lamp=True,
+                                    render_boxes=False, visual=True, demo=True, without_lamp=False,
                                     store_path=modelArgs['store_path']+"_before",save_3d=args.save_3d)
 
                     if shapes_pred is not None:
@@ -233,7 +233,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                     render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred,
                                 datasize=datasize,
                                 classes=obj_classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True,
-                                render_boxes=False, visual=True, demo=True, without_lamp=True,
+                                render_boxes=False, visual=True, demo=True, without_lamp=False,
                                 store_path=modelArgs['store_path']+"_after",save_3d=args.save_3d)
                 else:
                     raise NotImplementedError
@@ -403,12 +403,12 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             print("rendering", [classes[i].strip('\n') for i in dec_objs])
             if model.type_ == 'echolayout':
                 render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
             elif model.type_ == 'echoscene':
                 if shapes_pred is not None:
                     shapes_pred = shapes_pred.cpu().detach()
                 render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
                 if args.export_3d:
                     if not args.save_3d:
                         print("Skipping structured scene export because --save_3d is False.")
