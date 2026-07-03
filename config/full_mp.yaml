@@ -53,12 +53,12 @@ layout_branch:
       enabled: true
       interval: 5
       start_ratio: 0.7
-      grad_clip: 0.1
+      grad_clip: 10.1
       clip_to_bounds: true
       constraints:
         collision:
           enabled: true
-          strength: 0.08
+          strength: 10.0
           iou_threshold: 0.02
           penetration_threshold: 0.0
           iou_weight: 0.5
