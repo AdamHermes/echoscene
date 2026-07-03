@@ -50,7 +50,7 @@ layout_branch:
       iou_type: obb
       train_stats_file: null
     inference_guidance:
-      enabled: false
+      enabled: true
       interval: 5
       start_ratio: 0.7
       grad_clip: 0.1
