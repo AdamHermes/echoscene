@@ -121,7 +121,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         shuffle=False,
         num_workers=0)
     vocab = testdataset.vocab
-    obj_classes = sorted(list(set(vocab['object_idx_to_name'])))
+    obj_classes = testdataset.classes_r
     pred_classes = vocab['pred_idx_to_name']
 
     accuracy = {}
@@ -326,7 +326,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         class_idx = dec_objs.cpu().numpy().astype(int)
         objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
         for i, idx in enumerate(class_idx):
-            label = obj_classes[idx].strip('\n')
+            label = test_dataset.classes_r[idx].strip('\n')
             if label in ['_scene_', 'floor']:
                 objectness_mask[i] = False
         model.diff.current_objectness = objectness_mask
@@ -359,7 +359,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                     print(msg)
                     dbg_file.write(msg + '\n')
 
-                classes_sorted = sorted(list(set(vocab['object_idx_to_name'])))
+                classes_sorted = test_dataset.classes_r
                 obj_ids = dec_objs.detach().cpu().numpy()
                 boxes_np  = boxes_pred_den.detach().cpu().numpy()   # (N, 6): [l, h, w, x, y, z]
                 angles_np = angles_pred.detach().cpu().numpy()      # (N, 1): degrees
@@ -406,7 +406,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             dec_objs        = dec_objs,
             boxes_pred_den  = boxes_pred_den,
             angles_pred     = angles_pred,     # degrees, shape (N,1)
-            vocab           = vocab,
+            obj_classes     = test_dataset.classes_r,
             scan_id         = data['scan_id'][0],
         )
         physcene_export["class_labels"].append(entry["class_labels"])
@@ -417,7 +417,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         physcene_export["objectness"].append(entry["objectness"])
         physcene_export["scene_ids"].append(entry["scene_id"])
         if args.visualize:
-            classes = sorted(list(set(vocab['object_idx_to_name'])))
+            classes = test_dataset.classes_r
             print("rendering", [classes[i].strip('\n') for i in dec_objs])
             if model.type_ == 'echolayout':
                 render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
@@ -476,14 +476,14 @@ def build_physcene_json_entry(
     dec_objs,        # (N_obj,) int tensor — class indices
     boxes_pred_den,  # (N_obj, 6) float tensor — [l,h,w,x,y,z] denormalized
     angles_pred,     # (N_obj, 1) float tensor — degrees (from postprocess_sincos2arctan)
-    vocab,
+    obj_classes,
     scan_id,
 ):
     """
     Convert EchoScene per-scene output to PhyScene JSON format.
     Returns dict with numpy arrays ready for JSON serialization.
     """
-    obj_classes = sorted(list(set(vocab['object_idx_to_name'])))
+
     n_classes   = len(obj_classes)
     N           = dec_objs.shape[0]
 
