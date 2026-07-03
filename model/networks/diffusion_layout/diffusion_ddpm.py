@@ -410,6 +410,13 @@ class GaussianDiffusion:
                 torch.ones_like(iou_matrix, dtype=torch.bool),
                 diagonal=1,
             )
+            
+            # Filter out collisions involving floor/_scene_ if objectness mask is provided
+            if getattr(self, 'objectness', None) is not None:
+                scene_objectness = self.objectness[scene_mask]
+                valid_pairs = scene_objectness.unsqueeze(1) & scene_objectness.unsqueeze(0)
+                pair_mask = pair_mask & valid_pairs
+
             pair_iou = iou_matrix[pair_mask]
             penetration_matrix, penetration_depth_matrix = self._compute_pairwise_penetration(scene_boxes)
             pair_penetration = penetration_matrix[pair_mask]

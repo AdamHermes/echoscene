@@ -347,11 +347,18 @@ class Sg2ScDiffModel(nn.Module):
             diff_dict.update({'triples': triples_selected})
         return obj_cat_selected[:self.diffusion_bs], diff_dict
 
-    def prepare_boxes(self, triples, obj_embed, relation_cond, scene_ids=None, obj_boxes=None, obj_angles=None):
+    def prepare_boxes(self, triples, obj_embed, relation_cond, scene_ids=None, obj_boxes=None, obj_angles=None, dec_objs=None):
         if obj_boxes is not None and obj_angles is not None:
             obj_boxes = torch.cat((obj_boxes, obj_angles.reshape(-1,1)), dim=-1)
         diff_dict = {'preds': triples, 'box': obj_boxes, 'uc_b': obj_embed,
                      'c_b': relation_cond, "obj_id_to_scene": scene_ids}
+        if dec_objs is not None:
+            objectness = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
+            for i, idx in enumerate(dec_objs):
+                label = self.classes_r.get(idx.item(), '')
+                if label in ['floor', '_scene_']:
+                    objectness[i] = False
+            diff_dict['objectness'] = objectness
         return diff_dict
 
     def forward(self, enc_objs, enc_triples, enc_text_feat, enc_rel_feat, dec_objs, dec_objs_grained,
@@ -404,7 +411,7 @@ class Sg2ScDiffModel(nn.Module):
         Shape_loss, Shape_loss_dict = self.ShapeDiff.forward()
 
         box_diff_dict = self.prepare_boxes(dec_triples, obj_embed_, obj_boxes=dec_boxes, obj_angles=dec_angles,
-                                           relation_cond=latent_obj_vecs, scene_ids=dec_objs_to_scene)
+                                           relation_cond=latent_obj_vecs, scene_ids=dec_objs_to_scene, dec_objs=dec_objs)
         self.LayoutDiff.set_input(box_diff_dict)
         self.LayoutDiff.set_requires_grad([self.LayoutDiff.df], requires_grad=True)
         Layout_loss, Layout_loss_dict = self.LayoutDiff.forward()
@@ -429,7 +436,7 @@ class Sg2ScDiffModel(nn.Module):
                                                                                     dec_triplets, dec_text_feat,
                                                                                     dec_rel_feat)  # normal message passing
 
-            box_diff_dict = self.prepare_boxes(dec_triplets, obj_embed_, relation_cond=latent_obj_vecs_)
+            box_diff_dict = self.prepare_boxes(dec_triplets, obj_embed_, relation_cond=latent_obj_vecs_, dec_objs=dec_objs)
 
             self.LayoutDiff.set_input(box_diff_dict)
             gen_box_dict = self.LayoutDiff.generate_layout_sg(

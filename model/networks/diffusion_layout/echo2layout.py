@@ -69,6 +69,9 @@ class EchoToLayout(Module):
         # [MODIFIED] Added floor_plan and room_outer_box for PhyScene physical guidance
         self.floor_plan = data_dict.get('floor_plan', None)
         self.room_outer_box = data_dict.get('room_outer_box', None)
+        self.objectness = data_dict.get('objectness', None)
+        if hasattr(self, 'df'):
+            self.df.objectness = self.objectness
         
         self.tocuda(var_names=vars_list)
 
