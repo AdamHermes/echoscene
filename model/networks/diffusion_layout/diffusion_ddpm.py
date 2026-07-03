@@ -533,7 +533,9 @@ class GaussianDiffusion:
         step_stats.update({
             'applied': True,
             'guidance_strength': strength,
-            'collision_loss': float(collision_loss.detach().item()),
+            'collision_loss': float(collision_loss.detach().item()) if collision_loss is not None else 0.0,
+            'room_outer_loss': float(room_outer_loss.detach().item()) if isinstance(room_outer_loss, torch.Tensor) else float(room_outer_loss),
+            'walkable_loss': float(walkable_loss.detach().item()) if isinstance(walkable_loss, torch.Tensor) else float(walkable_loss),
             'variance_scale_mean': float(model_variance.mean().detach().item()),
             'variance_scale_max': float(model_variance.max().detach().item()),
             'grad_norm_mean': float(grad_norm.mean().detach().item()),
