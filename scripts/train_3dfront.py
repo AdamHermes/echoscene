@@ -234,6 +234,14 @@ def train():
                     dec_angles = torch.where(dec_angles > 0, dec_angles, torch.zeros_like(dec_angles))
                     dec_angles = torch.where(dec_angles < 24, dec_angles, torch.zeros_like(dec_angles))
 
+                class_idx = dec_objs.cpu().numpy().astype(int)
+                objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
+                for idx_i, idx in enumerate(class_idx):
+                    label = dataset.classes_r[idx].strip('\n')
+                    if label in ['_scene_', 'floor']:
+                        objectness_mask[idx_i] = False
+                model.diff.current_objectness = objectness_mask
+
                 model.diff.optimizerFULL.zero_grad()
 
                 model = model.train()

@@ -70,8 +70,10 @@ class EchoToLayout(Module):
         self.floor_plan = data_dict.get('floor_plan', None)
         self.room_outer_box = data_dict.get('room_outer_box', None)
         self.objectness = data_dict.get('objectness', None)
-        # if hasattr(self, 'df'):
-        #     self.df.objectness = self.objectness
+        self.gt_boxes = data_dict.get('gt_boxes', None)
+        if hasattr(self, 'df'):
+            self.df.objectness = self.objectness
+            self.df.gt_boxes = self.gt_boxes
         
         self.tocuda(var_names=vars_list)
 

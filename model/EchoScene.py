@@ -352,15 +352,17 @@ class Sg2ScDiffModel(nn.Module):
             obj_boxes = torch.cat((obj_boxes, obj_angles.reshape(-1,1)), dim=-1)
         diff_dict = {'preds': triples, 'box': obj_boxes, 'uc_b': obj_embed,
                      'c_b': relation_cond, "obj_id_to_scene": scene_ids}
-        if dec_objs is not None:
-            objectness = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
-            for i, idx in enumerate(dec_objs):
-                label = self.vocab['object_idx_to_name'][idx.item()]
-                if isinstance(label, str):
-                    label = label.strip('\n')
-                if label in ['floor', '_scene_']:
-                    objectness[i] = False
+        
+        # Pull the objectness mask directly from the model instance if the eval script set it.
+        # This completely avoids complex vocabulary/dataset label sorting mismatch bugs.
+        objectness = getattr(self, 'current_objectness', None)
+        if objectness is not None:
             diff_dict['objectness'] = objectness
+
+        gt_boxes = getattr(self, 'current_gt_boxes', None)
+        if gt_boxes is not None:
+            diff_dict['gt_boxes'] = gt_boxes
+
         return diff_dict
 
     def forward(self, enc_objs, enc_triples, enc_text_feat, enc_rel_feat, dec_objs, dec_objs_grained,
@@ -485,7 +487,7 @@ class Sg2ScDiffModel(nn.Module):
             else:
                 latent_obj_vecs = latent_obj_vecs_
 
-            box_diff_dict = self.prepare_boxes(dec_triplets, obj_embed_, relation_cond=latent_obj_vecs)
+            box_diff_dict = self.prepare_boxes(dec_triplets, obj_embed_, relation_cond=latent_obj_vecs, dec_objs=dec_objs)
             self.LayoutDiff.set_input(box_diff_dict)
             layout_dict = self.LayoutDiff.generate_layout_sg(
                 box_dim=self.diff_cfg.layout_branch.denoiser_kwargs.in_channels)
@@ -544,7 +546,7 @@ class Sg2ScDiffModel(nn.Module):
             else:
                 latent_obj_vecs = latent_obj_vecs_
 
-            box_diff_dict = self.prepare_boxes(dec_triplets, obj_embed_, relation_cond=latent_obj_vecs)
+            box_diff_dict = self.prepare_boxes(dec_triplets, obj_embed_, relation_cond=latent_obj_vecs, dec_objs=dec_objs)
             self.LayoutDiff.set_input(box_diff_dict)
             layout_dict = self.LayoutDiff.generate_layout_sg(
                 box_dim=self.diff_cfg.layout_branch.denoiser_kwargs.in_channels)

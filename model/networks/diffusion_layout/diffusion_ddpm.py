@@ -730,6 +730,18 @@ class GaussianDiffusion:
             # [MODIFIED] Pass floor_plan and room_outer_box
             x_t, guidance_step_stats = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
                                   clip_denoised=clip_denoised, return_pred_xstart=False, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
+            
+            # [MODIFIED] Freeze non-object nodes (e.g. floor, _scene_) using their Ground Truth values
+            if getattr(self, 'objectness', None) is not None and getattr(self, 'gt_boxes', None) is not None:
+                mask = ~self.objectness.bool()
+                if mask.any():
+                    if t > 0:
+                        noise = torch.randn_like(self.gt_boxes)
+                        noised_gt = self.q_sample(x_start=self.gt_boxes, t=t_, noise=noise)
+                    else:
+                        noised_gt = self.gt_boxes
+                    x_t[mask] = noised_gt[mask]
+
             if self._guidance_enabled():
                 step_stats.append(guidance_step_stats)
 
@@ -758,6 +770,18 @@ class GaussianDiffusion:
             img_t = self.p_sample(denoise_fn=denoise_fn, data=img_t, t=t_, condition=condition, condition_cross=condition_cross, noise_fn=noise_fn,
                                   clip_denoised=clip_denoised,
                                   return_pred_xstart=False)
+
+            # [MODIFIED] Freeze non-object nodes (e.g. floor, _scene_) using their Ground Truth values
+            if getattr(self, 'objectness', None) is not None and getattr(self, 'gt_boxes', None) is not None:
+                mask = ~self.objectness.bool()
+                if mask.any():
+                    if t > 0:
+                        noise = torch.randn_like(self.gt_boxes)
+                        noised_gt = self.q_sample(x_start=self.gt_boxes, t=t_, noise=noise)
+                    else:
+                        noised_gt = self.gt_boxes
+                    img_t[mask] = noised_gt[mask]
+
             if t % freq == 0 or t == total_steps-1:
                 imgs.append(img_t)
 
@@ -801,6 +825,13 @@ class GaussianDiffusion:
         scene_mask = scene_ids[:, None] == scene_ids
         diag_mask = torch.eye(scene_mask.size(0), dtype=torch.bool, device=scene_mask.device)
         scene_mask[diag_mask] = False  # remove the diagomal values
+
+        # [MODIFIED] Do not compute IoU loss for floor/_scene_
+        if getattr(self, 'objectness', None) is not None:
+            obj_mask = self.objectness.to(device=scene_mask.device, dtype=torch.bool)
+            valid_pairs = obj_mask.unsqueeze(1) & obj_mask.unsqueeze(0)
+            scene_mask = scene_mask & valid_pairs
+
         iou_indices = torch.where(scene_mask)
         w_iou_selected = w_iou[iou_indices[0]].reshape(-1)
         if not torch.isnan(bbox_iou[iou_indices]).any():

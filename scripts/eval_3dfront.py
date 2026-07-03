@@ -170,6 +170,15 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         all_pred_boxes = []
         all_pred_angles = []
 
+        class_idx = dec_objs.cpu().numpy().astype(int)
+        objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
+        for i, idx in enumerate(class_idx):
+            label = obj_classes[idx].strip('\n')
+            if label in ['_scene_', 'floor']:
+                objectness_mask[i] = False
+        model.diff.current_objectness = objectness_mask
+        model.diff.current_gt_boxes = dec_tight_boxes
+
         with torch.no_grad():
             original = 0
             if original:
@@ -299,7 +308,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         print(data['scan_id'])
 
         try:
-            dec_objs, dec_triples = data['decoder']['objs'], data['decoder']['tripltes']
+            dec_objs, dec_triples, dec_tight_boxes = data['decoder']['objs'], data['decoder']['tripltes'], data['decoder']['boxes']
             instances = data['instance_id'][0]
             scan = data['scan_id'][0]
         except Exception as e:
@@ -313,6 +322,15 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
 
         all_pred_boxes = []
         all_pred_angles = []
+
+        class_idx = dec_objs.cpu().numpy().astype(int)
+        objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
+        for i, idx in enumerate(class_idx):
+            label = obj_classes[idx].strip('\n')
+            if label in ['_scene_', 'floor']:
+                objectness_mask[i] = False
+        model.diff.current_objectness = objectness_mask
+        model.diff.current_gt_boxes = dec_tight_boxes.cuda()
 
         with torch.no_grad():
 
