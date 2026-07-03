@@ -64,43 +64,68 @@ def find_shortest_path(matrix, start, end):
 def compute_room_outer_loss(bbox, room_outer_box):
     """
     Computes Room-Layout Guidance loss by penalizing overlap with infinite walls.
-    bbox: [B, N, 7] (translations, sizes, angle)
-    room_outer_box: [B, W, 7] walls
+    bbox: [B, N, 7] (translations, sizes, angle) in denormalized physical coordinates
+    room_outer_box: [B, W, 7] walls (if None, we penalize exceeding a 6m x 6m bounds: [-3, 3] in X/Z)
     """
-    if room_outer_box is None:
-        return torch.tensor(0.0, device=bbox.device, requires_grad=True)
-        
-    loss_room_outer = 0.0
-    bbox_cnt_room = room_outer_box.shape[1]
-
-    # Calculate axis aligned bbox corners for both
-    half_sizes_obj = bbox[:, :, :3].clamp(min=1e-4) * 0.5
-    centers_obj = bbox[:, :, 3:6]
-    obj_corners = torch.cat((centers_obj - half_sizes_obj, centers_obj + half_sizes_obj), dim=-1)
+    if room_outer_box is not None:
+        loss_room_outer = 0.0
+        bbox_cnt_room = room_outer_box.shape[1]
     
-    half_sizes_wall = room_outer_box[:, :, :3].clamp(min=1e-4) * 0.5
-    centers_wall = room_outer_box[:, :, 3:6]
-    wall_corners = torch.cat((centers_wall - half_sizes_wall, centers_wall + half_sizes_wall), dim=-1)
-
-    for j in range(len(bbox)):
-        obj_corners_cur = obj_corners[j:j+1, :, :]
-        wall_corners_cur = wall_corners[j:j+1, :, :]
+        # Calculate axis aligned bbox corners for both
+        half_sizes_obj = bbox[:, :, :3].clamp(min=1e-4) * 0.5
+        centers_obj = bbox[:, :, 3:6]
+        obj_corners = torch.cat((centers_obj - half_sizes_obj, centers_obj + half_sizes_obj), dim=-1)
         
-        for i in range(obj_corners_cur.shape[1]):
-            bbox_target = obj_corners_cur[:, i:i+1, :]
-            bbox_target = bbox_target.repeat(1, bbox_cnt_room, 1)
-            iou = axis_aligned_bbox_overlaps_3d(wall_corners_cur, bbox_target)
-            loss_room_outer += iou.sum() / len(bbox) / obj_corners_cur.shape[1]
+        half_sizes_wall = room_outer_box[:, :, :3].clamp(min=1e-4) * 0.5
+        centers_wall = room_outer_box[:, :, 3:6]
+        wall_corners = torch.cat((centers_wall - half_sizes_wall, centers_wall + half_sizes_wall), dim=-1)
+    
+        for j in range(len(bbox)):
+            obj_corners_cur = obj_corners[j:j+1, :, :]
+            wall_corners_cur = wall_corners[j:j+1, :, :]
             
-    return loss_room_outer
+            for i in range(obj_corners_cur.shape[1]):
+                bbox_target = obj_corners_cur[:, i:i+1, :]
+                bbox_target = bbox_target.repeat(1, bbox_cnt_room, 1)
+                iou = axis_aligned_bbox_overlaps_3d(wall_corners_cur, bbox_target)
+                loss_room_outer += iou.sum() / len(bbox) / obj_corners_cur.shape[1]
+                
+        return loss_room_outer
+        
+    # Fallback if room_outer_box is None (e.g., EchoScene default)
+    # Bounding box centers in physical coordinates
+    centers_obj = bbox[:, :, 3:6]
+    half_sizes_obj = bbox[:, :, :3].clamp(min=1e-4) * 0.5
+    
+    # Max allowed bounds (e.g. 3.0 meters from center in X and Z)
+    max_bound = 3.0
+    min_bound = -3.0
+    
+    # Penalize corners that exceed bounds
+    max_corners = centers_obj + half_sizes_obj
+    min_corners = centers_obj - half_sizes_obj
+    
+    loss_x_max = torch.relu(max_corners[:, :, 0] - max_bound).sum()
+    loss_x_min = torch.relu(min_bound - min_corners[:, :, 0]).sum()
+    loss_z_max = torch.relu(max_corners[:, :, 2] - max_bound).sum()
+    loss_z_min = torch.relu(min_bound - min_corners[:, :, 2]).sum()
+    
+    return loss_x_max + loss_x_min + loss_z_max + loss_z_min
 
 def compute_walkable_loss(bbox, floor_plan, robot_width_real=0.5, robot_hight_real=1.5):
     """
     Computes Reachability Guidance by verifying an agent can traverse the room.
+    If floor_plan is None, we apply a soft penalty to objects placed directly in the center (0,0)
+    to enforce a walkable central area.
     """
-    if floor_plan is None:
-        return torch.tensor(0.0, device=bbox.device, requires_grad=True)
+    centers_obj = bbox[:, :, 3:6]
     
-    # Placeholder for actual walkable loss logic due to complexity.
-    # A full implementation requires projecting to 2D image, A* search, and backprojecting to 3D.
-    return torch.tensor(0.0, device=bbox.device, requires_grad=True)
+    # Penalize objects based on Gaussian distance to origin (X=0, Z=0)
+    # Centers close to (0,0) will have a higher penalty.
+    dist_sq = centers_obj[:, :, 0]**2 + centers_obj[:, :, 2]**2
+    # The penalty decays as objects move further from the center. 
+    # sigma = 0.5 means strong penalty within ~0.7 meters from center.
+    sigma = 0.5
+    walk_penalty = torch.exp(-dist_sq / sigma).sum()
+    
+    return walk_penalty

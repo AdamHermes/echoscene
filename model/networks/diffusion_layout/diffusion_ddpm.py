@@ -494,8 +494,9 @@ class GaussianDiffusion:
         step_stats.update(collision_stats)
         
         # [MODIFIED] Add room outer loss and walkable loss from PhyScene physical guidance
-        room_outer_loss = compute_room_outer_loss(pred_xstart, room_outer_box)
-        walkable_loss = compute_walkable_loss(pred_xstart, floor_plan)
+        denorm_boxes = self._denormalize_box_params(pred_xstart)
+        room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box)
+        walkable_loss = compute_walkable_loss(denorm_boxes, floor_plan)
         
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0
