@@ -61,60 +61,83 @@ def find_shortest_path(matrix, start, end):
 
     return None
 
-def compute_room_outer_loss(bbox, room_outer_box):
+def compute_room_outer_loss(bbox, room_outer_box=None, scene_ids=None, objectness=None):
     """
-    Computes Room-Layout Guidance loss by penalizing overlap with infinite walls.
-    bbox: [B, N, 7] (translations, sizes, angle) in denormalized physical coordinates
-    room_outer_box: [B, W, 7] walls (if None, we penalize exceeding a 6m x 6m bounds: [-3, 3] in X/Z)
+    Computes Room-Layout Guidance loss by penalizing overlap with infinite walls or boundaries.
+    If room_outer_box is None, we attempt to use the floor bounding box (found via ~objectness)
+    as the boundary. If that fails, we fallback to a hardcoded 6m x 6m bounds: [-3, 3] in X/Z.
     """
-    if len(bbox.shape) == 2:
-        bbox = bbox.unsqueeze(0)
-    if room_outer_box is not None and len(room_outer_box.shape) == 2:
-        room_outer_box = room_outer_box.unsqueeze(0)
-    if room_outer_box is not None:
-        loss_room_outer = 0.0
-        bbox_cnt_room = room_outer_box.shape[1]
-    
-        # Calculate axis aligned bbox corners for both
-        half_sizes_obj = bbox[:, :, :3].clamp(min=1e-4) * 0.5
-        centers_obj = bbox[:, :, 3:6]
-        obj_corners = torch.cat((centers_obj - half_sizes_obj, centers_obj + half_sizes_obj), dim=-1)
+    # Note: bbox format is [N, 7] (sizes, translations, angle) because we are passing it in directly.
+    # Actually _denormalize_box_params returns [sizes, translations, angle]. 
+    # Let's extract the sizes and centers.
+    if len(bbox.shape) == 3:
+        # If batched, flatten it or just take the first batch if B=1
+        bbox = bbox.squeeze(0)
         
-        half_sizes_wall = room_outer_box[:, :, :3].clamp(min=1e-4) * 0.5
-        centers_wall = room_outer_box[:, :, 3:6]
-        wall_corners = torch.cat((centers_wall - half_sizes_wall, centers_wall + half_sizes_wall), dim=-1)
+    half_sizes_obj = bbox[:, :3].clamp(min=1e-4) * 0.5
+    centers_obj = bbox[:, 3:6]
     
-        for j in range(len(bbox)):
-            obj_corners_cur = obj_corners[j:j+1, :, :]
-            wall_corners_cur = wall_corners[j:j+1, :, :]
-            
-            for i in range(obj_corners_cur.shape[1]):
-                bbox_target = obj_corners_cur[:, i:i+1, :]
-                bbox_target = bbox_target.repeat(1, bbox_cnt_room, 1)
-                iou = axis_aligned_bbox_overlaps_3d(wall_corners_cur, bbox_target)
-                loss_room_outer += iou.sum() / len(bbox) / obj_corners_cur.shape[1]
-                
-        return loss_room_outer
-        
-    # Fallback if room_outer_box is None (e.g., EchoScene default)
-    # Bounding box centers in physical coordinates
-    centers_obj = bbox[:, :, 3:6]
-    half_sizes_obj = bbox[:, :, :3].clamp(min=1e-4) * 0.5
-    
-    # Max allowed bounds (e.g. 3.0 meters from center in X and Z)
-    max_bound = 3.0
-    min_bound = -3.0
-    
-    # Penalize corners that exceed bounds
     max_corners = centers_obj + half_sizes_obj
     min_corners = centers_obj - half_sizes_obj
     
-    loss_x_max = torch.relu(max_corners[:, :, 0] - max_bound).sum()
-    loss_x_min = torch.relu(min_bound - min_corners[:, :, 0]).sum()
-    loss_z_max = torch.relu(max_corners[:, :, 2] - max_bound).sum()
-    loss_z_min = torch.relu(min_bound - min_corners[:, :, 2]).sum()
+    total_loss = 0.0
     
-    return loss_x_max + loss_x_min + loss_z_max + loss_z_min
+    unique_scenes = torch.unique(scene_ids) if scene_ids is not None else [0]
+    
+    for scene_id in unique_scenes:
+        if scene_ids is not None:
+            scene_mask = (scene_ids == scene_id)
+        else:
+            scene_mask = torch.ones(bbox.shape[0], dtype=torch.bool, device=bbox.device)
+            
+        if objectness is not None:
+            obj_mask = scene_mask & objectness.to(dtype=torch.bool, device=bbox.device)
+            non_obj_mask = scene_mask & ~objectness.to(dtype=torch.bool, device=bbox.device)
+        else:
+            obj_mask = scene_mask
+            non_obj_mask = torch.zeros_like(scene_mask)
+            
+        if not obj_mask.any():
+            continue
+            
+        # Default fallback boundaries
+        max_bound_x = 3.0
+        min_bound_x = -3.0
+        max_bound_z = 3.0
+        min_bound_z = -3.0
+        
+        # Extract the floor boundary if available
+        if non_obj_mask.any():
+            # non_obj_mask contains background objects like `_scene_` and `floor`.
+            # Find the largest object (by X * Z area) which is typically the floor.
+            non_obj_idx = torch.where(non_obj_mask)[0]
+            sizes_x = half_sizes_obj[non_obj_idx, 0]
+            sizes_z = half_sizes_obj[non_obj_idx, 2]
+            areas = sizes_x * sizes_z
+            best_idx = non_obj_idx[torch.argmax(areas)]
+            
+            best_center = centers_obj[best_idx].detach()
+            best_half_size = half_sizes_obj[best_idx].detach()
+            
+            max_bound_x = best_center[0] + best_half_size[0]
+            min_bound_x = best_center[0] - best_half_size[0]
+            max_bound_z = best_center[2] + best_half_size[2]
+            min_bound_z = best_center[2] - best_half_size[2]
+        else:
+            print("Warning: No floor object found for scene. Falling back to default [-3.0, 3.0] boundaries for room outer loss.")
+            
+        # Compute L1 penalty for objects exceeding these boundaries
+        cur_max_corners = max_corners[obj_mask]
+        cur_min_corners = min_corners[obj_mask]
+        
+        loss_x_max = torch.relu(cur_max_corners[:, 0] - max_bound_x).sum()
+        loss_x_min = torch.relu(min_bound_x - cur_min_corners[:, 0]).sum()
+        loss_z_max = torch.relu(cur_max_corners[:, 2] - max_bound_z).sum()
+        loss_z_min = torch.relu(min_bound_z - cur_min_corners[:, 2]).sum()
+        
+        total_loss = total_loss + loss_x_max + loss_x_min + loss_z_max + loss_z_min
+        
+    return total_loss
 
 def compute_walkable_loss(bbox, floor_plan, robot_width_real=0.5, robot_hight_real=1.5):
     """
