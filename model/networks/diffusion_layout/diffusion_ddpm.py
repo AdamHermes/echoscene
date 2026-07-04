@@ -536,7 +536,7 @@ class GaussianDiffusion:
         if collision_loss is not None:
             total_guidance_loss = total_guidance_loss + collision_loss * 10
             
-        total_guidance_loss = total_guidance_loss + room_outer_loss + walkable_loss
+        total_guidance_loss = total_guidance_loss + room_outer_loss * 10 + walkable_loss
 
         # Ensure that if all losses were effectively 0 or None, we don't try to compute grads if not required
         if isinstance(total_guidance_loss, float) and total_guidance_loss == 0.0:
