@@ -15,7 +15,7 @@ import json
 import torch.nn.functional as F
 from einops import rearrange, reduce
 from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_sincos2arctan
-from .loss import axis_aligned_bbox_overlaps_3d, differentiable_aabb_collision_loss
+from .loss import axis_aligned_bbox_overlaps_3d, differentiable_aabb_collision_loss, oriented_pairwise_collision_loss
 #from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
 def cfg_get(cfg, key, default=None):
@@ -918,29 +918,34 @@ class GaussianDiffusion:
             'loss.bbox_iou': bbox_iou_valid.mean(),
         }
 
-    def diffusion_loss(self, data_t, t, denoise_out, target, scene_ids):
+    def diffusion_loss(self, data_t, t, denoise_out, target, scene_ids, class_labels=None):
         loss_size = ((target[:, 0:self.size_dim] - denoise_out[:, 0:self.size_dim]) ** 2).mean(
             dim=list(range(1, len(data_t.shape))))
         loss_trans = ((target[:, self.size_dim:self.size_dim + self.translation_dim] - denoise_out[:,
-                                                                                       self.size_dim:self.size_dim + self.translation_dim]) ** 2).mean(
+                    self.size_dim:self.size_dim + self.translation_dim]) ** 2).mean(
             dim=list(range(1, len(data_t.shape))))
         loss_angle = ((target[:, self.size_dim + self.translation_dim:self.bbox_dim] - denoise_out[:,
-                                                                                       self.size_dim + self.translation_dim:self.bbox_dim]) ** 2).mean(
+                    self.size_dim + self.translation_dim:self.bbox_dim]) ** 2).mean(
             dim=list(range(1, len(data_t.shape))))
         loss_bbox = ((target[:, 0:self.bbox_dim] - denoise_out[:, 0:self.bbox_dim]) ** 2).mean(
             dim=list(range(1, len(data_t.shape))))
         losses = ((target - denoise_out) ** 2).mean(dim=list(range(1, len(data_t.shape))))
 
         if self.loss_iou:
-            loss_iou_valid, bbox_iou_valid = self.IoU_loss(data_t, timestep=t, pred_data=denoise_out,scene_ids=scene_ids)
+            loss_iou_valid, bbox_iou_valid = self.IoU_loss(data_t, timestep=t, pred_data=denoise_out, scene_ids=scene_ids)
         else:
             loss_iou_valid = torch.zeros(len(denoise_out)).to(data_t.device)
             bbox_iou_valid = torch.zeros(len(denoise_out)).to(data_t.device)
 
         collision_loss = denoise_out.new_zeros(())
         collision_weight = 0.0
+        collision_frac_active = 0.0
+
         if self.training_collision is not None and bool(cfg_get(self.training_collision, 'enabled', False)):
             collision_weight = float(cfg_get(self.training_collision, 'weight', 0.0))
+            gate_ratio = float(cfg_get(self.training_collision, 'gate_ratio', 1.0))
+            t_threshold = gate_ratio * self.num_timesteps
+
             if collision_weight > 0.0:
                 if self.model_mean_type == 'eps':
                     pred_xstart = self._predict_xstart_from_eps(data_t, t=t, eps=denoise_out)
@@ -949,12 +954,31 @@ class GaussianDiffusion:
                 else:
                     raise NotImplementedError(self.model_mean_type)
 
-                pred_boxes = self._denormalize_box_params(pred_xstart)
-                collision_loss = differentiable_aabb_collision_loss(
-                    pred_boxes,
-                    scene_ids=scene_ids,
-                    reduction=str(cfg_get(self.training_collision, 'reduction', 'mean')),
-                )
+                gate = (t.float() < t_threshold)
+                collision_frac_active = gate.float().mean().item()
+
+                if gate.any():
+                    pred_boxes = self._denormalize_box_params(pred_xstart[gate])
+
+                    gated_scene_ids = None
+                    if scene_ids is not None:
+                        scene_ids_t = scene_ids if isinstance(scene_ids, torch.Tensor) else torch.as_tensor(scene_ids)
+                        gated_scene_ids = scene_ids_t.to(device=data_t.device)[gate]
+
+                    valid_mask = None
+                    if class_labels is not None:
+                        class_labels_t = class_labels if isinstance(class_labels, torch.Tensor) else torch.as_tensor(class_labels)
+                        class_labels_t = class_labels_t.to(device=data_t.device)[gate]
+                        excluded_ids = cfg_get(self.training_collision, 'exclude_class_ids', [])
+                        excluded_ids_t = torch.as_tensor(excluded_ids, device=data_t.device, dtype=class_labels_t.dtype)
+                        valid_mask = ~torch.isin(class_labels_t, excluded_ids_t)
+
+                    collision_loss = oriented_pairwise_collision_loss(
+                        pred_boxes,
+                        scene_ids=gated_scene_ids,
+                        valid_mask=valid_mask,
+                        reduction=str(cfg_get(self.training_collision, 'reduction', 'mean')),
+                    )
 
         total_loss = losses.mean() + loss_iou_valid.mean() + collision_weight * collision_loss
         return total_loss, {
@@ -965,9 +989,10 @@ class GaussianDiffusion:
             'loss.liou': loss_iou_valid.mean(),
             'loss.bbox_iou': bbox_iou_valid.mean(),
             'loss.collision': collision_loss,
+            'loss.collision_frac_active': collision_frac_active,
         }
 
-    def p_losses(self, denoise_fn, data_start, obj_embed, triples, t, condition_cross=None, scene_ids=None):
+    def p_losses(self, denoise_fn, data_start, obj_embed, triples, t, condition_cross=None, scene_ids=None, class_labels=None):
         """
         Training loss calculation
         """
@@ -993,7 +1018,7 @@ class GaussianDiffusion:
         denoise_out = denoise_fn(data_t, obj_embed, triples, t, condition_cross)
         assert data_t.shape == data_start.shape
         assert denoise_out.shape == data_start.shape
-        loss, loss_dict = self.diffusion_loss(data_t, t, denoise_out, target, scene_ids)
+        loss, loss_dict = self.diffusion_loss(data_t, t, denoise_out, target, scene_ids, class_labels=class_labels)
 
         return loss, loss_dict
 
@@ -1085,16 +1110,18 @@ class DiffusionPoint(nn.Module):
         assert out.shape == torch.Size([B, D])
         return out
 
-    def get_loss_iter(self, obj_embed, preds, data, scene_ids=None, condition_cross=None):
+    def get_loss_iter(self, obj_embed, preds, data, scene_ids=None, condition_cross=None, class_labels=None):
         B, _ = data.shape
-
         unique_scenes, inv_idx = np.unique(scene_ids, return_inverse=True)
-        t = torch.randint(0, self.diffusion.num_timesteps, size=unique_scenes.shape,
-                          device=data.device)  # we want to have different t for each scene not each obj
+        t = torch.randint(0, self.diffusion.num_timesteps, size=unique_scenes.shape, device=data.device)
         t = t[inv_idx]
         assert len(t) == B
 
-        loss, loss_dict = self.diffusion.p_losses(self._denoise, data, obj_embed, triples=preds, t=t, condition_cross=condition_cross, scene_ids=scene_ids)
+        loss, loss_dict = self.diffusion.p_losses(
+            self._denoise, data, obj_embed, triples=preds, t=t,
+            condition_cross=condition_cross, scene_ids=scene_ids,
+            class_labels=class_labels,
+        )
         assert t.shape == torch.Size([B])
         return loss, loss_dict
     

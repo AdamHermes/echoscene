@@ -286,6 +286,8 @@ def train():
                 writer.add_scalar('Loss_IoU', loss_dict['loss.liou'], counter)
                 if 'loss.collision' in loss_dict:
                     writer.add_scalar('Loss_Collision', loss_dict['loss.collision'], counter)
+                if 'loss.collision_frac_active' in loss_dict:
+                    writer.add_scalar('Loss_Collision_ActiveFrac', loss_dict['loss.collision_frac_active'], counter)
                 writer.add_scalar('Loss_Shape', shape_loss, counter)
 
                 # t = (time.time() - iter_start_time) / args.batchSize

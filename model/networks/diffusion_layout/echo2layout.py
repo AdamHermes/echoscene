@@ -145,15 +145,18 @@ class EchoToLayout(Module):
         return self.loss, self.loss_dict
 
     def get_loss(self, obj_embed, obj_triples, target_box, rel):
-        # Unpack the sample_params
         batch_size, D_params = target_box.shape
         if self.rel_condition:
-            condition_cross = rel # use rel embed for cross attention
+            condition_cross = rel
         else:
             raise NotImplementedError
 
-        loss, loss_dict = self.df.get_loss_iter(obj_embed, obj_triples, target_box, scene_ids=self.scene_ids, condition_cross=condition_cross)
-
+        loss, loss_dict = self.df.get_loss_iter(
+            obj_embed, obj_triples, target_box,
+            scene_ids=self.scene_ids,
+            condition_cross=condition_cross,
+            class_labels=self.class_labels,
+        )
         return loss, loss_dict
 
     def sample(self, box_dim, batch_size, obj_embed=None, obj_triples=None, text=None, rel=None, ret_traj=False, ddim=False, clip_denoised=False, freq=40, batch_seeds=None, class_labels=None):

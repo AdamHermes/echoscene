@@ -50,8 +50,10 @@ layout_branch:
       train_stats_file: null
       training_collision:
         enabled: true
-        weight: 0.05
+        weight: 0.3
         reduction: mean
+        gate_ratio: 0.3
+        exclude_class_ids: []   # filled at runtime by SGDiff, see item 4
 
     lora:
         enabled: true

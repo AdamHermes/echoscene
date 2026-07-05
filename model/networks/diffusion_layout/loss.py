@@ -3,7 +3,58 @@ import torch
 '''
  https://github.com/open-mmlab/mmdetection3d/blob/master/mmdet3d/core/bbox/iou_calculators/iou3d_calculator.py
 '''
+from .oriented_iou_loss import cal_iou_3d
 
+
+def _to_zup_convention(sizes, centers, angle_rad):
+    """
+    EchoScene convention: y is vertical, rotation is yaw about y (footprint in x-z plane).
+    oriented_iou_loss convention: z is vertical, rotation is about z (footprint in x-y plane).
+    Remap: their(x,y) = our(x,z); their(z) = our(y); their(w,h) = our(sx,sz); their(l) = our(sy).
+    """
+    x, y_, z = centers[..., 0], centers[..., 1], centers[..., 2]
+    sx, sy, sz = sizes[..., 0], sizes[..., 1], sizes[..., 2]
+    return torch.stack([x, z, y_, sx, sz, sy, angle_rad], dim=-1)  # (..., 7)
+
+
+def oriented_pairwise_collision_loss(
+    boxes,            # (N, 7): [sx, sy, sz, tx, ty, tz, angle_rad] — already denormalized & arctan'd
+    scene_ids=None,
+    valid_mask=None,
+    reduction='mean',
+):
+    N = boxes.shape[0]
+    if N < 2:
+        return boxes.new_zeros(())
+
+    sizes = boxes[:, 0:3]
+    centers = boxes[:, 3:6]
+    angle = boxes[:, 6]   # already radians — _denormalize_box_params already ran postprocess_sincos2arctan
+
+    box7 = _to_zup_convention(sizes, centers, angle)  # (N, 7)
+
+    pair_mask = torch.triu(torch.ones(N, N, dtype=torch.bool, device=boxes.device), diagonal=1)
+    if scene_ids is not None:
+        scene_ids = scene_ids.to(device=boxes.device, dtype=torch.long)
+        pair_mask &= (scene_ids[:, None] == scene_ids[None, :])
+    if valid_mask is not None:
+        valid_mask = valid_mask.to(device=boxes.device, dtype=torch.bool)
+        pair_mask &= (valid_mask[:, None] & valid_mask[None, :])
+
+    idx_i, idx_j = pair_mask.nonzero(as_tuple=True)
+    if idx_i.numel() == 0:
+        return boxes.new_zeros(())
+
+    box_i = box7[idx_i].unsqueeze(0)
+    box_j = box7[idx_j].unsqueeze(0)
+
+    iou3d = cal_iou_3d(box_i, box_j).squeeze(0)
+
+    if reduction == 'sum':
+        return iou3d.sum()
+    if reduction == 'none':
+        return iou3d
+    return iou3d.mean()
 
 def differentiable_aabb_collision_loss(
     boxes,

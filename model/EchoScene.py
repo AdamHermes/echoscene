@@ -112,6 +112,17 @@ class Sg2ScDiffModel(nn.Module):
             assert self.sample_obj == 'greedy', 'if messsage_passing in the shape branch, greedy sampling is the only option for now.'
 
         ## layout branch
+        # NEW: resolve floor/_scene_ class ids so the layout branch's training-time
+        # collision loss can exclude them (they overlap every real object by construction).
+        exclude_ids = [self.classes[name] for name in ('floor', '_scene_') if name in self.classes]
+        try:
+            self.diff_cfg.layout_branch.diffusion_kwargs.training_collision.exclude_class_ids = exclude_ids
+            print('[Sg2ScDiffModel] training_collision.exclude_class_ids set to {} ({})'.format(
+                exclude_ids, [c for c in ('floor', '_scene_') if c in self.classes]
+            ))
+        except Exception as e:
+            print('[Sg2ScDiffModel] Warning: failed to set training_collision.exclude_class_ids: {}'.format(e))
+
         self.LayoutDiff = EchoToLayout(self.diff_cfg)
         lora_cfg = cfg_get(self.diff_cfg.layout_branch, 'lora', None)
         self.lora_finetune = self.LayoutDiff.lora_enabled and bool(cfg_get(lora_cfg, 'freeze_non_lora', True))
