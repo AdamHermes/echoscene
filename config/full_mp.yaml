@@ -64,7 +64,7 @@ layout_branch:
     # NEW PHYSCENE CONFIGURATION
     # -----------------------------------------------
     inference_guidance:
-        enabled: true
+        enabled: false
         interval: 10          # apply every 10 denoising steps → 100 total calls
         start_ratio: 0.3      # start at 30% through denoising (t < 700)
         weight_coll: 1.0
@@ -92,9 +92,9 @@ shape_branch:
     vq_dset: None
     vq_cat: None
     shape_branch:
-    df_cfg: config/sdfusion-txt2shape_mp.yaml
-    vq_cfg: config/vqvae_snet.yaml
-    vq_ckpt: scripts/checkpoint/vqvae_threedfront_best.pth
+    df_cfg: ../config/sdfusion-txt2shape_mp.yaml
+    vq_cfg: ../config/vqvae_snet.yaml
+    vq_ckpt: ./scripts/checkpoint/vqvae_threedfront_best.pth
 misc:
     debug: 0
     seed: 111
