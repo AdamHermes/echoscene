@@ -61,7 +61,7 @@ layout_branch:
           enabled: true
           strength: 0.05
           iou_threshold: 0.02
-          metric: aabb
+          metric: obb
 misc:
     debug: 0
     seed: 111

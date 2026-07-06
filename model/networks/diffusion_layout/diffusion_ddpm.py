@@ -334,25 +334,35 @@ class GaussianDiffusion:
         constraints_cfg = cfg_get(self.inference_guidance, 'constraints', None)
         return cfg_get(constraints_cfg, 'collision', None)
 
-    def _compute_pairwise_penetration(self, scene_boxes):
-        sizes = scene_boxes[:, :3].clamp(min=1e-4)
-        dx, dy, dz = sizes[:, 0], sizes[:, 1], sizes[:, 2]
-        angle = scene_boxes[:, 6]
-        
-        cos_a = torch.abs(torch.cos(angle))
-        sin_a = torch.abs(torch.sin(angle))
-        
-        new_dx = dx * cos_a + dz * sin_a
-        new_dz = dx * sin_a + dz * cos_a
-        
-        half_sizes = torch.stack([new_dx, dy, new_dz], dim=-1) * 0.5
-        
-        centers = scene_boxes[:, 3:6]
-        center_delta = torch.abs(centers[:, None, :] - centers[None, :, :])
-        overlap_delta = torch.relu(half_sizes[:, None, :] + half_sizes[None, :, :] - center_delta)
-        penetration_volume = overlap_delta[..., 0] * overlap_delta[..., 1] * overlap_delta[..., 2]
-        max_penetration_depth = overlap_delta.max(dim=-1).values
-        return penetration_volume, max_penetration_depth
+    def _compute_pairwise_obb_intersection(self, scene_boxes):
+        """Compute pairwise OBB intersection volumes using oriented box intersection.
+
+        Args:
+            scene_boxes: (N, 7) denormalized boxes as (dx, dy, dz, cx, cy, cz, angle)
+
+        Returns:
+            intersection_matrix: (N, N) pairwise OBB intersection volumes
+            iou_matrix: (N, N) pairwise OBB IoU values
+        """
+        N = scene_boxes.shape[0]
+        # Map to cal_iou_3d format: (x, y, z, w, h, l, alpha) -> indices (3, 5, 4, 0, 2, 1, 6)
+        clamped_sizes = scene_boxes[:, :3].clamp(min=1e-4)
+        clamped_boxes = torch.cat([clamped_sizes, scene_boxes[:, 3:]], dim=-1)
+        mapped = clamped_boxes[:, [3, 5, 4, 0, 2, 1, 6]]  # (N, 7)
+        mapped1 = mapped.unsqueeze(1).repeat(1, N, 1)       # (N, N, 7)
+        mapped2 = mapped.unsqueeze(0).repeat(N, 1, 1)       # (N, N, 7)
+        # cal_iou_3d expects (B, N, 7); treat the first object dim as batch
+        iou, corners1, corners2, z_range, u3d = cal_iou_3d(mapped1, mapped2, verbose=True)
+        iou = torch.nan_to_num(iou, nan=0.0, posinf=0.0, neginf=0.0)
+        # Recover intersection volume: I = IoU * U / (1 - IoU) ... but simpler:
+        # u3d = v1 + v2 - I, so I = v1 + v2 - u3d
+        v1 = mapped1[..., 3] * mapped1[..., 4] * mapped1[..., 5]  # (N, N)
+        v2 = mapped2[..., 3] * mapped2[..., 4] * mapped2[..., 5]  # (N, N)
+        intersection_volume = torch.relu(v1 + v2 - u3d)  # clamp to >= 0 for stability
+        # Zero out self-intersections (diagonal)
+        intersection_volume = intersection_volume * (1.0 - torch.eye(N, device=scene_boxes.device))
+        iou = iou * (1.0 - torch.eye(N, device=scene_boxes.device))
+        return intersection_volume, iou
 
     def _compute_collision_guidance_loss(self, box_params, scene_ids, ignore_enabled=False, objectness=None):
         collision_cfg = self._collision_guidance_cfg()
@@ -369,12 +379,12 @@ class GaussianDiffusion:
                 'skip_reason': 'missing_train_stats',
             }
 
-        metric = str(cfg_get(collision_cfg, 'metric', 'aabb') if collision_cfg is not None else 'aabb').lower()
+        metric = str(cfg_get(collision_cfg, 'metric', 'obb') if collision_cfg is not None else 'obb').lower()
 
         iou_threshold = float(cfg_get(collision_cfg, 'iou_threshold', 0.0) if collision_cfg is not None else 0.0)
-        penetration_threshold = float(cfg_get(collision_cfg, 'penetration_threshold', 0.0) if collision_cfg is not None else 0.0)
+        obb_intersection_threshold = float(cfg_get(collision_cfg, 'obb_intersection_threshold', 0.0) if collision_cfg is not None else 0.0)
         iou_weight = float(cfg_get(collision_cfg, 'iou_weight', 1.0) if collision_cfg is not None else 1.0)
-        penetration_weight = float(cfg_get(collision_cfg, 'penetration_weight', 0.0) if collision_cfg is not None else 0.0)
+        obb_intersection_weight = float(cfg_get(collision_cfg, 'obb_intersection_weight', 2.0) if collision_cfg is not None else 2.0)
         denorm_boxes = self._denormalize_box_params(box_params)
         scene_ids = self._scene_ids_tensor(scene_ids, box_params.shape[0], box_params.device)
         # Modify to remove scene/floor
@@ -385,11 +395,11 @@ class GaussianDiffusion:
         scene_losses = []
         per_scene_mean_ious = []
         per_scene_max_ious = []
-        per_scene_penetration = []
-        per_scene_max_penetration = []
+        per_scene_obb_intersection = []
+        per_scene_max_obb_intersection = []
         total_pairs = 0
         total_pairs_above_threshold = 0
-        total_pairs_with_penetration = 0
+        total_pairs_with_obb_intersection = 0
 
         for scene_id in torch.unique(scene_ids):
             scene_mask = (scene_ids == scene_id) & objectness 
@@ -422,27 +432,29 @@ class GaussianDiffusion:
                 pair_mask = pair_mask & valid_pairs
 
             pair_iou = iou_matrix[pair_mask]
-            penetration_matrix, penetration_depth_matrix = self._compute_pairwise_penetration(scene_boxes)
-            pair_penetration = penetration_matrix[pair_mask]
-            pair_penetration_depth = penetration_depth_matrix[pair_mask]
+            # Compute OBB intersection volumes and IoU for collision
+            obb_inter_matrix, obb_iou_matrix = self._compute_pairwise_obb_intersection(scene_boxes)
+            pair_obb_intersection = obb_inter_matrix[pair_mask]
+            # Use the OBB IoU from our computation (more accurate than the cal_iou_3d call above
+            # since they share the same logic, but we keep both for stats)
             if pair_iou.numel() == 0:
                 continue
 
             active_pair_iou = torch.relu(pair_iou - iou_threshold)
-            active_pair_penetration = torch.relu(pair_penetration - penetration_threshold)
+            active_pair_obb_intersection = torch.relu(pair_obb_intersection - obb_intersection_threshold)
             total_pairs += int(pair_iou.numel())
             total_pairs_above_threshold += int((pair_iou > iou_threshold).sum().item())
-            total_pairs_with_penetration += int((pair_penetration > penetration_threshold).sum().item())
+            total_pairs_with_obb_intersection += int((pair_obb_intersection > obb_intersection_threshold).sum().item())
             per_scene_mean_ious.append(pair_iou.mean())
             per_scene_max_ious.append(pair_iou.max())
-            per_scene_penetration.append(pair_penetration.mean())
-            per_scene_max_penetration.append(pair_penetration_depth.max())
+            per_scene_obb_intersection.append(pair_obb_intersection.mean())
+            per_scene_max_obb_intersection.append(pair_obb_intersection.max())
 
             scene_loss_terms = []
             if iou_weight > 0.0 and torch.any(active_pair_iou > 0):
                 scene_loss_terms.append(iou_weight * active_pair_iou.mean())
-            if penetration_weight > 0.0 and torch.any(active_pair_penetration > 0):
-                scene_loss_terms.append(penetration_weight * active_pair_penetration.mean())
+            if obb_intersection_weight > 0.0 and torch.any(active_pair_obb_intersection > 0):
+                scene_loss_terms.append(obb_intersection_weight * active_pair_obb_intersection.mean())
             if len(scene_loss_terms) > 0:
                 scene_losses.append(torch.stack(scene_loss_terms).sum())
 
@@ -453,13 +465,13 @@ class GaussianDiffusion:
                 'skip_reason': 'insufficient_pairs',
                 'num_pairs': 0,
                 'pairs_above_threshold': 0,
-                'pairs_with_penetration': 0,
+                'pairs_with_obb_intersection': 0,
                 'avg_scene_iou': 0.0,
                 'max_pair_iou': 0.0,
-                'avg_scene_penetration': 0.0,
-                'max_pair_penetration': 0.0,
+                'avg_scene_obb_intersection': 0.0,
+                'max_pair_obb_intersection': 0.0,
                 'iou_threshold': iou_threshold,
-                'penetration_threshold': penetration_threshold,
+                'obb_intersection_threshold': obb_intersection_threshold,
                 'metric': metric,
             }
 
@@ -470,15 +482,15 @@ class GaussianDiffusion:
                 'skip_reason': 'below_threshold',
                 'num_pairs': total_pairs,
                 'pairs_above_threshold': total_pairs_above_threshold,
-                'pairs_with_penetration': total_pairs_with_penetration,
+                'pairs_with_obb_intersection': total_pairs_with_obb_intersection,
                 'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
                 'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
-                'avg_scene_penetration': float(torch.stack(per_scene_penetration).mean().detach().item()),
-                'max_pair_penetration': float(torch.stack(per_scene_max_penetration).max().detach().item()),
+                'avg_scene_obb_intersection': float(torch.stack(per_scene_obb_intersection).mean().detach().item()),
+                'max_pair_obb_intersection': float(torch.stack(per_scene_max_obb_intersection).max().detach().item()),
                 'iou_threshold': iou_threshold,
-                'penetration_threshold': penetration_threshold,
+                'obb_intersection_threshold': obb_intersection_threshold,
                 'iou_weight': iou_weight,
-                'penetration_weight': penetration_weight,
+                'obb_intersection_weight': obb_intersection_weight,
                 'metric': metric,
             }
 
@@ -488,15 +500,15 @@ class GaussianDiffusion:
             'skipped': False,
             'num_pairs': total_pairs,
             'pairs_above_threshold': total_pairs_above_threshold,
-            'pairs_with_penetration': total_pairs_with_penetration,
+            'pairs_with_obb_intersection': total_pairs_with_obb_intersection,
             'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
             'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
-            'avg_scene_penetration': float(torch.stack(per_scene_penetration).mean().detach().item()),
-            'max_pair_penetration': float(torch.stack(per_scene_max_penetration).max().detach().item()),
+            'avg_scene_obb_intersection': float(torch.stack(per_scene_obb_intersection).mean().detach().item()),
+            'max_pair_obb_intersection': float(torch.stack(per_scene_max_obb_intersection).max().detach().item()),
             'iou_threshold': iou_threshold,
-            'penetration_threshold': penetration_threshold,
+            'obb_intersection_threshold': obb_intersection_threshold,
             'iou_weight': iou_weight,
-            'penetration_weight': penetration_weight,
+            'obb_intersection_weight': obb_intersection_weight,
             'metric': metric,
         }
         return loss, stats
@@ -590,13 +602,13 @@ class GaussianDiffusion:
         applied_stats = [stat for stat in step_stats if stat.get('applied')]
         if applied_stats:
             summary['avg_guided_scene_iou'] = float(np.mean([stat['avg_scene_iou'] for stat in applied_stats]))
-            summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
+            summary['avg_guided_scene_obb_intersection'] = float(np.mean([stat.get('avg_scene_obb_intersection', 0.0) for stat in applied_stats]))
             summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
             summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
             summary['avg_guided_variance_scale'] = float(np.mean([stat.get('variance_scale_mean', 0.0) for stat in applied_stats]))
         else:
             summary['avg_guided_scene_iou'] = 0.0
-            summary['avg_guided_scene_penetration'] = 0.0
+            summary['avg_guided_scene_obb_intersection'] = 0.0
             summary['avg_guided_collision_loss'] = 0.0
             summary['avg_guided_grad_norm'] = 0.0
             summary['avg_guided_variance_scale'] = 0.0
@@ -605,18 +617,18 @@ class GaussianDiffusion:
             _, final_collision_stats = self._compute_collision_guidance_loss(final_sample.detach(), scene_ids, ignore_enabled=True, objectness=objectness)
             summary['final_avg_scene_iou'] = float(final_collision_stats.get('avg_scene_iou', 0.0))
             summary['final_max_pair_iou'] = float(final_collision_stats.get('max_pair_iou', 0.0))
-            summary['final_avg_scene_penetration'] = float(final_collision_stats.get('avg_scene_penetration', 0.0))
-            summary['final_max_pair_penetration'] = float(final_collision_stats.get('max_pair_penetration', 0.0))
+            summary['final_avg_scene_obb_intersection'] = float(final_collision_stats.get('avg_scene_obb_intersection', 0.0))
+            summary['final_max_pair_obb_intersection'] = float(final_collision_stats.get('max_pair_obb_intersection', 0.0))
             summary['final_pairs_above_threshold'] = int(final_collision_stats.get('pairs_above_threshold', 0))
-            summary['final_pairs_with_penetration'] = int(final_collision_stats.get('pairs_with_penetration', 0))
+            summary['final_pairs_with_obb_intersection'] = int(final_collision_stats.get('pairs_with_obb_intersection', 0))
             summary['final_num_pairs'] = int(final_collision_stats.get('num_pairs', 0))
         except ValueError as exc:
             summary['final_avg_scene_iou'] = 0.0
             summary['final_max_pair_iou'] = 0.0
-            summary['final_avg_scene_penetration'] = 0.0
-            summary['final_max_pair_penetration'] = 0.0
+            summary['final_avg_scene_obb_intersection'] = 0.0
+            summary['final_max_pair_obb_intersection'] = 0.0
             summary['final_pairs_above_threshold'] = 0
-            summary['final_pairs_with_penetration'] = 0
+            summary['final_pairs_with_obb_intersection'] = 0
             summary['final_num_pairs'] = 0
             summary['final_metrics_error'] = str(exc)
 

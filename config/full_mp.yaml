@@ -60,10 +60,10 @@ layout_branch:
           enabled: true
           strength: 20.0
           iou_threshold: 0.02
-          penetration_threshold: 0.0
+          obb_intersection_threshold: 0.0
           iou_weight: 0.5
-          penetration_weight: 2.0
-          metric: aabb
+          obb_intersection_weight: 2.0
+          metric: obb
 
 shape_branch:
     model: sdfusion-txt2shape_mp
