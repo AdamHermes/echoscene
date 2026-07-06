@@ -33,7 +33,7 @@ python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT 
 # You can use --max_samples to limit the number of rooms evaluated (e.g. --max_samples 5).
 # You can use --start_idx to skip the first N rooms (e.g. --start_idx 20).
 # Example command evaluating only 13 samples starting from the 174th:
-python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT/ --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True --max_samples 15 --start_idx 50 --save_3d True
+python eval_3dfront.py --exp ../released_full_model --dataset ../FRONT/ --epoch 2050 --visualize True --room_type all --render_type echoscene --gen_shape True --max_samples 15 --start_idx 0 --save_3d True
 
 
 

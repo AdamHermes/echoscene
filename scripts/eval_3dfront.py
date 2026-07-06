@@ -225,7 +225,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                 boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
 
             if args.visualize:
-                print("rendering", [obj_classes[i].strip('\n') for i in dec_objs])
+                print("rendering", [obj_classes[i.item()].strip('\n') for i in dec_objs])
                 if model.type_ == 'echoscene':
                     if original:
                         if original_shapes_pred is not None:
@@ -418,7 +418,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         physcene_export["scene_ids"].append(entry["scene_id"])
         if args.visualize:
             classes = test_dataset.classes_r
-            print("rendering", [classes[i].strip('\n') for i in dec_objs])
+            print("rendering", [classes[i.item()].strip('\n') for i in dec_objs])
             if model.type_ == 'echolayout':
                 render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
                 classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
