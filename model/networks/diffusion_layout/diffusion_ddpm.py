@@ -526,7 +526,9 @@ class GaussianDiffusion:
             denorm_boxes_for_room = denorm_boxes[obj_mask]
         else:
             denorm_boxes_for_room = denorm_boxes
-        room_outer_loss = compute_room_outer_loss(denorm_boxes_for_room, room_outer_box)
+            
+        # Pass the full denorm_boxes, scene_ids, and objectness to dynamically find the floor
+        room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
         walkable_loss = compute_walkable_loss(denorm_boxes_for_room, floor_plan)
         
         # [MODIFIED] Handle the case where collision_loss is None
@@ -534,7 +536,7 @@ class GaussianDiffusion:
         if collision_loss is not None:
             total_guidance_loss = total_guidance_loss + collision_loss * 10
             
-        total_guidance_loss = total_guidance_loss + room_outer_loss + walkable_loss
+        total_guidance_loss = total_guidance_loss + room_outer_loss * 10 + walkable_loss
 
         # Ensure that if all losses were effectively 0 or None, we don't try to compute grads if not required
         if isinstance(total_guidance_loss, float) and total_guidance_loss == 0.0:

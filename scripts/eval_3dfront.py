@@ -173,7 +173,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         class_idx = dec_objs.cpu().numpy().astype(int)
         objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
         for i, idx in enumerate(class_idx):
-            label = obj_classes[idx].strip('\n')
+            label = obj_classes[int(idx)].strip('\n')
             if label in ['_scene_', 'floor']:
                 objectness_mask[i] = False
         model.diff.current_objectness = objectness_mask
@@ -199,7 +199,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
             print("***manipulated graph***")
             if len(manipulated_subs) and len(manipulated_objs):
                 manipulated_nodes = manipulated_subs + manipulated_objs
-                print('previous:' , obj_classes[enc_objs[manipulated_subs[0]]], pred_classes[manipulated_preds[0]], obj_classes[enc_objs[manipulated_objs[0]]])
+                print('previous:' , obj_classes[int(enc_objs[manipulated_subs[0]].item())], pred_classes[int(manipulated_preds[0].item())], obj_classes[int(enc_objs[manipulated_objs[0]].item())])
                 keep, data_dict = model.sample_boxes_and_shape_with_changes(enc_objs, enc_triples, encoded_enc_text_feat,
                                                                             encoded_enc_rel_feat, dec_objs, dec_triples,
                                                                             encoded_dec_text_feat, encoded_dec_rel_feat,
@@ -326,7 +326,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         class_idx = dec_objs.cpu().numpy().astype(int)
         objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
         for i, idx in enumerate(class_idx):
-            label = test_dataset.classes_r[idx].strip('\n')
+            label = test_dataset.classes_r[int(idx)].strip('\n')
             if label in ['_scene_', 'floor']:
                 objectness_mask[i] = False
         model.diff.current_objectness = objectness_mask
@@ -370,7 +370,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                 dprint(f"{'Obj':<20} {'l':>6} {'h':>6} {'w':>6}  {'x':>7} {'y':>7} {'z':>7}  {'angle':>7}")
                 dprint(f"{'-'*70}")
                 for n in range(len(obj_ids)):
-                    name = classes_sorted[obj_ids[n]].strip('\n')
+                    name = classes_sorted[int(obj_ids[n])].strip('\n')
                     l, h, w = boxes_np[n, 0], boxes_np[n, 1], boxes_np[n, 2]
                     x, y, z = boxes_np[n, 3], boxes_np[n, 4], boxes_np[n, 5]
                     a = float(angles_np[n])
@@ -391,8 +391,8 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                         overlap = np.all(max_i > min_j) and np.all(max_j > min_i)
                         if overlap:
                             any_collision = True
-                            name_i = classes_sorted[obj_ids[ni]].strip('\n')
-                            name_j = classes_sorted[obj_ids[nj]].strip('\n')
+                            name_i = classes_sorted[int(obj_ids[ni])].strip('\n')
+                            name_j = classes_sorted[int(obj_ids[nj])].strip('\n')
                             # compute overlap depth on each axis as a rough severity measure
                             depth = np.minimum(max_i, max_j) - np.maximum(min_i, min_j)
                             dprint(f"  !! OVERLAP: {name_i} <-> {name_j}  "
@@ -502,7 +502,7 @@ def build_physcene_json_entry(
     class_idx  = dec_objs.cpu().numpy().astype(int)        # (N,)
     one_hot    = np.zeros((N, n_classes + 1), dtype=np.float32)
     for i, idx in enumerate(class_idx):
-        label = obj_classes[idx].strip('\n')
+        label = obj_classes[int(idx)].strip('\n')
         if label in ['_scene_', 'floor']:
             one_hot[i, n_classes] = 1.0    # mark as empty/padding
         else:
@@ -511,7 +511,7 @@ def build_physcene_json_entry(
     # ── Objectness: 0 for _scene_/floor, 1 for real objects
     objectness = np.zeros((N, 1), dtype=np.float32)
     for i, idx in enumerate(class_idx):
-        label = obj_classes[idx].strip('\n')
+        label = obj_classes[int(idx)].strip('\n')
         if label not in ['_scene_', 'floor']:
             objectness[i, 0] = 1.0
 
