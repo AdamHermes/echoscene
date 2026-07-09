@@ -134,11 +134,28 @@ def _room_bounds(objects):
 
     mins = [min(aabb["min"][axis] for aabb in object_aabbs) for axis in range(3)]
     maxs = [max(aabb["max"][axis] for aabb in object_aabbs) for axis in range(3)]
+    
+    corners_2d = []
+    for obj in objects:
+        if obj["category"] not in ARCHITECTURAL_CATEGORIES and obj.get("corners") is not None:
+            for pt in obj["corners"]:
+                corners_2d.append([pt[0], pt[2]])
+    
+    polygon = None
+    if len(corners_2d) > 2:
+        try:
+            from scipy.spatial import ConvexHull
+            hull = ConvexHull(corners_2d)
+            polygon = [[float(corners_2d[i][0]), float(corners_2d[i][1])] for i in hull.vertices]
+        except Exception:
+            pass
+
     return {
         "min": mins,
         "max": maxs,
         "size": [maxs[axis] - mins[axis] for axis in range(3)],
         "center": [(mins[axis] + maxs[axis]) * 0.5 for axis in range(3)],
+        "polygon": polygon,
         "source": "generated_object_aabbs",
         "up_axis": "Y",
     }
@@ -150,11 +167,13 @@ def _architectural_surfaces(bounds):
 
     min_x, min_y, min_z = bounds["min"]
     max_x, max_y, max_z = bounds["max"]
+    polygon = bounds.get("polygon")
     return [
         {
             "id": "floor",
             "type": "floor",
             "aabb": {"min": [min_x, min_y, min_z], "max": [max_x, min_y, max_z]},
+            "polygon": polygon,
             "affordances": ["architectural_surface", "support_surface"],
             "suggested_body_type": "static",
         },
@@ -162,6 +181,7 @@ def _architectural_surfaces(bounds):
             "id": "ceiling",
             "type": "ceiling",
             "aabb": {"min": [min_x, max_y, min_z], "max": [max_x, max_y, max_z]},
+            "polygon": polygon,
             "affordances": ["architectural_surface"],
             "suggested_body_type": "static",
         },
@@ -169,6 +189,7 @@ def _architectural_surfaces(bounds):
             "id": "walls",
             "type": "walls",
             "aabb": {"min": [min_x, min_y, min_z], "max": [max_x, max_y, max_z]},
+            "polygon": polygon,
             "affordances": ["architectural_surface"],
             "suggested_body_type": "static",
         },

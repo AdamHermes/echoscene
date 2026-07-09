@@ -75,44 +75,65 @@ def create_bg(box_and_angle, cat_ids, classes, type='floor'):
     points_y = np.array(points_list_y).reshape(-1,1)
     points_z = np.array(points_list_z).reshape(-1,1)
     points = np.concatenate((points_x,points_y, points_z),axis=1)
-    min_x, min_y, min_z = np.min(points, axis=0)
-    max_x, max_y, max_z = np.max(points, axis=0)
+    min_y = np.min(points[:, 1])
+    max_y = np.max(points[:, 1])
+    
+    from scipy.spatial import ConvexHull
+    # Compute the 2D convex hull of all object points on the floor plane (X, Z)
+    pts_2d = points[:, [0, 2]]
+    hull = ConvexHull(pts_2d)
+    
+    # Extract the hull vertices in counter-clockwise order
+    hull_pts = points[hull.vertices]
+    
     if type == 'floor':
-        vertices = np.array([[min_x, min_y, min_z],
-                             [min_x, min_y, max_z],
-                             [max_x, min_y, max_z],
-                             [max_x, min_y, min_z]], dtype=np.float32)
-        faces = np.array([[0, 1, 2], [0, 2, 3]])
-    elif type == 'walls':
-        vertices1 = np.array([[min_x, min_y, min_z],
-                             [min_x, min_y, max_z],
-                             [min_x, max_y, max_z],
-                             [min_x, max_y, min_z]], dtype=np.float32) # min x
-        faces1 = np.array([[1, 0, 3], [1, 3, 2]])
-        vertices2 = np.array([[max_x, min_y, min_z],
-                                   [min_x, min_y, min_z],
-                                   [min_x, max_y, min_z],
-                                   [max_x, max_y, min_z]], dtype=np.float32) # min z
-        faces2 = np.array([[1, 0, 3], [1, 3, 2]])
-        vertices3 = np.array([[max_x, min_y, min_z],
-                                   [max_x, min_y, max_z],
-                                   [max_x, max_y, max_z],
-                                   [max_x, max_y, min_z]], dtype=np.float32) # max x
-        faces3 = np.array([[0, 1, 2], [0, 2, 3]])
-        vertices4 = np.array([[min_x, min_y, max_z],
-                                   [max_x, min_y, max_z],
-                                   [max_x, max_y, max_z],
-                                   [min_x, max_y, max_z]], dtype=np.float32) # max z
-        faces4 = np.array([[1, 0, 3], [1, 3, 2]])
-        vertices = np.concatenate([vertices1, vertices2, vertices3, vertices4])
-        faces = np.concatenate([faces1, faces2 + len(vertices1), faces3 + len(vertices1) + len(vertices2),
-                                faces4 + len(vertices1) + len(vertices2) + len(vertices3)])
+        vertices = np.zeros((len(hull_pts), 3), dtype=np.float32)
+        vertices[:, 0] = hull_pts[:, 0]
+        vertices[:, 1] = min_y
+        vertices[:, 2] = hull_pts[:, 2]
+        
+        # Triangulate convex polygon (fan triangulation from vertex 0)
+        faces = []
+        for i in range(1, len(vertices) - 1):
+            faces.append([0, i, i + 1])
+        faces = np.array(faces)
+        
     elif type == 'ceiling':
-        vertices = np.array([[min_x, max_y, min_z],
-                             [min_x, max_y, max_z],
-                             [max_x, max_y, max_z],
-                             [max_x, max_y, min_z]], dtype=np.float32)
-        faces = np.array([[1, 0, 3], [1, 3, 2]])
+        vertices = np.zeros((len(hull_pts), 3), dtype=np.float32)
+        vertices[:, 0] = hull_pts[:, 0]
+        vertices[:, 1] = max_y
+        vertices[:, 2] = hull_pts[:, 2]
+        
+        # Triangulate (reverse order for normal pointing down)
+        faces = []
+        for i in range(1, len(vertices) - 1):
+            faces.append([0, i + 1, i])
+        faces = np.array(faces)
+        
+    elif type == 'walls':
+        vertices_list = []
+        faces_list = []
+        
+        n = len(hull_pts)
+        for i in range(n):
+            p1 = hull_pts[i]
+            p2 = hull_pts[(i + 1) % n]
+            
+            # 4 vertices for this wall segment
+            v0 = [p1[0], min_y, p1[2]]
+            v1 = [p1[0], max_y, p1[2]]
+            v2 = [p2[0], max_y, p2[2]]
+            v3 = [p2[0], min_y, p2[2]]
+            
+            idx = len(vertices_list)
+            vertices_list.extend([v0, v1, v2, v3])
+            
+            # triangles
+            faces_list.append([idx, idx + 2, idx + 1])
+            faces_list.append([idx, idx + 3, idx + 2])
+            
+        vertices = np.array(vertices_list, dtype=np.float32)
+        faces = np.array(faces_list)
     else:
         raise NotImplementedError
     return trimesh.Trimesh(vertices=vertices, faces=faces)
