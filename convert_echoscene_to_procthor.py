@@ -161,73 +161,75 @@ def convert_to_procthor_json(scene_name, scene_data):
             "polygon": [
                 {"x": va['x'], "y": 0, "z": va['z']},
                 {"x": vb['x'], "y": 0, "z": vb['z']},
-                {"x": va['x'], "y": 3, "z": va['z']},
-                {"x": vb['x'], "y": 3, "z": vb['z']}
+                {"x": vb['x'], "y": 3, "z": vb['z']},
+                {"x": va['x'], "y": 3, "z": va['z']}
             ]
         })
+        
+    import shapely.geometry
+    import shapely.ops
     
-    # Generate object barriers as walls for accurate Walkability bounding boxes
-    obj_wall_idx = len(edges)
     procthor_objects = []
+    obj_polys = []
     
     for idx, obj in enumerate(scene_data['objects']):
-        # We still want to map classes if we wanted to spawn them, 
-        # but for walkability, we use exact bounding box walls!
-        
         cx = obj['position']['x'] + offset_x
         cz = obj['position']['z'] + offset_z
         w = obj['size']['x']
         d = obj['size']['z']
         
-        # Convert rotation to radians
-        # Note: AI2-THOR is left-handed, standard math is right-handed. 
-        # But for bounding box perimeter, the direction doesn't matter as much.
         theta = math.radians(obj['rotation']['y'])
-        
         hw = w / 2
         hd = d / 2
         
-        local_corners = [
-            (hw, hd),
-            (hw, -hd),
-            (-hw, -hd),
-            (-hw, hd)
-        ]
-        
+        local_corners = [(hw, hd), (hw, -hd), (-hw, -hd), (-hw, hd)]
         world_corners = []
         for lx, lz in local_corners:
             rx = lx * math.cos(theta) - lz * math.sin(theta)
             rz = lx * math.sin(theta) + lz * math.cos(theta)
-            world_corners.append({'x': cx + rx, 'z': cz + rz})
             
-        obj_edges = [
-            (world_corners[0], world_corners[1]),
-            (world_corners[1], world_corners[2]),
-            (world_corners[2], world_corners[3]),
-            (world_corners[3], world_corners[0])
-        ]
+            wx = max(0.01, min(cx + rx, l - 0.01))
+            wz = max(0.01, min(cz + rz, w - 0.01))
+            world_corners.append((wx, wz))
+            
+        obj_polys.append(shapely.geometry.Polygon(world_corners))
         
-        # We give the object walls a distinct red color for visualization
-        for j, (va, vb) in enumerate(obj_edges):
-            # wall_id = f"wall|0|{va['x']:.2f}|{va['z']:.2f}|{vb['x']:.2f}|{vb['z']:.2f}_{obj_wall_idx}"
-            # Ensure wall ID doesn't strictly break if we append an index, but to be safe, use standard coords
-            wall_id = f"wall|0|{va['x']:.3f}|{va['z']:.3f}|{vb['x']:.3f}|{vb['z']:.3f}"
-            walls.append({
-                "id": wall_id,
-                "roomId": "room|0",
-                "color": {"r": 1.0, "g": 0.0, "b": 0.0},
-                "material": {
-                    "name": "PureWhite",
-                    "color": {"r": 1.0, "g": 0.0, "b": 0.0}
-                },
-                "polygon": [
-                    {"x": va['x'], "y": 0, "z": va['z']},
-                    {"x": vb['x'], "y": 0, "z": vb['z']},
-                    {"x": va['x'], "y": obj['size']['y'], "z": va['z']},
-                    {"x": vb['x'], "y": obj['size']['y'], "z": vb['z']}
-                ]
-            })
-            obj_wall_idx += 1
+    # CRITICAL FIX: Merge all intersecting object polygons so Unity doesn't crash on intersecting walls!
+    unioned = shapely.ops.unary_union(obj_polys)
+    
+    if isinstance(unioned, shapely.geometry.Polygon):
+        merged_polys = [unioned]
+    elif isinstance(unioned, shapely.geometry.MultiPolygon):
+        merged_polys = list(unioned.geoms)
+    else:
+        merged_polys = []
+        
+    for p_idx, poly in enumerate(merged_polys):
+        # We need both the exterior boundary and any interior holes
+        rings = [poly.exterior] + list(poly.interiors)
+        
+        for r_idx, ring in enumerate(rings):
+            coords = list(ring.coords)
+            # shapely rings are closed (first point == last point)
+            for i in range(len(coords) - 1):
+                va = coords[i]
+                vb = coords[i+1]
+                wall_id = f"wall|0|{va[0]:.3f}|{va[1]:.3f}|{vb[0]:.3f}|{vb[1]:.3f}_{p_idx}_{r_idx}"
+                walls.append({
+                    "id": wall_id,
+                    "roomId": "room|0",
+                    "color": {"r": 1.0, "g": 0.0, "b": 0.0},
+                    "material": {
+                        "name": "PureWhite",
+                        "color": {"r": 1.0, "g": 0.0, "b": 0.0}
+                    },
+                    "polygon": [
+                        {"x": va[0], "y": 0, "z": va[1]},
+                        {"x": vb[0], "y": 0, "z": vb[1]},
+                        {"x": vb[0], "y": 2.0, "z": vb[1]},
+                        {"x": va[0], "y": 2.0, "z": va[1]}
+                    ]
+                })
         
     try:
         with open("sample_house.json", "r") as f:
@@ -284,6 +286,7 @@ if __name__ == "__main__":
     for scene_name, scene_data in scenes.items():
         house_json = convert_to_procthor_json(scene_name, scene_data)
         if house_json:
+            house_json["objects_raw"] = scene_data.get('objects', [])
             out_path = os.path.join(out_dir, f"{scene_name}.json")
             with open(out_path, 'w') as f:
                 json.dump(house_json, f, indent=2)
