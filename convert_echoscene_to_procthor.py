@@ -56,7 +56,7 @@ def parse_debug_bbox(file_path):
                         scenes[current_scene]['objects'].append(obj_data)
     return scenes
 
-def parse_final_json(file_path):
+def parse_final_json(file_path, full=False):
     import json
     with open(file_path, 'r') as f:
         data = json.load(f)
@@ -68,7 +68,12 @@ def parse_final_json(file_path):
     }
     
     scenes = {}
-    for i, scene_id in enumerate(data['scene_ids']):
+    
+    scene_ids_to_process = data['scene_ids']
+    if not full:
+        scene_ids_to_process = scene_ids_to_process[:50]
+        
+    for i, scene_id in enumerate(scene_ids_to_process):
         scene_objs = []
         floor = None
         labels = data['class_labels'][i]
@@ -267,15 +272,16 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert echoscene bounding boxes to ProcTHOR JSON scenes.")
-    parser.add_argument("--bbox_path", type=str, required=True, help="Path to the debug_bbox.txt file")
+    parser.add_argument("--bbox_path", type=str, required=True, help="Path to the debug_bbox.txt or final.json file")
     parser.add_argument("--out_dir", type=str, required=True, help="Directory to save the converted JSON files")
+    parser.add_argument("--full", action="store_true", help="If specified, converts all scenes. If not, limits to the first 50 scenes.")
     args = parser.parse_args()
     
     debug_bbox_path = args.bbox_path
     out_dir = args.out_dir
     
     if debug_bbox_path.endswith('.json'):
-        scenes = parse_final_json(debug_bbox_path)
+        scenes = parse_final_json(debug_bbox_path, full=args.full)
     else:
         scenes = parse_debug_bbox(debug_bbox_path)
         
