@@ -23,52 +23,113 @@ def parse_debug_bbox(file_path):
     current_scene = None
     
     with open(file_path, 'r') as f:
-        lines = f.readlines()
-        
-    i = 0
-    while i < len(lines):
-        line = lines[i].strip()
-        if line.startswith("SCENE:"):
-            # e.g., "SCENE: MasterBedroom-33296  |  9 objects"
-            parts = line.split("|")[0].split("SCENE:")
-            scene_id = parts[1].strip()
-            current_scene = scene_id
-            scenes[current_scene] = {'objects': [], 'floor': None}
-            i += 3 # skip the table header
-        elif current_scene and line and not line.startswith("=") and not line.startswith("Pairwise") and not line.startswith("!!"):
-            # Parse object line
-            parts = line.split()
-            if len(parts) >= 8:
-                obj_class = parts[0]
-                l, h, w = float(parts[1]), float(parts[2]), float(parts[3])
-                x, y, z = float(parts[4]), float(parts[5]), float(parts[6])
-                angle_deg = float(parts[7].replace('°', ''))
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
                 
-                obj_data = {
-                    'class': obj_class,
-                    'size': {'x': l, 'y': h, 'z': w},
-                    'position': {'x': x, 'y': y, 'z': z},
-                    'rotation': {'x': 0, 'y': angle_deg, 'z': 0}
-                }
+            if line.startswith("SCENE:"):
+                # e.g., "SCENE: SecondBedroom-860  |  7 objects"
+                scene_name = line.split("|")[0].replace("SCENE:", "").strip()
+                current_scene = scene_name
+                scenes[current_scene] = {'objects': [], 'floor': None}
+            elif current_scene and not line.startswith("=") and not line.startswith("-") and not line.startswith("Obj"):
+                # Parse object line
+                # e.g., "chair                 0.655  1.026  0.722   -0.540 -0.001 -0.925     0.00°"
+                parts = line.split()
+                if len(parts) >= 8:
+                    name = parts[0]
+                    l, h, w = map(float, parts[1:4])
+                    x, y, z = map(float, parts[4:7])
+                    angle = float(parts[7].replace('°', ''))
+                    
+                    obj_data = {
+                        'class': name,
+                        'size': {'x': l, 'y': h, 'z': w},
+                        'position': {'x': x, 'y': y, 'z': z},
+                        'rotation': {'x': 0, 'y': angle, 'z': 0}
+                    }
+                    
+                    if name == 'floor':
+                        scenes[current_scene]['floor'] = obj_data
+                    elif name != '_scene_':
+                        scenes[current_scene]['objects'].append(obj_data)
+    return scenes
+
+def parse_final_json(file_path):
+    import json
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+        
+    class_map = {
+        1: 'bed', 2: 'bookshelf', 3: 'cabinet', 4: 'chair', 5: 'desk', 
+        6: 'floor', 7: 'lamp', 8: 'nightstand', 9: 'shelf', 10: 'sofa', 
+        11: 'table', 12: 'tv_stand', 13: 'wardrobe'
+    }
+    
+    scenes = {}
+    for i, scene_id in enumerate(data['scene_ids']):
+        scene_objs = []
+        floor = None
+        labels = data['class_labels'][i]
+        sizes = data['sizes'][i]
+        translations = data['translations'][i]
+        angles = data['angles'][i]
+        
+        for j in range(len(labels)):
+            try:
+                class_idx = labels[j].index(1.0)
+            except ValueError:
+                continue
                 
-                if obj_class == 'floor':
-                    scenes[current_scene]['floor'] = obj_data
-                elif obj_class != '_scene_':
-                    scenes[current_scene]['objects'].append(obj_data)
-        
-        i += 1
-        
+            if class_idx == 14: # padding
+                continue
+            
+            name = class_map.get(class_idx, f"unknown_{class_idx}")
+            l, h, w = sizes[j]
+            x, y, z = translations[j]
+            angle = angles[j][0]
+            
+            obj_data = {
+                'class': name,
+                'size': {'x': l, 'y': h, 'z': w},
+                'position': {'x': x, 'y': y, 'z': z},
+                'rotation': {'x': 0, 'y': angle, 'z': 0}
+            }
+
+            if name == 'floor':
+                floor = obj_data
+            else:
+                scene_objs.append(obj_data)
+        scenes[scene_id] = {'objects': scene_objs, 'floor': floor}
     return scenes
 
 def convert_to_procthor_json(scene_name, scene_data):
     if not scene_data['floor']:
-        return None
+        # Synthesize a floor based on the extent of all objects
+        objs = scene_data.get('objects', [])
+        if not objs:
+            return None
+        min_x = min(o['position']['x'] - o['size']['x']/2 for o in objs)
+        max_x = max(o['position']['x'] + o['size']['x']/2 for o in objs)
+        min_z = min(o['position']['z'] - o['size']['z']/2 for o in objs)
+        max_z = max(o['position']['z'] + o['size']['z']/2 for o in objs)
         
-    # Construct a rectangular room from the floor bbox
-    fx = scene_data['floor']['position']['x']
-    fz = scene_data['floor']['position']['z']
-    l = scene_data['floor']['size']['x']
-    w = scene_data['floor']['size']['z']
+        # Add a 0.5m padding to the walls
+        min_x -= 0.5
+        max_x += 0.5
+        min_z -= 0.5
+        max_z += 0.5
+        
+        l = max_x - min_x
+        w = max_z - min_z
+        fx = (max_x + min_x) / 2.0
+        fz = (max_z + min_z) / 2.0
+    else:
+        fx = scene_data['floor']['position']['x']
+        fz = scene_data['floor']['position']['z']
+        l = scene_data['floor']['size']['x']
+        w = scene_data['floor']['size']['z']
     
     half_l = l / 2.0
     half_w = w / 2.0
@@ -211,7 +272,11 @@ if __name__ == "__main__":
     debug_bbox_path = args.bbox_path
     out_dir = args.out_dir
     
-    scenes = parse_debug_bbox(debug_bbox_path)
+    if debug_bbox_path.endswith('.json'):
+        scenes = parse_final_json(debug_bbox_path)
+    else:
+        scenes = parse_debug_bbox(debug_bbox_path)
+        
     print(f"Parsed {len(scenes)} scenes from {debug_bbox_path}.")
     
     os.makedirs(out_dir, exist_ok=True)
