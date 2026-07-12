@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import heapq
 from .loss import axis_aligned_bbox_overlaps_3d
+from .oriented_iou_loss import cal_iou_3d
 
 def draw_2d_gaussian(center, size, angle, image_size = 256):
     rotation_matrix = np.array([
@@ -139,22 +140,181 @@ def compute_room_outer_loss(bbox, room_outer_box=None, scene_ids=None, objectnes
         
     return total_loss
 
-def compute_walkable_loss(bbox, floor_plan, robot_width_real=0.5, robot_hight_real=1.5):
+def calc_loss_on_path(image, shortest_path, robot_width, robot_width_real, robot_hight_real, map_to_image_coordinate, image_to_map_coordinate, scale, image_size, bbox_floor):
+    loss_walkable = 0.0
+    box_mask = image[:,:,1] == 255
+    bbox_path = []
+    path_count = 0
+    for i in range(len(shortest_path)):
+        if box_mask[shortest_path[i]]:
+            if path_count % robot_width == 0:
+                center_map = image_to_map_coordinate((shortest_path[i][1], shortest_path[i][0]))
+                angle = 0.
+                # cal_iou_3d expects (X, Z, Y_up, X_size, Z_size, Y_size_up, alpha)
+                box = np.array([center_map[0], center_map[1], 0.0, robot_width_real, robot_width_real, robot_hight_real, angle])
+                bbox_path.append(box)
+            path_count += 1
+            
+    if not bbox_path:
+        return loss_walkable
+        
+    for box in bbox_path:
+        center = map_to_image_coordinate((box[0], box[2]))
+        size = (int(box[5] / scale * image_size / 2), int(box[3] / scale * image_size / 2)) # l and w
+        angle = box[-1]
+        box_points = cv2.boxPoints(((center[0], center[1]), size, -angle/np.pi*180))
+        box_points = np.intp(box_points)
+        cv2.drawContours(image, [box_points], 0, (0, 255, 255), robot_width)
+        
+    bbox_path = np.expand_dims(np.stack(bbox_path, 0), 0)
+    bbox_cnt_path = bbox_path.shape[1]
+    bbox_floor_exp = bbox_floor.unsqueeze(0) if bbox_floor.dim() == 2 else bbox_floor
+    bbox_floor_cur_cnt = bbox_floor_exp.shape[1]
+    
+    for bbox_cnt_idx in range(bbox_floor_cur_cnt):    
+        bbox_target = bbox_floor_exp[:, bbox_cnt_idx, :]
+        bbox_target = torch.tile(bbox_target.unsqueeze(1), [1, bbox_cnt_path, 1])
+        loss_walkable = loss_walkable + cal_iou_3d(
+            torch.tensor(bbox_path, device=bbox_target.device, dtype=bbox_target.dtype), 
+            bbox_target
+        ).sum() / max(1, len(bbox_floor)) / bbox_floor_cur_cnt
+        
+    return loss_walkable
+
+def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.5, robot_hight_real=1.5):
     """
     Computes Reachability Guidance by verifying an agent can traverse the room.
-    If floor_plan is None, we apply a soft penalty to objects placed directly in the center (0,0)
-    to enforce a walkable central area.
     """
+    if floor_plan is None:
+        if len(bbox.shape) == 2:
+            bbox = bbox.unsqueeze(0)
+        centers_obj = bbox[:, :, 3:6]
+        dist_sq = centers_obj[:, :, 0]**2 + centers_obj[:, :, 2]**2
+        sigma = 0.5
+        walk_penalty = torch.exp(-dist_sq / sigma).sum()
+        return walk_penalty
+
     if len(bbox.shape) == 2:
         bbox = bbox.unsqueeze(0)
-    centers_obj = bbox[:, :, 3:6]
-    
-    # Penalize objects based on Gaussian distance to origin (X=0, Z=0)
-    # Centers close to (0,0) will have a higher penalty.
-    dist_sq = centers_obj[:, :, 0]**2 + centers_obj[:, :, 2]**2
-    # The penalty decays as objects move further from the center. 
-    # sigma = 0.5 means strong penalty within ~0.7 meters from center.
-    sigma = 0.5
-    walk_penalty = torch.exp(-dist_sq / sigma).sum()
-    
-    return walk_penalty
+        if objectness is not None and len(objectness.shape) == 1:
+            objectness = objectness.unsqueeze(0)
+        
+    loss_walkable = 0.0
+    for i in range(len(bbox)):
+        bbox_cur = bbox[i:i+1, :, :]
+        if objectness is not None:
+            obj_mask = objectness[i]
+            if obj_mask.dim() > 1:
+                obj_mask = obj_mask[:, 0]
+            bbox_cur = bbox_cur[:, obj_mask.bool(), :]
+        
+        bbox_cur_cnt = bbox_cur.shape[1]
+        
+        if isinstance(floor_plan, list) and len(floor_plan) > i:
+            fp = floor_plan[i]
+        else:
+            fp = floor_plan
+            
+        if fp is None or len(fp) != 2:
+            continue
+            
+        vertices, faces = fp
+        
+        if isinstance(vertices, torch.Tensor):
+            vertices = vertices.cpu().numpy()
+        if isinstance(faces, torch.Tensor):
+            faces = faces.cpu().numpy()
+            
+        vertices = vertices - np.mean(vertices, axis=0)
+        vertices = vertices[:, 0::2]
+        scale = np.abs(vertices).max() + 0.2
+        
+        bbox_floor = bbox_cur[0, bbox_cur[0, :, 4] < robot_hight_real]
+        
+        image_size = 256
+        image = np.zeros((image_size, image_size, 3), dtype=np.uint8)
+        robot_width = int(robot_width_real / scale * image_size/2)
+
+        def map_to_image_coordinate(point):
+            x, y = point
+            x_image = int(x / scale * image_size/2)+image_size/2
+            y_image = int(y / scale * image_size/2)+image_size/2
+            return x_image, y_image
+        
+        def image_to_map_coordinate(point):
+            x, y = point
+            x_map = (x - image_size/2) * 2 / image_size *scale
+            y_map = (y - image_size/2) * 2 / image_size *scale
+            return x_map, y_map
+
+        for face in faces:
+            face_vertices = vertices[face]
+            face_vertices_image = [map_to_image_coordinate(v) for v in face_vertices]
+            pts = np.array(face_vertices_image, np.int32).reshape(-1, 1, 2)
+            cv2.fillPoly(image, [pts], (255, 0, 0))
+
+        kernel = np.ones((robot_width, robot_width))
+        image[:, :, 0] = cv2.erode(image[:, :, 0], kernel, iterations=1)
+        floor_plan_mask = image[:, :, 0] == 255
+        box_heat_map = np.zeros((image_size, image_size), dtype=np.float32)
+
+        for box in bbox_floor:
+            box = box.cpu().detach().numpy()
+            center = map_to_image_coordinate((box[3], box[5]))
+            size = (int(box[0] / scale * image_size / 2), int(box[2] / scale * image_size / 2))
+            angle = box[-1]
+
+            box_points = cv2.boxPoints(((center[0], center[1]), size, -angle/np.pi*180))
+            box_points = np.intp(box_points)
+            
+            box_mask = np.zeros((image_size, image_size, 3), dtype=np.uint8)
+            cv2.drawContours(image, [box_points], 0, (0, 255, 0), robot_width)
+            cv2.fillPoly(image, [box_points], (0, 255, 0))
+            cv2.drawContours(box_mask, [box_points], 0, (0, 255, 0), robot_width)
+            cv2.fillPoly(box_mask, [box_points], (0, 255, 0))
+            
+            box_mask_bool = box_mask[:,:,1] == 255
+            if min(size) != 0:
+                gaussian = draw_2d_gaussian((int(center[0]), int(center[1])), size, -angle, image_size)
+                box_heat_map = box_heat_map + gaussian * box_mask_bool
+            
+        box_heat_map = floor_plan_mask * box_heat_map
+        box_wall_heat_map = box_heat_map + (1 - floor_plan_mask) * box_heat_map.max()
+        
+        walkable_map = image[:, :, 0].copy()
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(walkable_map, connectivity=8)
+        
+        if num_labels > 2:
+            area_1 = np.zeros_like(walkable_map)
+            area_2 = np.zeros_like(walkable_map)
+            for label in range(1, num_labels):
+                mask = np.zeros_like(walkable_map)
+                mask[labels == label] = 1
+                if mask.sum() > area_2.sum():
+                    area_2 = mask.copy()
+                if area_2.sum() > area_1.sum():
+                    area_2, area_1 = area_1.copy(), area_2.copy()
+                    
+            if area_2.sum() > 100:
+                dist_tf_1 = cv2.distanceTransform(area_1.astype(np.uint8), distanceType=cv2.DIST_L2, maskSize=5)
+                minimum_area_1 = np.argmax(dist_tf_1)
+                minimum_area_1_position = np.unravel_index(minimum_area_1, area_1.shape)
+                
+                dist_tf_2 = cv2.distanceTransform(area_2.astype(np.uint8), distanceType=cv2.DIST_L2, maskSize=5)
+                minimum_area_2 = np.argmax(dist_tf_2)
+                minimum_area_2_position = np.unravel_index(minimum_area_2, area_2.shape)
+                
+                shortest_path = find_shortest_path(
+                    box_wall_heat_map, 
+                    (minimum_area_1_position[0], minimum_area_1_position[1]),
+                    (minimum_area_2_position[0], minimum_area_2_position[1])
+                )
+                if shortest_path is not None:
+                    mapped_bbox_floor = bbox_floor[:, [3, 5, 4, 0, 2, 1, 6]]
+                    loss_walkable = loss_walkable + calc_loss_on_path(
+                        image, shortest_path, robot_width, robot_width_real, robot_hight_real,
+                        map_to_image_coordinate, image_to_map_coordinate,
+                        scale, image_size, mapped_bbox_floor
+                    )
+
+    return loss_walkable

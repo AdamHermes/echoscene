@@ -128,6 +128,22 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
     accuracy_unchanged = {}
     accuracy_in_orig_graph = {}
 
+    def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
+        import os
+        if 'collision_stats' in data_dict and data_dict['collision_stats'] is not None:
+            stats_summary = data_dict['collision_stats']
+            if 'step_stats' in stats_summary and len(stats_summary['step_stats']) > 0:
+                last_step = stats_summary['step_stats'][-1]
+                col_loss = last_step.get('collision_loss', 0.0)
+                room_loss = last_step.get('room_outer_loss', 0.0)
+                walk_loss = last_step.get('walkable_loss', 0.0)
+                msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f}"
+                print(msg)
+                loss_log_path = os.path.join(store_path, 'guidance_losses.txt')
+                os.makedirs(store_path, exist_ok=True)
+                with open(loss_log_path, 'a') as f:
+                    f.write(msg + '\n')
+
     for k in ['left', 'right', 'front', 'behind', 'smaller', 'bigger', 'shorter', 'taller', 'standing on', 'close by', 'symmetrical to', 'total']:
         accuracy_in_orig_graph[k] = []
         accuracy_unchanged[k] = []
@@ -186,6 +202,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                 print("***original graph***")
                 original_data_dict = model.sample_box_and_shape(enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat,
                                                        gen_shape=gen_shape)
+                log_collision_stats(original_data_dict, data['scan_id'][0], modelArgs['store_path'], prefix="[Original] ")
                 original_boxes_pred, original_angles_pred = torch.concat((original_data_dict['sizes'], original_data_dict['translations']), dim=-1), original_data_dict['angles']
                 original_shapes_pred = None
                 try:
@@ -210,6 +227,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                                                                               encoded_dec_text_feat, encoded_dec_rel_feat,
                                                                               missing_nodes, gen_shape=gen_shape)
 
+            log_collision_stats(data_dict, data['scan_id'][0], modelArgs['store_path'], prefix="[Manipulated] ")
             boxes_pred, angles_pred = torch.concat((data_dict['sizes'], data_dict['translations']), dim=-1), data_dict['angles']
             shapes_pred = None
             try:
@@ -336,6 +354,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
 
             data_dict = model.sample_box_and_shape(dec_objs, dec_triples, encoded_dec_text_feat, encoded_dec_rel_feat, gen_shape=gen_shape)
 
+            log_collision_stats(data_dict, data['scan_id'][0], modelArgs['store_path'])
             boxes_pred, angles_pred = torch.concat((data_dict['sizes'],data_dict['translations']),dim=-1), data_dict['angles']
             shapes_pred = None
             try:

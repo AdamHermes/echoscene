@@ -529,7 +529,7 @@ class GaussianDiffusion:
             
         # Pass the full denorm_boxes, scene_ids, and objectness to dynamically find the floor
         room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
-        walkable_loss = compute_walkable_loss(denorm_boxes_for_room, floor_plan)
+        walkable_loss = compute_walkable_loss(denorm_boxes, floor_plan, objectness=objectness)
         
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0
