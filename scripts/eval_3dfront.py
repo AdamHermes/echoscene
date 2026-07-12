@@ -146,6 +146,22 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
     accuracy_unchanged = {}
     accuracy_in_orig_graph = {}
 
+    def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
+        import os
+        if 'collision_stats' in data_dict and data_dict['collision_stats'] is not None:
+            stats_summary = data_dict['collision_stats']
+            if 'step_stats' in stats_summary and len(stats_summary['step_stats']) > 0:
+                last_step = stats_summary['step_stats'][-1]
+                col_loss = last_step.get('collision_loss', 0.0)
+                room_loss = last_step.get('room_outer_loss', 0.0)
+                walk_loss = last_step.get('walkable_loss', 0.0)
+                msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f}"
+                print(msg)
+                loss_log_path = os.path.join(store_path, 'guidance_losses.txt')
+                os.makedirs(store_path, exist_ok=True)
+                with open(loss_log_path, 'a') as f:
+                    f.write(msg + '\n')
+
     for k in ['left', 'right', 'front', 'behind', 'smaller', 'bigger', 'shorter', 'taller', 'standing on', 'close by', 'symmetrical to', 'total']:
         accuracy_in_orig_graph[k] = []
         accuracy_unchanged[k] = []
