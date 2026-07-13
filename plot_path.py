@@ -4,6 +4,7 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
+from scipy.ndimage import distance_transform_edt
 
 try:
     from ai2thor.controller import Controller
@@ -49,15 +50,35 @@ for folder in folders:
     
     controller.reset(scene=house_data)
     
-    spawn_x, spawn_z = l / 2.0, w / 2.0
-    found = False
-    for x in np.arange(0.25, l, 0.25):
-        for z in np.arange(0.25, w, 0.25):
-            if is_clear(x, z, furniture_boxes, l, w):
-                spawn_x, spawn_z = x, z
-                found = True
-                break
-        if found: break
+    res = 0.05
+    grid_w = int(math.ceil(l / res))
+    grid_h = int(math.ceil(w / res))
+    occupancy_grid = np.ones((grid_w, grid_h))
+    
+    occupancy_grid[0, :] = 0
+    occupancy_grid[-1, :] = 0
+    occupancy_grid[:, 0] = 0
+    occupancy_grid[:, -1] = 0
+    
+    for box in furniture_boxes:
+        min_x, max_x, min_z, max_z = box
+        idx_min_x = max(0, int(min_x / res))
+        idx_max_x = min(grid_w, int(max_x / res) + 1)
+        idx_min_z = max(0, int(min_z / res))
+        idx_max_z = min(grid_h, int(max_z / res) + 1)
+        occupancy_grid[idx_min_x:idx_max_x, idx_min_z:idx_max_z] = 0
+        
+    distances = distance_transform_edt(occupancy_grid)
+    
+    max_idx = np.unravel_index(np.argmax(distances), distances.shape)
+    spawn_x = max_idx[0] * res
+    spawn_z = max_idx[1] * res
+    
+    # Snap to the 0.25m grid to keep AI2-THOR pathfinding perfectly aligned
+    spawn_x = round(spawn_x / 0.25) * 0.25
+    spawn_z = round(spawn_z / 0.25) * 0.25
+    
+    print(f"[{folder}] Spawn chosen by EDT at ({spawn_x:.2f}, {spawn_z:.2f}) with clearance {distances[max_idx]*res:.2f}m")
         
     controller.step(action="Teleport", position={"x": spawn_x, "y": 0.9, "z": spawn_z}, forceAction=True)
     
@@ -104,6 +125,12 @@ for folder in folders:
     
     # Plot room bounds
     ax.add_patch(patches.Rectangle((0, 0), l, w, fill=False, edgecolor='black', linewidth=3))
+    
+    from matplotlib.colors import ListedColormap
+    # Plot Occupancy Grid cells (0: occupied -> blue, 1: free -> green)
+    cmap = ListedColormap(['blue', 'green'])
+    X_grid, Z_grid = np.meshgrid(np.arange(grid_w + 1) * res, np.arange(grid_h + 1) * res)
+    ax.pcolormesh(X_grid, Z_grid, occupancy_grid.T, cmap=cmap, vmin=0, vmax=1, alpha=0.15, edgecolors='none')
     
     # Re-calculate offset logic from convert script
     objects_raw = house_data.get('objects_raw', [])
@@ -161,13 +188,10 @@ for folder in folders:
     plt.ylabel("Z")
     plt.legend(loc='upper right')
     
-    out_img = os.path.join(output_dir, f"{scene_name}_{folder}.png")
-    plt.savefig(out_img, bbox_inches='tight')
-    plt.close()
-    
-    # Also save a copy inside the user's directory
     user_dir = f"./output/{folder}/vis/2050"
     plot_path = os.path.join(user_dir, f"{scene_name}_path.png")
-    print(f"Saved plot to {out_img} and {user_dir}/{scene_name}_path.png")
+    plt.savefig(plot_path, bbox_inches='tight')
+    plt.close()
+    print(f"Saved plot to {plot_path}")
 
 controller.stop()
