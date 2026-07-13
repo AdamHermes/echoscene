@@ -100,10 +100,44 @@ for folder in folders:
     # Plot room bounds
     ax.add_patch(patches.Rectangle((0, 0), l, w, fill=False, edgecolor='black', linewidth=3))
     
-    # Plot furniture
-    for box in furniture_boxes:
-        min_x, max_x, min_z, max_z = box
-        ax.add_patch(patches.Rectangle((min_x, min_z), max_x - min_x, max_z - min_z, fill=True, color='brown', alpha=0.5))
+    # Re-calculate offset logic from convert script
+    objects_raw = house_data.get('objects_raw', [])
+    if 'floor' in house_data:
+        fx = house_data['floor']['position']['x']
+        fz = house_data['floor']['position']['z']
+    else:
+        min_x = min(o['position']['x'] - o['size']['x']/2 for o in objects_raw)
+        max_x = max(o['position']['x'] + o['size']['x']/2 for o in objects_raw)
+        min_z = min(o['position']['z'] - o['size']['z']/2 for o in objects_raw)
+        max_z = max(o['position']['z'] + o['size']['z']/2 for o in objects_raw)
+        fx = (max_x + min_x) / 2.0
+        fz = (max_z + min_z) / 2.0
+        
+    offset_x = -(fx - l/2.0)
+    offset_z = -(fz - w/2.0)
+    
+    for obj in objects_raw:
+        min_y = max(0.0, obj['position']['y'] - obj['size']['y'] / 2.0)
+        if min_y >= 1.0: 
+            continue # ignore high ceiling objects for the floor plot
+            
+        cx = obj['position']['x'] + offset_x
+        cz = obj['position']['z'] + offset_z
+        obj_w, obj_d = obj['size']['x'], obj['size']['z']
+        theta = obj['rotation']['y']
+        
+        # AI2-THOR / Unity uses a left-handed coordinate system.
+        hw, hd = obj_w / 2.0, obj_d / 2.0
+        # theta is already in radians!
+        rad = theta
+        cos_t, sin_t = math.cos(rad), math.sin(rad)
+        
+        def rot(lx, lz):
+            # Standard 2D rotation
+            return cx + lx*cos_t - lz*sin_t, cz + lx*sin_t + lz*cos_t
+            
+        corners = [rot(-hw, -hd), rot(hw, -hd), rot(hw, hd), rot(-hw, hd)]
+        ax.add_patch(patches.Polygon(corners, closed=True, fill=True, color='brown', alpha=0.5))
         
     # Plot reachable points
     if valid_positions:
