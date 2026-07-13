@@ -71,11 +71,11 @@ def main(argv):
     # )
     # splits_builder = CSVSplitsBuilder(args.path_to_annotations)
     if args.compare_trainval:
-        args.path_to_real_renderings = "../output/small/test"
-        args.path_to_synthesized_renderings = "../echoscene"
+        args.path_to_real_renderings = "./output/small/test"
+        args.path_to_synthesized_renderings = "./echoscene"
     else:
-        args.path_to_real_renderings = "../output/small/test"
-        args.path_to_synthesized_renderings = "../echoscene"
+        args.path_to_real_renderings = "./output/small/test"
+        args.path_to_synthesized_renderings = "./echoscene"
 
     print("Generating temporary a folder with test_real images...")
     path_to_test_real = "../fid_kid_tmp/real"

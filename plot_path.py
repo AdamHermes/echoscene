@@ -34,7 +34,7 @@ output_dir = "/Users/lehoangan/.gemini/antigravity-cli/brain/c21352c1-abf1-4f85-
 os.makedirs(output_dir, exist_ok=True)
 
 for folder in folders:
-    json_path = f"../output/{folder}/vis/2050/procthor_scenes/{scene_name}.json"
+    json_path = f"./output/{folder}/vis/2050/procthor_scenes/{scene_name}.json"
     if not os.path.exists(json_path):
         print(f"File not found: {json_path}")
         continue
@@ -165,9 +165,9 @@ for folder in folders:
     plt.savefig(out_img, bbox_inches='tight')
     plt.close()
     
-    # Also copy to the original requested folder as per user request
-    user_dir = f"../output/{folder}/vis/2050"
-    os.system(f"cp {out_img} {user_dir}/{scene_name}_path.png")
+    # Also save a copy inside the user's directory
+    user_dir = f"./output/{folder}/vis/2050"
+    plot_path = os.path.join(user_dir, f"{scene_name}_path.png")
     print(f"Saved plot to {out_img} and {user_dir}/{scene_name}_path.png")
 
 controller.stop()

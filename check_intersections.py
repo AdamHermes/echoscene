@@ -5,7 +5,7 @@ from shapely.geometry import Polygon, LineString
 
 scene_name = "SecondBedroom-6482"
 folder = "baseline"
-house_json = f"../output/{folder}/vis/2050/procthor_scenes/{scene_name}.json"
+house_json = f"./output/{folder}/vis/2050/procthor_scenes/{scene_name}.json"
 
 with open(house_json, 'r') as f:
     house_data = json.load(f)

@@ -141,3 +141,4 @@ dmypy.json
 *.pth
 released_full_model/
 released_layout_model/
+/output
