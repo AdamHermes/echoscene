@@ -216,8 +216,9 @@ def convert_to_procthor_json(scene_name, scene_data):
             xs = [p[0] for p in corners]; zs = [p[1] for p in corners]
             furniture_boxes.append((min(xs), max(xs), min(zs), max(zs)))
 
-        # 4 wall panels forming a closed box around the furniture footprint
-        edges = [(c0, c1), (c1, c2), (c2, c3), (c3, c0)]
+        # 4 wall panels forming a closed box around the furniture footprint + 2 diagonals to prevent NavMesh leak
+        # Must be CLOCKWISE so normals face outward in Unity's left-handed system!
+        edges = [(c0, c3), (c3, c2), (c2, c1), (c1, c0), (c0, c2), (c1, c3)]
         for e_idx, (va, vb) in enumerate(edges):
             wall_id = f"furn|{idx}|{e_idx}"
             walls.append({
