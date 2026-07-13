@@ -1,32 +1,15 @@
-import ai2thor.controller
 import json
+from ai2thor.controller import Controller
 
-import os
-
-scenes_dir = "../output/released_full_model/vis/2050/procthor_scenes"
-scene_file = next(f for f in os.listdir(scenes_dir) if f.endswith(".json") and f != "walkability_results.json")
-with open(os.path.join(scenes_dir, scene_file), "r") as f:
+with open("test_procthor_scenes/Bedroom-68718.json", 'r') as f:
     house = json.load(f)
-    print(f"Loaded {scene_file}")
 
-controller = ai2thor.controller.Controller(
-    scene=house,
-    agentMode="default",
-    visibilityDistance=1.5,
-    fieldOfView=90,
-    renderDepthImage=False,
-    renderInstanceSegmentation=False,
-    width=300,
-    height=300,
-    gridSize=0.25
-)
+c = Controller(scene="Procedural", agentMode="default", gridSize=0.25, width=300, height=300)
+c.reset(scene=house)
 
-evt = controller.step(action="GetSceneBounds")
-if evt.metadata["lastActionSuccess"]:
-    print("Scene Bounds:", evt.metadata["actionReturn"])
-else:
-    print("Failed to get scene bounds:", evt.metadata["errorMessage"])
+print("Scene Bounds:", c.last_event.metadata['sceneBounds'])
 
-evt = controller.step(action="GetReachablePositions")
-if not evt.metadata["lastActionSuccess"]:
-    print("GetReachablePositions error:", evt.metadata["errorMessage"])
+fp = house['rooms'][0]['floorPolygon']
+print("Floor Polygon:", fp)
+
+c.stop()
