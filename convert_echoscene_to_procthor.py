@@ -193,13 +193,10 @@ def convert_to_procthor_json(scene_name, scene_data):
         
         theta = obj['rotation']['y']
 
-        # Clip centre to room bounds
-        cx = max(obj_w / 2, min(l - obj_w / 2, cx))
-        cz = max(obj_d / 2, min(w - obj_d / 2, cz))
-
         # Build the 4 corners of the furniture footprint (axis-aligned for now — rotation handled below)
         hw, hd = obj_w / 2.0, obj_d / 2.0
-        rad = _math.radians(theta)
+        # theta from final.json is already in radians!
+        rad = theta
         cos_t, sin_t = _math.cos(rad), _math.sin(rad)
 
         def rot(lx, lz):
