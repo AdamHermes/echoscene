@@ -61,88 +61,36 @@ for folder in folders:
         
     controller.step(action="Teleport", position={"x": spawn_x, "y": 0.9, "z": spawn_z}, forceAction=True)
     
-    # ---------------------------------------------------------
-    # 4. PATHFINDING (Python-native to avoid Unity NavMesh bugs)
-    # ---------------------------------------------------------
-    import networkx as nx
-    from shapely.geometry import Polygon, LineString
-    
-    objects_raw = house_data.get('objects_raw', [])
-    min_x = min(o['position']['x'] - o['size']['x']/2 for o in objects_raw)
-    max_x = max(o['position']['x'] + o['size']['x']/2 for o in objects_raw)
-    min_z = min(o['position']['z'] - o['size']['z']/2 for o in objects_raw)
-    max_z = max(o['position']['z'] + o['size']['z']/2 for o in objects_raw)
-    fx = (max_x + min_x) / 2.0
-    fz = (max_z + min_z) / 2.0
+    # Get all reachable points
+    rp_event = controller.step(action="GetReachablePositions")
+    valid_positions = []
+    if rp_event.metadata["lastActionSuccess"]:
+        reachable_positions = rp_event.metadata["actionReturn"]
+        valid_positions = [p for p in reachable_positions if 0 <= p['x'] <= l and 0 <= p['z'] <= w]
         
-    offset_x = -(fx - l/2.0)
-    offset_z = -(fz - w/2.0)
-    
-    # Rebuild polygons mathematically
-    polygons = []
-    for obj in objects_raw:
-        min_y = max(0.0, obj['position']['y'] - obj['size']['y'] / 2.0)
-        if min_y >= 1.0: continue
-        cx = obj['position']['x'] + offset_x
-        cz = obj['position']['z'] + offset_z
-        obj_w, obj_d = obj['size']['x'], obj['size']['z']
-        rad = obj['rotation']['y']
-        cos_t, sin_t = math.cos(rad), math.sin(rad)
-        hw, hd = obj_w / 2.0, obj_d / 2.0
-        def rot(lx, lz): return cx + lx*cos_t - lz*sin_t, cz + lx*sin_t + lz*cos_t
-        corners = [rot(-hw, -hd), rot(hw, -hd), rot(hw, hd), rot(-hw, hd)]
-        polygons.append(Polygon(corners).buffer(0.25)) # Exactly match robot_width_real=0.5 (radius 0.25m) from walkable_loss
-        
-    G = nx.Graph()
-    nodes = [(x, z) for x in np.arange(0.2, l-0.2, 0.1) for z in np.arange(0.2, w-0.2, 0.1)]
-    valid_nodes = []
-    for x, z in nodes:
-        pt = Polygon([(x, z), (x+0.01, z), (x+0.01, z+0.01), (x, z+0.01)])
-        if not any(poly.intersects(pt) for poly in polygons):
-            valid_nodes.append((round(x, 2), round(z, 2)))
-            
-    valid_nodes_set = set(valid_nodes)
-    for (x, z) in valid_nodes:
-        G.add_node((x, z))
-        for dx, dz in [(-0.1, 0), (0.1, 0), (0, -0.1), (0, 0.1), (-0.1, -0.1), (0.1, 0.1), (-0.1, 0.1), (0.1, -0.1)]:
-            nx_z = round(x + dx, 2)
-            nz_z = round(z + dz, 2)
-            if (nx_z, nz_z) in valid_nodes_set:
-                G.add_edge((x, z), (nx_z, nz_z), weight=math.hypot(dx, dz))
-                
-    start_pos = {"x": spawn_x, "z": spawn_z}
-    
-    # Snap start to grid
-    start_n = min(valid_nodes, key=lambda n: math.dist([start_pos['x'], start_pos['z']], n))
-    
-    # Ensure goal is in the same connected component so a path always exists
-    reachable_nodes = list(nx.node_connected_component(G, start_n))
-    if len(reachable_nodes) < 2:
-        print(f"{folder}: Agent is completely stuck. Skipping.")
+    if not valid_positions:
+        print(f"{folder}: No reachable positions found.")
         continue
         
-    goal_n = max(reachable_nodes, key=lambda n: math.dist(start_n, n))
-    goal_pos = {"x": goal_n[0], "z": goal_n[1]}
-    
-    try:
-        raw_path = nx.shortest_path(G, source=start_n, target=goal_n, weight='weight')
-        # Line-of-Sight Smoothing
-        smoothed_path = [raw_path[0]]
-        curr = 0
-        while curr < len(raw_path) - 1:
-            furthest = curr + 1
-            for j in range(len(raw_path) - 1, curr, -1):
-                line = LineString([raw_path[curr], raw_path[j]])
-                if not any(poly.intersects(line) for poly in polygons):
-                    furthest = j
-                    break
-            smoothed_path.append(raw_path[furthest])
-            curr = furthest
-        path_points = [{'x': p[0], 'z': p[1]} for p in smoothed_path]
-    except (nx.NetworkXNoPath, ValueError):
+    # Find the furthest point from start as goal
+    start_pos = {"x": spawn_x, "y": 0.9, "z": spawn_z}
+    goal_pos = start_pos
+    max_dist = -1
+    for p in valid_positions:
+        dist = math.dist([start_pos['x'], start_pos['z']], [p['x'], p['z']])
+        if dist > max_dist:
+            max_dist = dist
+            goal_pos = p
+            
+    # Get shortest path natively from AI2-THOR NavMesh
+    path_event = controller.step(action="GetShortestPathToPoint", target=goal_pos)
+    path_points = []
+    if path_event.metadata["lastActionSuccess"]:
+        path_points = path_event.metadata["actionReturn"]["corners"]
+    else:
+        print(f"{folder}: Failed to get shortest path. Using straight line.")
         path_points = [start_pos, goal_pos]
         
-    # Plotting
     fig, ax = plt.subplots(figsize=(8, 8))
     ax.set_xlim(0, l)
     ax.set_ylim(0, w)
@@ -187,10 +135,10 @@ for folder in folders:
         ax.add_patch(patches.Polygon(corners, closed=True, fill=True, color='brown', alpha=0.5))
         
     # Also plot the valid positions if desired
-    if valid_nodes:
-        x_vals = [n[0] for n in valid_nodes]
-        z_vals = [n[1] for n in valid_nodes]
-        ax.scatter(x_vals, z_vals, color='gray', s=5, alpha=0.5, zorder=1, label='Reachable Area (NavMesh)')
+    if valid_positions:
+        rx = [p['x'] for p in valid_positions]
+        rz = [p['z'] for p in valid_positions]
+        ax.scatter(rx, rz, c='lightgray', s=10, label='Reachable Area (NavMesh)')
         
     # Plot path
     if path_points:
