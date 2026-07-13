@@ -91,7 +91,7 @@ for folder in folders:
         hw, hd = obj_w / 2.0, obj_d / 2.0
         def rot(lx, lz): return cx + lx*cos_t - lz*sin_t, cz + lx*sin_t + lz*cos_t
         corners = [rot(-hw, -hd), rot(hw, -hd), rot(hw, hd), rot(-hw, hd)]
-        polygons.append(Polygon(corners).buffer(0.22)) # Tighter buffer to prevent closing off narrow pathways
+        polygons.append(Polygon(corners).buffer(0.25)) # Exactly match robot_width_real=0.5 (radius 0.25m) from walkable_loss
         
     G = nx.Graph()
     nodes = [(x, z) for x in np.arange(0.2, l-0.2, 0.1) for z in np.arange(0.2, w-0.2, 0.1)]
