@@ -46,8 +46,6 @@ for folder in folders:
     rd = house_data.get('room_dims', {})
     l = rd.get('l', 0)
     w = rd.get('w', 0)
-    furniture_boxes = house_data.get('furniture_boxes', [])
-    
     controller.reset(scene=house_data)
     
     res = 0.05
@@ -60,13 +58,41 @@ for folder in folders:
     occupancy_grid[:, 0] = 0
     occupancy_grid[:, -1] = 0
     
-    for box in furniture_boxes:
-        min_x, max_x, min_z, max_z = box
-        idx_min_x = max(0, int(min_x / res))
-        idx_max_x = min(grid_w, int(max_x / res) + 1)
-        idx_min_z = max(0, int(min_z / res))
-        idx_max_z = min(grid_h, int(max_z / res) + 1)
-        occupancy_grid[idx_min_x:idx_max_x, idx_min_z:idx_max_z] = 0
+    import matplotlib.path as mpltPath
+    X_centers, Z_centers = np.meshgrid(np.arange(grid_w) * res + res/2, np.arange(grid_h) * res + res/2, indexing='ij')
+    grid_points = np.column_stack((X_centers.flatten(), Z_centers.flatten()))
+    
+    objects_raw = house_data.get('objects_raw', [])
+    if objects_raw:
+        min_x = min(o['position']['x'] - o['size']['x']/2 for o in objects_raw)
+        max_x = max(o['position']['x'] + o['size']['x']/2 for o in objects_raw)
+        min_z = min(o['position']['z'] - o['size']['z']/2 for o in objects_raw)
+        max_z = max(o['position']['z'] + o['size']['z']/2 for o in objects_raw)
+        fx = (max_x + min_x) / 2.0
+        fz = (max_z + min_z) / 2.0
+        offset_x = -(fx - l/2.0)
+        offset_z = -(fz - w/2.0)
+        
+        for obj in objects_raw:
+            min_y = max(0.0, obj['position']['y'] - obj['size']['y'] / 2.0)
+            if min_y >= 1.0: 
+                continue
+                
+            cx = obj['position']['x'] + offset_x
+            cz = obj['position']['z'] + offset_z
+            hw = obj['size']['x'] / 2.0
+            hd = obj['size']['z'] / 2.0
+            
+            theta = obj['rotation']['y']
+            cos_t, sin_t = math.cos(theta), math.sin(theta)
+            def rot(lx, lz):
+                return cx + lx*cos_t - lz*sin_t, cz + lx*sin_t + lz*cos_t
+                
+            corners = [rot(-hw, -hd), rot(hw, -hd), rot(hw, hd), rot(-hw, hd)]
+            path = mpltPath.Path(corners)
+            # Use radius=res to expand the collision check, guaranteeing any partially covered cell is marked blue
+            mask = path.contains_points(grid_points, radius=res).reshape(grid_w, grid_h)
+            occupancy_grid[mask] = 0
         
     distances = distance_transform_edt(occupancy_grid)
     
@@ -127,22 +153,11 @@ for folder in folders:
     ax.add_patch(patches.Rectangle((0, 0), l, w, fill=False, edgecolor='black', linewidth=3))
     
     from matplotlib.colors import ListedColormap
-    # Plot Occupancy Grid cells (0: occupied -> blue, 1: free -> green)
-    cmap = ListedColormap(['blue', 'green'])
+    # Plot Occupancy Grid cells (0: occupied -> blue (opaque), 1: free -> green (transparent))
+    # Colors defined as (R, G, B, Alpha)
+    cmap = ListedColormap([(0.0, 0.0, 1.0, 0.6), (0.0, 1.0, 0.0, 0.15)])
     X_grid, Z_grid = np.meshgrid(np.arange(grid_w + 1) * res, np.arange(grid_h + 1) * res)
-    ax.pcolormesh(X_grid, Z_grid, occupancy_grid.T, cmap=cmap, vmin=0, vmax=1, alpha=0.15, edgecolors='none')
-    
-    # Re-calculate offset logic from convert script
-    objects_raw = house_data.get('objects_raw', [])
-    min_x = min(o['position']['x'] - o['size']['x']/2 for o in objects_raw)
-    max_x = max(o['position']['x'] + o['size']['x']/2 for o in objects_raw)
-    min_z = min(o['position']['z'] - o['size']['z']/2 for o in objects_raw)
-    max_z = max(o['position']['z'] + o['size']['z']/2 for o in objects_raw)
-    fx = (max_x + min_x) / 2.0
-    fz = (max_z + min_z) / 2.0
-        
-    offset_x = -(fx - l/2.0)
-    offset_z = -(fz - w/2.0)
+    ax.pcolormesh(X_grid, Z_grid, occupancy_grid.T, cmap=cmap, vmin=0, vmax=1, edgecolors='none')
     
     for obj in objects_raw:
         min_y = max(0.0, obj['position']['y'] - obj['size']['y'] / 2.0)
@@ -171,7 +186,7 @@ for folder in folders:
     if valid_positions:
         rx = [p['x'] for p in valid_positions]
         rz = [p['z'] for p in valid_positions]
-        ax.scatter(rx, rz, c='lightgray', s=10, label='Reachable Area (NavMesh)')
+        ax.scatter(rx, rz, c='black', s=10, label='Reachable Area (NavMesh)')
         
     # Plot path
     if path_points:

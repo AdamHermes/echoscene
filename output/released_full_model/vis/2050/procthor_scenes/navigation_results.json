@@ -1,0 +1,260 @@
+{
+  "summary": {
+    "instance_count": 50,
+    "total_objects_evaluated": 196,
+    "total_objects_accessible": 155,
+    "average_accessibility_rate": 0.7908163265306123
+  },
+  "scenes": {
+    "SecondBedroom-30034": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "MasterBedroom-33296": {
+      "total_objects": 6,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.6666666666666666
+    },
+    "MasterBedroom-10364": {
+      "total_objects": 4,
+      "accessible_objects": 3,
+      "accessibility_rate": 0.75
+    },
+    "SecondBedroom-11303": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "MasterBedroom-6399": {
+      "total_objects": 4,
+      "accessible_objects": 2,
+      "accessibility_rate": 0.5
+    },
+    "SecondBedroom-19119": {
+      "total_objects": 4,
+      "accessible_objects": 4,
+      "accessibility_rate": 1.0
+    },
+    "SecondBedroom-860": {
+      "total_objects": 4,
+      "accessible_objects": 2,
+      "accessibility_rate": 0.5
+    },
+    "Bedroom-2719": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "MasterBedroom-196": {
+      "total_objects": 4,
+      "accessible_objects": 3,
+      "accessibility_rate": 0.75
+    },
+    "MasterBedroom-132469": {
+      "total_objects": 2,
+      "accessible_objects": 2,
+      "accessibility_rate": 1.0
+    },
+    "Bedroom-12864": {
+      "total_objects": 4,
+      "accessible_objects": 3,
+      "accessibility_rate": 0.75
+    },
+    "SecondBedroom-15551": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "Bedroom-18": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "SecondBedroom-266050": {
+      "total_objects": 4,
+      "accessible_objects": 3,
+      "accessibility_rate": 0.75
+    },
+    "SecondBedroom-2787": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "MasterBedroom-514": {
+      "total_objects": 2,
+      "accessible_objects": 2,
+      "accessibility_rate": 1.0
+    },
+    "MasterBedroom-1362": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "SecondBedroom-13841": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "Bedroom-6993": {
+      "total_objects": 2,
+      "accessible_objects": 2,
+      "accessibility_rate": 1.0
+    },
+    "SecondBedroom-35821": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "MasterBedroom-935": {
+      "total_objects": 7,
+      "accessible_objects": 5,
+      "accessibility_rate": 0.7142857142857143
+    },
+    "Bedroom-18055": {
+      "total_objects": 4,
+      "accessible_objects": 3,
+      "accessibility_rate": 0.75
+    },
+    "SecondBedroom-739": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "SecondBedroom-22370": {
+      "total_objects": 4,
+      "accessible_objects": 3,
+      "accessibility_rate": 0.75
+    },
+    "SecondBedroom-1145": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "MasterBedroom-12352": {
+      "total_objects": 3,
+      "accessible_objects": 2,
+      "accessibility_rate": 0.6666666666666666
+    },
+    "MasterBedroom-6351": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "SecondBedroom-52584": {
+      "total_objects": 2,
+      "accessible_objects": 2,
+      "accessibility_rate": 1.0
+    },
+    "SecondBedroom-11167": {
+      "total_objects": 6,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.6666666666666666
+    },
+    "Bedroom-47437": {
+      "total_objects": 3,
+      "accessible_objects": 2,
+      "accessibility_rate": 0.6666666666666666
+    },
+    "SecondBedroom-6482": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "SecondBedroom-69136": {
+      "total_objects": 5,
+      "accessible_objects": 3,
+      "accessibility_rate": 0.6
+    },
+    "MasterBedroom-21684": {
+      "total_objects": 6,
+      "accessible_objects": 3,
+      "accessibility_rate": 0.5
+    },
+    "MasterBedroom-104323": {
+      "total_objects": 2,
+      "accessible_objects": 2,
+      "accessibility_rate": 1.0
+    },
+    "MasterBedroom-4089": {
+      "total_objects": 4,
+      "accessible_objects": 2,
+      "accessibility_rate": 0.5
+    },
+    "SecondBedroom-19262": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "MasterBedroom-18415": {
+      "total_objects": 5,
+      "accessible_objects": 5,
+      "accessibility_rate": 1.0
+    },
+    "MasterBedroom-118594": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "Bedroom-87322": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "Bedroom-430": {
+      "total_objects": 3,
+      "accessible_objects": 2,
+      "accessibility_rate": 0.6666666666666666
+    },
+    "MasterBedroom-9404": {
+      "total_objects": 6,
+      "accessible_objects": 2,
+      "accessibility_rate": 0.3333333333333333
+    },
+    "MasterBedroom-7894": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "MasterBedroom-27127": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "SecondBedroom-69556": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "MasterBedroom-75552": {
+      "total_objects": 2,
+      "accessible_objects": 1,
+      "accessibility_rate": 0.5
+    },
+    "Bedroom-68718": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "MasterBedroom-13100": {
+      "total_objects": 5,
+      "accessible_objects": 4,
+      "accessibility_rate": 0.8
+    },
+    "SecondBedroom-2311": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "SecondBedroom-8497": {
+      "total_objects": 3,
+      "accessible_objects": 3,
+      "accessibility_rate": 1.0
+    },
+    "SecondBedroom-11204": {
+      "total_objects": 5,
+      "accessible_objects": 5,
+      "accessibility_rate": 1.0
+    }
+  }
+}

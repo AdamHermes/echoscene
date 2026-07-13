@@ -1,0 +1,3789 @@
+{
+  "method": "mesh",
+  "backend": "kaolin",
+  "transform_source": "json",
+  "size_scale": 1.0,
+  "object_mesh_root": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes",
+  "scene_count": 50,
+  "object_count": 241,
+  "collided_object_count": 41,
+  "collided_scene_count": 16,
+  "ColObj": 0.17012448132780084,
+  "ColScene": 0.32,
+  "per_scene": [
+    {
+      "scene_id": "Bedroom-12864",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-12864/wardrobe_13_1.obj",
+          "collides": false,
+          "bounds_min": [
+            0.4694855809211731,
+            -1.0871793031692505,
+            0.019076287746429443
+          ],
+          "bounds_max": [
+            0.9643044471740723,
+            1.037584900856018,
+            1.8744096755981445
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-12864/bed_1_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.9628214836120605,
+            -0.492410272359848,
+            -0.7883995175361633
+          ],
+          "bounds_max": [
+            0.2853062152862549,
+            0.5021681189537048,
+            0.7945466637611389
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-12864/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5249462127685547,
+            -0.23369573056697845,
+            -1.6181451082229614
+          ],
+          "bounds_max": [
+            -1.100929617881775,
+            0.24090661108493805,
+            -1.0930074453353882
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-12864/nightstand_8_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.551952838897705,
+            -0.23673801124095917,
+            0.8811307549476624
+          ],
+          "bounds_max": [
+            -1.1280596256256104,
+            0.2591823935508728,
+            1.344257116317749
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-12864/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.894911527633667,
+            1.3985328674316406,
+            -0.578838050365448
+          ],
+          "bounds_max": [
+            -0.31263041496276855,
+            2.3463246822357178,
+            0.007047802209854126
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-18",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.28313833475112915,
+            -0.48416686058044434,
+            -0.5294866561889648
+          ],
+          "bounds_max": [
+            1.6241462230682373,
+            0.44946402311325073,
+            1.577043890953064
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            0.9637793302536011,
+            -0.3028939664363861,
+            -1.5681692361831665
+          ],
+          "bounds_max": [
+            1.6264431476593018,
+            0.3052655756473541,
+            -0.9968699216842651
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5319745540618896,
+            -0.29848745465278625,
+            -1.4905219078063965
+          ],
+          "bounds_max": [
+            -0.9117953777313232,
+            0.2991882860660553,
+            -0.8832271099090576
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.577113926410675,
+            1.881307601928711,
+            -0.4690644145011902
+          ],
+          "bounds_max": [
+            0.8005397319793701,
+            2.501359462738037,
+            -0.22518809139728546
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-18055",
+      "object_count": 6,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18055/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.3633158206939697,
+            -0.5362637042999268,
+            -1.2808839082717896
+          ],
+          "bounds_max": [
+            1.5511356592178345,
+            0.49404871463775635,
+            0.00031644105911254883
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18055/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.5028683543205261,
+            -1.200130820274353,
+            1.7677843570709229
+          ],
+          "bounds_max": [
+            1.4339520931243896,
+            1.2029141187667847,
+            2.2549028396606445
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18055/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.8448101282119751,
+            -0.2631889581680298,
+            0.7544534206390381
+          ],
+          "bounds_max": [
+            1.314637303352356,
+            0.26065921783447266,
+            1.3108863830566406
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18055/nightstand_8_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.7876724600791931,
+            -0.3173123896121979,
+            -2.0025806427001953
+          ],
+          "bounds_max": [
+            1.3168928623199463,
+            0.3191414773464203,
+            -1.5177843570709229
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18055/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            0.5665109753608704,
+            1.5658477544784546,
+            0.7191979885101318
+          ],
+          "bounds_max": [
+            1.289772629737854,
+            2.2712793350219727,
+            1.0698251724243164
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-18055/lamp_7_6.obj",
+          "collides": false,
+          "bounds_min": [
+            0.8204683065414429,
+            1.3444077968597412,
+            -1.4645171165466309
+          ],
+          "bounds_max": [
+            1.1530518531799316,
+            2.1242918968200684,
+            -1.1024372577667236
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-2719",
+      "object_count": 6,
+      "collided_object_count": 3,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-2719/chair_4_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3064435720443726,
+            -0.25732332468032837,
+            -1.5816247463226318
+          ],
+          "bounds_max": [
+            -0.8993362784385681,
+            0.26179468631744385,
+            -1.1559128761291504
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-2719/bookshelf_2_2.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.5072006583213806,
+            -1.2513259649276733,
+            -2.2868995666503906
+          ],
+          "bounds_max": [
+            -0.023498669266700745,
+            1.1281017065048218,
+            0.2175818681716919
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-2719/table_11_3.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.3620127439498901,
+            -0.6562623381614685,
+            0.7695817947387695
+          ],
+          "bounds_max": [
+            -0.906754195690155,
+            0.6557555794715881,
+            1.4298315048217773
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-2719/bed_1_4.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.9443913698196411,
+            -0.40331655740737915,
+            -0.05875539779663086
+          ],
+          "bounds_max": [
+            0.6497441530227661,
+            0.3984375,
+            1.9591974020004272
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-2719/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.2992384433746338,
+            2.1321022510528564,
+            -1.3228654861450195
+          ],
+          "bounds_max": [
+            0.18039587140083313,
+            2.7790424823760986,
+            -0.8101561069488525
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-2719/chair_4_6.obj",
+          "collides": false,
+          "bounds_min": [
+            0.7655715942382812,
+            -0.4298100173473358,
+            -1.0776184797286987
+          ],
+          "bounds_max": [
+            1.3081403970718384,
+            0.43200209736824036,
+            -0.4922929108142853
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-430",
+      "object_count": 4,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-430/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.6047357320785522,
+            -0.6889784336090088,
+            -1.1388447284698486
+          ],
+          "bounds_max": [
+            0.4447667598724365,
+            0.6678676605224609,
+            0.447417676448822
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-430/table_11_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3525125980377197,
+            -0.23280629515647888,
+            0.7604982852935791
+          ],
+          "bounds_max": [
+            -0.9579650163650513,
+            0.23632344603538513,
+            1.2225006818771362
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-430/table_11_3.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.3414052724838257,
+            -0.2857206463813782,
+            -1.6684321165084839
+          ],
+          "bounds_max": [
+            -0.7898597121238708,
+            0.288371205329895,
+            -1.1307834386825562
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-430/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.44849976897239685,
+            1.615861415863037,
+            -0.5110660791397095
+          ],
+          "bounds_max": [
+            0.32323265075683594,
+            2.462522029876709,
+            0.4640122652053833
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-47437",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-47437/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.8649537563323975,
+            -0.5056263208389282,
+            -0.7775521278381348
+          ],
+          "bounds_max": [
+            0.4703713655471802,
+            0.5098673105239868,
+            0.9393589496612549
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-47437/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.1241421699523926,
+            -0.29614388942718506,
+            1.1929832696914673
+          ],
+          "bounds_max": [
+            -0.6489450335502625,
+            0.29699450731277466,
+            1.7082873582839966
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-47437/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.1498831510543823,
+            -0.2726314663887024,
+            -1.4599968194961548
+          ],
+          "bounds_max": [
+            -0.6921592950820923,
+            0.27732837200164795,
+            -0.9645045399665833
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-68718",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-68718/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6099882125854492,
+            -0.700050413608551,
+            -0.8167146444320679
+          ],
+          "bounds_max": [
+            0.4265720844268799,
+            0.756803572177887,
+            1.1625518798828125
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-68718/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4586666822433472,
+            -0.27627038955688477,
+            -1.713167428970337
+          ],
+          "bounds_max": [
+            -0.7959110736846924,
+            0.27935224771499634,
+            -1.2835321426391602
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-68718/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.8180339336395264,
+            -0.2643091678619385,
+            -1.6820261478424072
+          ],
+          "bounds_max": [
+            1.3887380361557007,
+            0.26579296588897705,
+            -1.238088607788086
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-68718/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2996848821640015,
+            -1.1536426544189453,
+            1.2231353521347046
+          ],
+          "bounds_max": [
+            1.0815010070800781,
+            1.1460497379302979,
+            1.6403555870056152
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-68718/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.23666968941688538,
+            0.9772956967353821,
+            -1.2632925510406494
+          ],
+          "bounds_max": [
+            0.7551424503326416,
+            2.1145386695861816,
+            -0.4543718695640564
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-6993",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-6993/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2183775901794434,
+            -0.38595372438430786,
+            -0.10745245218276978
+          ],
+          "bounds_max": [
+            0.577040433883667,
+            0.3510117530822754,
+            1.7668383121490479
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-6993/lamp_7_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.13922923803329468,
+            1.368028998374939,
+            0.7756161689758301
+          ],
+          "bounds_max": [
+            0.9065262079238892,
+            2.3322484493255615,
+            0.8880152106285095
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-6993/wardrobe_13_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.448514461517334,
+            -1.1999304294586182,
+            -1.8182673454284668
+          ],
+          "bounds_max": [
+            1.653405785560608,
+            1.1916849613189697,
+            -1.1948890686035156
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-87322",
+      "object_count": 7,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-87322/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.13489174842834473,
+            -0.6175979971885681,
+            -1.4177460670471191
+          ],
+          "bounds_max": [
+            2.0384249687194824,
+            0.614618718624115,
+            0.2943984270095825
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-87322/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            1.4687068462371826,
+            -0.3857300579547882,
+            0.3862568140029907
+          ],
+          "bounds_max": [
+            1.8512928485870361,
+            0.3869042694568634,
+            0.8724361658096313
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-87322/chair_4_3.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.5407494902610779,
+            -0.283041387796402,
+            -1.916231632232666
+          ],
+          "bounds_max": [
+            0.07329979538917542,
+            0.28446367383003235,
+            -0.5634558796882629
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-87322/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.5226277112960815,
+            -1.148281455039978,
+            1.063245415687561
+          ],
+          "bounds_max": [
+            1.8247942924499512,
+            1.149574637413025,
+            1.6402350664138794
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-87322/tv_stand_12_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2870889902114868,
+            -0.23800554871559143,
+            -1.7950608730316162
+          ],
+          "bounds_max": [
+            -0.9335923790931702,
+            0.24965250492095947,
+            -0.17344564199447632
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-87322/lamp_7_6.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.21363577246665955,
+            1.8482234477996826,
+            0.9457367658615112
+          ],
+          "bounds_max": [
+            0.33279237151145935,
+            2.260582685470581,
+            1.4899705648422241
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/Bedroom-87322/lamp_7_7.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.007033020257949829,
+            2.4638235569000244,
+            -1.30665123462677
+          ],
+          "bounds_max": [
+            0.7060596942901611,
+            2.6275827884674072,
+            -0.6034282445907593
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-10364",
+      "object_count": 6,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-10364/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            0.15364062786102295,
+            -0.5928167700767517,
+            -1.4861321449279785
+          ],
+          "bounds_max": [
+            2.036149024963379,
+            0.590867817401886,
+            0.5679420232772827
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-10364/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            1.3755481243133545,
+            -0.3573055863380432,
+            -1.9972234964370728
+          ],
+          "bounds_max": [
+            2.0014936923980713,
+            0.36020445823669434,
+            -1.560152292251587
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-10364/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.3705691993236542,
+            -0.3110279440879822,
+            -1.9394152164459229
+          ],
+          "bounds_max": [
+            0.22141647338867188,
+            0.31271153688430786,
+            -1.441627860069275
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-10364/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.439691424369812,
+            -0.9083380699157715,
+            -1.4576042890548706
+          ],
+          "bounds_max": [
+            -0.9800195097923279,
+            0.9116684198379517,
+            -0.5289434194564819
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-10364/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            0.8310045003890991,
+            2.358511209487915,
+            -0.7115384340286255
+          ],
+          "bounds_max": [
+            1.3595882654190063,
+            2.569390058517456,
+            -0.20401298999786377
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-10364/lamp_7_6.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3797708749771118,
+            2.0243234634399414,
+            0.911772608757019
+          ],
+          "bounds_max": [
+            -0.8818181753158569,
+            2.531977653503418,
+            1.2692999839782715
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-104323",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-104323/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6088485717773438,
+            -0.5952581167221069,
+            -0.3471642732620239
+          ],
+          "bounds_max": [
+            0.5405778884887695,
+            0.5988861322402954,
+            1.309504508972168
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-104323/lamp_7_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.5974750518798828,
+            1.1847729682922363,
+            0.9411617517471313
+          ],
+          "bounds_max": [
+            0.3324112892150879,
+            2.276423692703247,
+            1.2780214548110962
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-104323/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2541102170944214,
+            -0.2800287902355194,
+            -0.894132137298584
+          ],
+          "bounds_max": [
+            -0.9101830124855042,
+            0.28058579564094543,
+            -0.3722035884857178
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-118594",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-118594/lamp_7_1.obj",
+          "collides": false,
+          "bounds_min": [
+            0.00864836573600769,
+            2.1444456577301025,
+            -1.0165315866470337
+          ],
+          "bounds_max": [
+            0.5981830358505249,
+            2.6875722408294678,
+            -0.4154922068119049
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-118594/bed_1_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.42818737030029297,
+            -0.5623676776885986,
+            -1.5927356481552124
+          ],
+          "bounds_max": [
+            1.7328464984893799,
+            0.5614036321640015,
+            0.5032429695129395
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-118594/bookshelf_2_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7551425695419312,
+            -1.2647297382354736,
+            1.3424797058105469
+          ],
+          "bounds_max": [
+            1.793172001838684,
+            1.2717533111572266,
+            1.7790902853012085
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-118594/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3146765232086182,
+            -0.9658554196357727,
+            -1.4882097244262695
+          ],
+          "bounds_max": [
+            -0.8329344391822815,
+            0.9739620089530945,
+            0.00764387845993042
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-12352",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-12352/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5778125524520874,
+            -0.4343547821044922,
+            -0.6709690093994141
+          ],
+          "bounds_max": [
+            0.6138620376586914,
+            0.4452607035636902,
+            1.3132965564727783
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-12352/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3973274230957031,
+            -0.3299822211265564,
+            -1.3429479598999023
+          ],
+          "bounds_max": [
+            -1.043125867843628,
+            0.33007627725601196,
+            -0.7778326272964478
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-12352/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4191542863845825,
+            -0.33951324224472046,
+            1.3716830015182495
+          ],
+          "bounds_max": [
+            -0.9530322551727295,
+            0.33649033308029175,
+            1.8853707313537598
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-12352/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.7430810928344727,
+            1.2883421182632446,
+            0.5585426092147827
+          ],
+          "bounds_max": [
+            0.22292575240135193,
+            2.2009730339050293,
+            0.84956955909729
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-13100",
+      "object_count": 6,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-13100/lamp_7_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.018512308597564697,
+            1.3319493532180786,
+            0.5756893157958984
+          ],
+          "bounds_max": [
+            0.3469979465007782,
+            2.2378416061401367,
+            0.9495795965194702
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-13100/bed_1_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.8875353932380676,
+            -0.5316611528396606,
+            -0.29879164695739746
+          ],
+          "bounds_max": [
+            1.1023764610290527,
+            0.547501802444458,
+            2.35794734954834
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-13100/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1249535083770752,
+            -0.295891672372818,
+            -1.278467059135437
+          ],
+          "bounds_max": [
+            1.6520169973373413,
+            0.29955050349235535,
+            -0.7934077978134155
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-13100/nightstand_8_4.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1743463277816772,
+            -0.28965696692466736,
+            1.3335055112838745
+          ],
+          "bounds_max": [
+            1.708572506904602,
+            0.2921971380710602,
+            1.8547019958496094
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-13100/wardrobe_13_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.7259726524353027,
+            -1.257686972618103,
+            -1.9874212741851807
+          ],
+          "bounds_max": [
+            1.6012080907821655,
+            1.2564152479171753,
+            -1.3119288682937622
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-13100/shelf_9_6.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3659989833831787,
+            -0.9262774586677551,
+            1.2239019870758057
+          ],
+          "bounds_max": [
+            -0.9321615695953369,
+            0.9299871325492859,
+            2.09171724319458
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-132469",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-132469/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.6693335771560669,
+            -0.46600204706192017,
+            -0.3276479244232178
+          ],
+          "bounds_max": [
+            1.441695213317871,
+            0.47177064418792725,
+            1.9281307458877563
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-132469/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.1767832636833191,
+            -1.0409080982208252,
+            -1.9308348894119263
+          ],
+          "bounds_max": [
+            1.4150526523590088,
+            1.0437097549438477,
+            -1.3168833255767822
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-132469/lamp_7_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.5534082055091858,
+            2.304150104522705,
+            0.5622435808181763
+          ],
+          "bounds_max": [
+            0.17800754308700562,
+            2.486691474914551,
+            1.2009212970733643
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-1362",
+      "object_count": 6,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-1362/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.19845247268676758,
+            -0.7719476819038391,
+            -0.10037106275558472
+          ],
+          "bounds_max": [
+            1.6574441194534302,
+            0.7341436743736267,
+            1.429940938949585
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-1362/table_11_2.obj",
+          "collides": false,
+          "bounds_min": [
+            0.9461724758148193,
+            -0.27989307045936584,
+            -1.2241709232330322
+          ],
+          "bounds_max": [
+            1.4753577709197998,
+            0.278870552778244,
+            -0.7567355632781982
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-1362/table_11_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.9978843331336975,
+            -0.2600993812084198,
+            1.449753761291504
+          ],
+          "bounds_max": [
+            1.5013350248336792,
+            0.26328566670417786,
+            1.9278950691223145
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-1362/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.03700512647628784,
+            -0.9894099235534668,
+            -1.8025403022766113
+          ],
+          "bounds_max": [
+            1.4745287895202637,
+            0.9889642000198364,
+            -1.295829176902771
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-1362/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            0.10273465514183044,
+            2.386281728744507,
+            0.17243605852127075
+          ],
+          "bounds_max": [
+            0.7762036323547363,
+            2.569300413131714,
+            0.8424540758132935
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-1362/chair_4_6.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4966217279434204,
+            -0.37778520584106445,
+            -0.3532252013683319
+          ],
+          "bounds_max": [
+            -0.6173672080039978,
+            0.38180214166641235,
+            0.5163998007774353
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-18415",
+      "object_count": 6,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-18415/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6042512655258179,
+            -0.33739152550697327,
+            -0.26144731044769287
+          ],
+          "bounds_max": [
+            0.3396643400192261,
+            0.3432333171367645,
+            1.7477740049362183
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-18415/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6335219144821167,
+            -0.3944680988788605,
+            -0.7450047731399536
+          ],
+          "bounds_max": [
+            -1.192571759223938,
+            0.3922613561153412,
+            -0.3037996292114258
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-18415/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6521179676055908,
+            -0.35134610533714294,
+            1.961303949356079
+          ],
+          "bounds_max": [
+            -1.2017689943313599,
+            0.3445311486721039,
+            2.363649368286133
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-18415/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.63250732421875,
+            -1.2313686609268188,
+            -2.06603741645813
+          ],
+          "bounds_max": [
+            0.6310054063796997,
+            1.2364283800125122,
+            -1.5044573545455933
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-18415/tv_stand_12_5.obj",
+          "collides": false,
+          "bounds_min": [
+            0.7886043787002563,
+            -0.22968189418315887,
+            0.28297317028045654
+          ],
+          "bounds_max": [
+            1.1495580673217773,
+            0.24143396317958832,
+            1.7562363147735596
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-18415/lamp_7_6.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.49511656165122986,
+            1.3201359510421753,
+            0.6584910154342651
+          ],
+          "bounds_max": [
+            0.30629587173461914,
+            2.281435966491699,
+            1.400425910949707
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-196",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-196/lamp_7_1.obj",
+          "collides": false,
+          "bounds_min": [
+            0.5689102411270142,
+            2.1839840412139893,
+            -0.7467687129974365
+          ],
+          "bounds_max": [
+            1.1060103178024292,
+            2.6785190105438232,
+            -0.23352903127670288
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-196/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.8290929794311523,
+            -1.211464762687683,
+            -1.9851572513580322
+          ],
+          "bounds_max": [
+            -0.6203663945198059,
+            1.1916109323501587,
+            -0.18413835763931274
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-196/bed_1_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.019892990589141846,
+            -0.5308598875999451,
+            -1.146499752998352
+          ],
+          "bounds_max": [
+            1.6388005018234253,
+            0.49329501390457153,
+            1.0679101943969727
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-196/nightstand_8_4.obj",
+          "collides": false,
+          "bounds_min": [
+            1.2569597959518433,
+            -0.3391372561454773,
+            -1.6454540491104126
+          ],
+          "bounds_max": [
+            1.86620032787323,
+            0.34033042192459106,
+            -1.2011535167694092
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-196/nightstand_8_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3548569679260254,
+            -0.2940549850463867,
+            -1.7072688341140747
+          ],
+          "bounds_max": [
+            -0.8336348533630371,
+            0.29577600955963135,
+            -1.2121316194534302
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-21684",
+      "object_count": 7,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-21684/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.32395392656326294,
+            -0.5219151973724365,
+            -1.6694766283035278
+          ],
+          "bounds_max": [
+            1.3124871253967285,
+            0.521242618560791,
+            0.6138619184494019
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-21684/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            1.3348326683044434,
+            -0.38443583250045776,
+            -1.5098252296447754
+          ],
+          "bounds_max": [
+            1.638257622718811,
+            0.36589473485946655,
+            -1.0621192455291748
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-21684/cabinet_3_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.398225873708725,
+            -0.8026018142700195,
+            1.1082929372787476
+          ],
+          "bounds_max": [
+            0.6013215184211731,
+            0.8065297603607178,
+            1.5804696083068848
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-21684/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.415097713470459,
+            -1.2000889778137207,
+            -1.277261734008789
+          ],
+          "bounds_max": [
+            -0.808940052986145,
+            1.1931912899017334,
+            0.13191485404968262
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-21684/nightstand_8_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.0345412492752075,
+            -0.38821694254875183,
+            -1.7007533311843872
+          ],
+          "bounds_max": [
+            -0.5231497287750244,
+            0.39237555861473083,
+            -1.304097056388855
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-21684/chair_4_6.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1126787662506104,
+            -0.37676626443862915,
+            0.5612759590148926
+          ],
+          "bounds_max": [
+            1.871939778327942,
+            0.38429033756256104,
+            1.296872615814209
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-21684/lamp_7_7.obj",
+          "collides": false,
+          "bounds_min": [
+            0.21881011128425598,
+            1.2942700386047363,
+            0.3319013714790344
+          ],
+          "bounds_max": [
+            1.0716543197631836,
+            2.332524538040161,
+            1.004595160484314
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-27127",
+      "object_count": 5,
+      "collided_object_count": 3,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-27127/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.2109286785125732,
+            -0.4418216943740845,
+            -0.32528167963027954
+          ],
+          "bounds_max": [
+            0.4954978823661804,
+            0.4517550468444824,
+            1.2467290163040161
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-27127/nightstand_8_2.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.6556929349899292,
+            -0.2810511291027069,
+            -0.618188738822937
+          ],
+          "bounds_max": [
+            -1.121605634689331,
+            0.2808975279331207,
+            -0.09943008422851562
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-27127/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.6553593873977661,
+            -0.2513953149318695,
+            0.20787303149700165
+          ],
+          "bounds_max": [
+            1.1769728660583496,
+            0.2595280706882477,
+            0.688022792339325
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-27127/wardrobe_13_4.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.4842751026153564,
+            -1.065555214881897,
+            -1.7380163669586182
+          ],
+          "bounds_max": [
+            -1.0270450115203857,
+            1.1425875425338745,
+            -0.424785315990448
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-27127/desk_5_5.obj",
+          "collides": false,
+          "bounds_min": [
+            1.2185044288635254,
+            -0.554031252861023,
+            -0.25236350297927856
+          ],
+          "bounds_max": [
+            1.692863941192627,
+            0.5596081018447876,
+            0.8629682064056396
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-33296",
+      "object_count": 7,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-33296/table_11_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -3.035865068435669,
+            -0.5208292603492737,
+            -1.318837285041809
+          ],
+          "bounds_max": [
+            -1.9237552881240845,
+            0.5200120806694031,
+            -0.934981107711792
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-33296/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            0.004365891218185425,
+            -0.28822025656700134,
+            -1.378300428390503
+          ],
+          "bounds_max": [
+            0.5797725915908813,
+            0.279898077249527,
+            -1.1201292276382446
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-33296/chair_4_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -2.480045795440674,
+            -0.22453592717647552,
+            -0.9000726938247681
+          ],
+          "bounds_max": [
+            -2.013798952102661,
+            0.21816904842853546,
+            -0.4503464698791504
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-33296/bed_1_4.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.973490834236145,
+            -0.7312366962432861,
+            -1.3364711999893188
+          ],
+          "bounds_max": [
+            -0.0640072226524353,
+            0.7225896120071411,
+            0.7591276168823242
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-33296/cabinet_3_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -2.5827531814575195,
+            -0.5145053863525391,
+            1.0075578689575195
+          ],
+          "bounds_max": [
+            -1.7284154891967773,
+            0.5193119049072266,
+            1.4377528429031372
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-33296/lamp_7_6.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5974072217941284,
+            1.5141979455947876,
+            -0.2840355336666107
+          ],
+          "bounds_max": [
+            -0.883084774017334,
+            2.3815178871154785,
+            0.4156332015991211
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-33296/wardrobe_13_7.obj",
+          "collides": false,
+          "bounds_min": [
+            0.5065281391143799,
+            -1.184548258781433,
+            -1.0150419473648071
+          ],
+          "bounds_max": [
+            1.1185201406478882,
+            1.1822272539138794,
+            2.135411024093628
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-4089",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-4089/wardrobe_13_1.obj",
+          "collides": false,
+          "bounds_min": [
+            0.724443793296814,
+            -1.2377252578735352,
+            -0.22137540578842163
+          ],
+          "bounds_max": [
+            1.3319787979125977,
+            1.2384755611419678,
+            1.6620267629623413
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-4089/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7454391717910767,
+            -0.34777748584747314,
+            -1.630561113357544
+          ],
+          "bounds_max": [
+            -1.136409044265747,
+            0.34855806827545166,
+            -1.3184911012649536
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-4089/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            1.0026997327804565,
+            -0.374252051115036,
+            -1.5338693857192993
+          ],
+          "bounds_max": [
+            1.5903841257095337,
+            0.3744945824146271,
+            -1.0581594705581665
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-4089/bed_1_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7677998542785645,
+            -0.3249979019165039,
+            -1.3266016244888306
+          ],
+          "bounds_max": [
+            0.32996654510498047,
+            0.3305211663246155,
+            0.685918927192688
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-4089/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.7350260615348816,
+            1.0056512355804443,
+            -0.746496319770813
+          ],
+          "bounds_max": [
+            -0.2959224581718445,
+            2.146010160446167,
+            -0.45668870210647583
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-514",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-514/nightstand_8_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.9122666120529175,
+            -0.28102946281433105,
+            0.3255673348903656
+          ],
+          "bounds_max": [
+            -0.49001452326774597,
+            0.2871246337890625,
+            0.8583954572677612
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-514/bed_1_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.3878439664840698,
+            -0.5197063684463501,
+            -1.2976007461547852
+          ],
+          "bounds_max": [
+            1.4775621891021729,
+            0.49297356605529785,
+            0.2206486463546753
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-514/lamp_7_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.08638817071914673,
+            1.332212209701538,
+            0.23514574766159058
+          ],
+          "bounds_max": [
+            0.9552425742149353,
+            2.2692880630493164,
+            0.8525919318199158
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-6351",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6351/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.5289132595062256,
+            -0.604273796081543,
+            -1.0372741222381592
+          ],
+          "bounds_max": [
+            1.876671552658081,
+            0.6581054925918579,
+            0.46023786067962646
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6351/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            1.017363429069519,
+            -0.24494856595993042,
+            0.8202459216117859
+          ],
+          "bounds_max": [
+            1.4501831531524658,
+            0.2443283498287201,
+            1.2418713569641113
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6351/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            1.131636381149292,
+            -0.2957266867160797,
+            -1.7402912378311157
+          ],
+          "bounds_max": [
+            1.507781744003296,
+            0.2953251898288727,
+            -1.365121603012085
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6351/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.5784769058227539,
+            1.921961784362793,
+            -1.088580846786499
+          ],
+          "bounds_max": [
+            0.3767324388027191,
+            2.49359130859375,
+            -0.27275389432907104
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-6399",
+      "object_count": 5,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6399/wardrobe_13_1.obj",
+          "collides": false,
+          "bounds_min": [
+            1.2282263040542603,
+            -1.226825475692749,
+            -1.215158462524414
+          ],
+          "bounds_max": [
+            1.6907410621643066,
+            1.2234644889831543,
+            0.07317966222763062
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6399/bed_1_2.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.1818017959594727,
+            -0.406610906124115,
+            -1.4905829429626465
+          ],
+          "bounds_max": [
+            0.16539067029953003,
+            0.41505903005599976,
+            0.38540226221084595
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6399/table_11_3.obj",
+          "collides": true,
+          "bounds_min": [
+            -2.1150591373443604,
+            -0.6457819938659668,
+            -1.4745229482650757
+          ],
+          "bounds_max": [
+            -1.17153000831604,
+            0.6447513103485107,
+            -1.0025466680526733
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6399/chair_4_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.72886323928833,
+            -0.23939867317676544,
+            -0.7029487490653992
+          ],
+          "bounds_max": [
+            -1.2627440690994263,
+            0.23890824615955353,
+            -0.23262919485569
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-6399/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.200894832611084,
+            1.7409002780914307,
+            -0.254034161567688
+          ],
+          "bounds_max": [
+            -0.436359167098999,
+            2.3721630573272705,
+            0.47668638825416565
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-75552",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-75552/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7352081537246704,
+            -0.4540606141090393,
+            -1.6158441305160522
+          ],
+          "bounds_max": [
+            0.58225417137146,
+            0.45876795053482056,
+            0.14583855867385864
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-75552/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.9712207317352295,
+            -1.2299302816390991,
+            1.3039023876190186
+          ],
+          "bounds_max": [
+            1.3814139366149902,
+            1.233012080192566,
+            1.8779609203338623
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-75552/lamp_7_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.2897437512874603,
+            1.6628344058990479,
+            -1.1917155981063843
+          ],
+          "bounds_max": [
+            0.43357205390930176,
+            2.258390426635742,
+            -0.5275686383247375
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-7894",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-7894/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5678526163101196,
+            -0.45070019364356995,
+            -0.01325535774230957
+          ],
+          "bounds_max": [
+            0.7618643045425415,
+            0.45162633061408997,
+            1.699418067932129
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-7894/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5814738273620605,
+            -0.27573728561401367,
+            1.7220685482025146
+          ],
+          "bounds_max": [
+            -1.0798966884613037,
+            0.28004443645477295,
+            2.280853509902954
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-7894/lamp_7_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.3063024878501892,
+            1.456244707107544,
+            0.8459194302558899
+          ],
+          "bounds_max": [
+            0.8169540762901306,
+            2.3701648712158203,
+            1.090041995048523
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-7894/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.1148000955581665,
+            -1.2907261848449707,
+            -1.5930871963500977
+          ],
+          "bounds_max": [
+            1.6569809913635254,
+            1.2851676940917969,
+            -1.0247939825057983
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-935",
+      "object_count": 9,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/desk_5_1.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1013110876083374,
+            -0.37777402997016907,
+            -1.4955625534057617
+          ],
+          "bounds_max": [
+            1.5420695543289185,
+            0.3773365914821625,
+            -0.4590703845024109
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/lamp_7_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.04010951519012451,
+            1.6933181285858154,
+            0.6140159368515015
+          ],
+          "bounds_max": [
+            0.43361830711364746,
+            2.369690179824829,
+            1.1823515892028809
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/lamp_7_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.6652172207832336,
+            1.250701665878296,
+            1.2480453252792358
+          ],
+          "bounds_max": [
+            1.5221811532974243,
+            2.1802656650543213,
+            2.2283663749694824
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.7060461640357971,
+            0.7948326468467712,
+            -1.6669213771820068
+          ],
+          "bounds_max": [
+            1.7885549068450928,
+            1.947256088256836,
+            -0.7490601539611816
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/chair_4_5.obj",
+          "collides": false,
+          "bounds_min": [
+            0.3610509932041168,
+            -0.41465383768081665,
+            -1.5387094020843506
+          ],
+          "bounds_max": [
+            0.8744062781333923,
+            0.42040711641311646,
+            -1.087498664855957
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/bed_1_6.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.35629594326019287,
+            -0.3779686987400055,
+            -0.2939310073852539
+          ],
+          "bounds_max": [
+            1.7438873052597046,
+            0.3759578764438629,
+            1.7267564535140991
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/wardrobe_13_7.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.5215343236923218,
+            -1.1740158796310425,
+            -2.1596148014068604
+          ],
+          "bounds_max": [
+            1.8086856603622437,
+            1.1710745096206665,
+            -1.640509009361267
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/tv_stand_12_8.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.1971900463104248,
+            -0.346326619386673,
+            -0.08542054891586304
+          ],
+          "bounds_max": [
+            -0.7196211814880371,
+            0.33757874369621277,
+            1.8408068418502808
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-935/nightstand_8_9.obj",
+          "collides": true,
+          "bounds_min": [
+            1.3918113708496094,
+            -0.23788362741470337,
+            1.5590834617614746
+          ],
+          "bounds_max": [
+            1.8142542839050293,
+            0.25677022337913513,
+            1.9309155941009521
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-9404",
+      "object_count": 6,
+      "collided_object_count": 3,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-9404/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.3369842767715454,
+            -0.6971033215522766,
+            -0.4582207202911377
+          ],
+          "bounds_max": [
+            1.666257619857788,
+            0.6971361041069031,
+            1.5605897903442383
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-9404/wardrobe_13_2.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.3780505657196045,
+            -1.1783983707427979,
+            -2.0864810943603516
+          ],
+          "bounds_max": [
+            1.697102665901184,
+            1.1754207611083984,
+            -1.539228081703186
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-9404/wardrobe_13_3.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.8113250732421875,
+            -1.170121192932129,
+            -1.619179606437683
+          ],
+          "bounds_max": [
+            1.388979196548462,
+            1.1715209484100342,
+            -1.0858287811279297
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-9404/nightstand_8_4.obj",
+          "collides": false,
+          "bounds_min": [
+            1.2715668678283691,
+            -0.32561105489730835,
+            1.600219964981079
+          ],
+          "bounds_max": [
+            1.6971386671066284,
+            0.32697099447250366,
+            2.1097233295440674
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-9404/nightstand_8_5.obj",
+          "collides": true,
+          "bounds_min": [
+            1.294508457183838,
+            -0.3244848847389221,
+            -1.307389259338379
+          ],
+          "bounds_max": [
+            1.5993049144744873,
+            0.32787907123565674,
+            -0.6487841606140137
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/MasterBedroom-9404/tv_stand_12_6.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.24649178981781,
+            -0.19284814596176147,
+            -0.17580604553222656
+          ],
+          "bounds_max": [
+            -0.6246609091758728,
+            0.18974587321281433,
+            1.952162504196167
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-11167",
+      "object_count": 7,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11167/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.6858816146850586,
+            -1.0985500812530518,
+            -0.3783230781555176
+          ],
+          "bounds_max": [
+            0.3079521059989929,
+            1.1022858619689941,
+            1.3593486547470093
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11167/cabinet_3_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4324218034744263,
+            -0.4660796821117401,
+            -1.9993393421173096
+          ],
+          "bounds_max": [
+            -0.2737414240837097,
+            0.46939387917518616,
+            -1.6119129657745361
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11167/table_11_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.8571622967720032,
+            -0.7654728889465332,
+            0.8706664443016052
+          ],
+          "bounds_max": [
+            1.4824104309082031,
+            0.7710291147232056,
+            1.7338250875473022
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11167/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.3809444308280945,
+            0.5270980596542358,
+            1.6027684211730957
+          ],
+          "bounds_max": [
+            0.5445609092712402,
+            1.3053704500198364,
+            1.7305302619934082
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11167/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.38869258761405945,
+            1.3024989366531372,
+            0.5493812561035156
+          ],
+          "bounds_max": [
+            0.328054279088974,
+            2.1785330772399902,
+            1.1854159832000732
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11167/nightstand_8_6.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.5060882568359375,
+            -0.3314934968948364,
+            1.3327051401138306
+          ],
+          "bounds_max": [
+            -1.1326152086257935,
+            0.3356117010116577,
+            1.752542495727539
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11167/nightstand_8_7.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.481255292892456,
+            -0.32810601592063904,
+            -1.2507840394973755
+          ],
+          "bounds_max": [
+            -0.9987773895263672,
+            0.33634069561958313,
+            -0.7088339328765869
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-11204",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11204/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.9297235012054443,
+            -0.5591822266578674,
+            -1.2915477752685547
+          ],
+          "bounds_max": [
+            0.30578386783599854,
+            0.5652793049812317,
+            0.23393911123275757
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11204/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5078380107879639,
+            -1.1094964742660522,
+            1.260300874710083
+          ],
+          "bounds_max": [
+            0.21428173780441284,
+            1.1128157377243042,
+            1.7512526512145996
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11204/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4746342897415161,
+            -0.27729710936546326,
+            0.7903279066085815
+          ],
+          "bounds_max": [
+            -1.0477246046066284,
+            0.28039488196372986,
+            1.2627098560333252
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11204/table_11_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.9783802032470703,
+            -0.5459516644477844,
+            -1.0668216943740845
+          ],
+          "bounds_max": [
+            1.3905903100967407,
+            0.5469101071357727,
+            -0.28221017122268677
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11204/chair_4_5.obj",
+          "collides": false,
+          "bounds_min": [
+            0.6110530495643616,
+            -0.23813778162002563,
+            -1.2938131093978882
+          ],
+          "bounds_max": [
+            0.9677432775497437,
+            0.24092835187911987,
+            -0.5608739852905273
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-11303",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11303/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.9563453197479248,
+            -0.5728439688682556,
+            -1.3737932443618774
+          ],
+          "bounds_max": [
+            0.21679675579071045,
+            0.5811899304389954,
+            0.37443602085113525
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11303/desk_5_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6657884120941162,
+            -0.36467114090919495,
+            0.455410897731781
+          ],
+          "bounds_max": [
+            -0.16960549354553223,
+            0.36280587315559387,
+            1.1459304094314575
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11303/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.860360860824585,
+            -0.22604915499687195,
+            0.5582565069198608
+          ],
+          "bounds_max": [
+            1.1347345113754272,
+            0.22428515553474426,
+            0.8730140924453735
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11303/wardrobe_13_4.obj",
+          "collides": false,
+          "bounds_min": [
+            1.0131425857543945,
+            -1.0600277185440063,
+            -0.3508504629135132
+          ],
+          "bounds_max": [
+            1.6386499404907227,
+            1.063315987586975,
+            0.7706184387207031
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-11303/wardrobe_13_5.obj",
+          "collides": false,
+          "bounds_min": [
+            1.052642822265625,
+            -1.1470922231674194,
+            -1.6400378942489624
+          ],
+          "bounds_max": [
+            1.6451305150985718,
+            1.1455785036087036,
+            -0.45008593797683716
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-1145",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-1145/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.9277342557907104,
+            -0.533769965171814,
+            -1.144694209098816
+          ],
+          "bounds_max": [
+            0.17957425117492676,
+            0.5144144296646118,
+            0.9850891828536987
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-1145/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.954211711883545,
+            -0.2761595547199249,
+            -1.5230045318603516
+          ],
+          "bounds_max": [
+            -1.31505286693573,
+            0.277631014585495,
+            -1.1591988801956177
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-1145/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.5404760837554932,
+            -0.2670605480670929,
+            -1.5245617628097534
+          ],
+          "bounds_max": [
+            1.028347134590149,
+            0.2680496871471405,
+            -1.1049412488937378
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-1145/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2199972867965698,
+            2.1077752113342285,
+            -0.41623008251190186
+          ],
+          "bounds_max": [
+            -0.5072084069252014,
+            2.7181153297424316,
+            0.3072355389595032
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-13841",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-13841/lamp_7_1.obj",
+          "collides": false,
+          "bounds_min": [
+            0.6327652931213379,
+            0.776185154914856,
+            -0.3923317492008209
+          ],
+          "bounds_max": [
+            1.274609923362732,
+            1.8261502981185913,
+            0.42391857504844666
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-13841/bed_1_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.3526037335395813,
+            -0.8011430501937866,
+            -1.7105051279067993
+          ],
+          "bounds_max": [
+            1.4876744747161865,
+            0.7832964658737183,
+            0.581560492515564
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-13841/wardrobe_13_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5464187860488892,
+            -0.9934077858924866,
+            -1.0496470928192139
+          ],
+          "bounds_max": [
+            -0.5417936444282532,
+            0.9807291626930237,
+            -0.026858747005462646
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-15551",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-15551/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7333585023880005,
+            -0.4184417426586151,
+            -1.254338026046753
+          ],
+          "bounds_max": [
+            0.39693784713745117,
+            0.4166949689388275,
+            0.4634987711906433
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-15551/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5455551147460938,
+            -1.236954689025879,
+            1.228982925415039
+          ],
+          "bounds_max": [
+            0.9178241491317749,
+            1.238013505935669,
+            1.8111822605133057
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-15551/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4765422344207764,
+            -0.27789953351020813,
+            -1.9108951091766357
+          ],
+          "bounds_max": [
+            -1.0128477811813354,
+            0.284145325422287,
+            -1.3612614870071411
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-19119",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19119/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.889670491218567,
+            -0.43830737471580505,
+            -0.4044002890586853
+          ],
+          "bounds_max": [
+            0.22783219814300537,
+            0.43598297238349915,
+            1.3248324394226074
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19119/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.8250844478607178,
+            -1.148848295211792,
+            -1.6937799453735352
+          ],
+          "bounds_max": [
+            0.07418125867843628,
+            1.1483559608459473,
+            -0.9910968542098999
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19119/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.8744442462921143,
+            -0.31356367468833923,
+            1.4019801616668701
+          ],
+          "bounds_max": [
+            -1.3155968189239502,
+            0.31630977988243103,
+            1.9435837268829346
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19119/tv_stand_12_4.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1173510551452637,
+            -0.29498153924942017,
+            -0.07930135726928711
+          ],
+          "bounds_max": [
+            1.5010098218917847,
+            0.2843722105026245,
+            1.1628185510635376
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19119/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.6981262564659119,
+            1.5951170921325684,
+            0.12210902571678162
+          ],
+          "bounds_max": [
+            0.15051919221878052,
+            2.342170000076294,
+            0.9585957527160645
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-19262",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19262/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6496583223342896,
+            -0.49836722016334534,
+            -0.4429982900619507
+          ],
+          "bounds_max": [
+            0.4304966926574707,
+            0.5055521726608276,
+            1.7808200120925903
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19262/tv_stand_12_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.885205626487732,
+            -0.3012547194957733,
+            -1.536449909210205
+          ],
+          "bounds_max": [
+            0.4908062219619751,
+            0.3007396161556244,
+            -1.0162060260772705
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19262/wardrobe_13_3.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1417949199676514,
+            -1.1762467622756958,
+            0.18190884590148926
+          ],
+          "bounds_max": [
+            1.7906278371810913,
+            1.1744147539138794,
+            1.4996289014816284
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-19262/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.9935585260391235,
+            1.5226738452911377,
+            0.36878031492233276
+          ],
+          "bounds_max": [
+            -0.35498806834220886,
+            2.3157126903533936,
+            0.9679321646690369
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-22370",
+      "object_count": 5,
+      "collided_object_count": 4,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-22370/wardrobe_13_1.obj",
+          "collides": true,
+          "bounds_min": [
+            1.0405778884887695,
+            -1.0857946872711182,
+            0.03832113742828369
+          ],
+          "bounds_max": [
+            1.6627014875411987,
+            1.078789234161377,
+            1.3707656860351562
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-22370/bed_1_2.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.825544834136963,
+            -0.6854792237281799,
+            -0.5859875082969666
+          ],
+          "bounds_max": [
+            0.147524893283844,
+            0.6929286122322083,
+            1.4044837951660156
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-22370/nightstand_8_3.obj",
+          "collides": true,
+          "bounds_min": [
+            0.6250172257423401,
+            -0.25377222895622253,
+            1.1363154649734497
+          ],
+          "bounds_max": [
+            1.0874841213226318,
+            0.2583502233028412,
+            1.5101906061172485
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-22370/nightstand_8_4.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.6982686519622803,
+            -0.25906243920326233,
+            1.2580269575119019
+          ],
+          "bounds_max": [
+            -1.3299016952514648,
+            0.2567833364009857,
+            1.5055850744247437
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-22370/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.9202914237976074,
+            1.5137605667114258,
+            -0.8164123296737671
+          ],
+          "bounds_max": [
+            -0.0727822482585907,
+            2.3560471534729004,
+            -0.012533187866210938
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-2311",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-2311/bookshelf_2_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.0058751106262207,
+            -1.3737589120864868,
+            -1.500614047050476
+          ],
+          "bounds_max": [
+            0.5562909841537476,
+            1.3725696802139282,
+            -1.0466885566711426
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-2311/lamp_7_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.2134118676185608,
+            1.5815587043762207,
+            0.5286746025085449
+          ],
+          "bounds_max": [
+            0.6910465359687805,
+            2.2998030185699463,
+            1.4027044773101807
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-2311/bed_1_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5804367065429688,
+            -0.6017378568649292,
+            -0.5491394996643066
+          ],
+          "bounds_max": [
+            -0.055552124977111816,
+            0.6025018692016602,
+            1.390251636505127
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-2311/chair_4_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.9700816869735718,
+            -0.34598150849342346,
+            0.4354614317417145
+          ],
+          "bounds_max": [
+            1.9085246324539185,
+            0.3512762486934662,
+            1.3628602027893066
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-266050",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-266050/sofa_10_1.obj",
+          "collides": false,
+          "bounds_min": [
+            0.55234694480896,
+            -0.3403797149658203,
+            -0.8137162327766418
+          ],
+          "bounds_max": [
+            1.6178264617919922,
+            0.34229540824890137,
+            0.7756297588348389
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-266050/bed_1_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -2.0353307723999023,
+            -0.6004682779312134,
+            -0.7359621524810791
+          ],
+          "bounds_max": [
+            0.28912353515625,
+            0.5955299139022827,
+            1.2926989793777466
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-266050/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.8643779754638672,
+            -0.38208407163619995,
+            -1.6745977401733398
+          ],
+          "bounds_max": [
+            -1.3137178421020508,
+            0.3862394690513611,
+            -1.1073238849639893
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-266050/nightstand_8_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7862590551376343,
+            -0.29331904649734497,
+            1.453244924545288
+          ],
+          "bounds_max": [
+            -1.3686820268630981,
+            0.29587215185165405,
+            1.9259260892868042
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-2787",
+      "object_count": 4,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-2787/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.1987988948822021,
+            -0.39576849341392517,
+            -1.5856236219406128
+          ],
+          "bounds_max": [
+            0.08587932586669922,
+            0.40711143612861633,
+            0.06685161590576172
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-2787/nightstand_8_2.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.7190974950790405,
+            -0.2725900411605835,
+            -0.47469693422317505
+          ],
+          "bounds_max": [
+            -1.156050205230713,
+            0.2757633924484253,
+            0.04783278703689575
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-2787/desk_5_3.obj",
+          "collides": false,
+          "bounds_min": [
+            1.0077383518218994,
+            -0.5864185094833374,
+            -0.7366145849227905
+          ],
+          "bounds_max": [
+            1.5671100616455078,
+            0.5870106220245361,
+            0.18648496270179749
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-2787/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.6946865320205688,
+            2.0165109634399414,
+            -0.6557198762893677
+          ],
+          "bounds_max": [
+            -0.49332672357559204,
+            2.3991355895996094,
+            -0.29493147134780884
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-30034",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-30034/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.44524085521698,
+            -0.5324718356132507,
+            -0.6037452816963196
+          ],
+          "bounds_max": [
+            1.6603641510009766,
+            0.5615643858909607,
+            1.2153561115264893
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-30034/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            1.0879191160202026,
+            -0.28991883993148804,
+            1.2502875328063965
+          ],
+          "bounds_max": [
+            1.4803025722503662,
+            0.29110389947891235,
+            1.7242546081542969
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-30034/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            1.0769178867340088,
+            -0.25294533371925354,
+            -1.4628504514694214
+          ],
+          "bounds_max": [
+            1.492310643196106,
+            0.2546907961368561,
+            -0.9725989699363708
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-30034/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.2226811647415161,
+            1.5963658094406128,
+            0.21047282218933105
+          ],
+          "bounds_max": [
+            0.7542394995689392,
+            2.487095594406128,
+            0.7595793008804321
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-35821",
+      "object_count": 6,
+      "collided_object_count": 4,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-35821/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -2.0706560611724854,
+            -0.5557209849357605,
+            -1.0796082019805908
+          ],
+          "bounds_max": [
+            0.17685091495513916,
+            0.5659042000770569,
+            0.4063248038291931
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-35821/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.8790231943130493,
+            -0.2639123201370239,
+            0.9148787260055542
+          ],
+          "bounds_max": [
+            -1.4168545007705688,
+            0.2672669291496277,
+            1.4355117082595825
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-35821/nightstand_8_3.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.8094089031219482,
+            -0.26008424162864685,
+            -1.417052149772644
+          ],
+          "bounds_max": [
+            -1.349853515625,
+            0.2595265805721283,
+            -0.9503288865089417
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-35821/tv_stand_12_4.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.5755732655525208,
+            -0.05564010888338089,
+            0.44934988021850586
+          ],
+          "bounds_max": [
+            -0.5276138186454773,
+            0.20504435896873474,
+            1.9733242988586426
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-35821/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.0781325101852417,
+            1.415458083152771,
+            -0.8269413709640503
+          ],
+          "bounds_max": [
+            -0.10738542675971985,
+            2.1158742904663086,
+            0.07352501153945923
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-35821/chair_4_6.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.5701337456703186,
+            -0.3976145088672638,
+            0.3807958960533142
+          ],
+          "bounds_max": [
+            0.4992305636405945,
+            0.42542240023612976,
+            1.4530329704284668
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-52584",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-52584/lamp_7_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.44763725996017456,
+            1.4995594024658203,
+            -1.222673773765564
+          ],
+          "bounds_max": [
+            0.6370366215705872,
+            2.5024189949035645,
+            -0.13037747144699097
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-52584/bed_1_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.9088180065155029,
+            -0.6383326053619385,
+            -0.31325554847717285
+          ],
+          "bounds_max": [
+            1.3761626482009888,
+            0.6405782699584961,
+            1.5208070278167725
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-52584/table_11_3.obj",
+          "collides": false,
+          "bounds_min": [
+            0.9418658018112183,
+            -0.3132203221321106,
+            -1.7322138547897339
+          ],
+          "bounds_max": [
+            1.43454909324646,
+            0.3147760033607483,
+            -0.9930908679962158
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-6482",
+      "object_count": 6,
+      "collided_object_count": 4,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-6482/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.3134187459945679,
+            -0.4954618811607361,
+            -2.053544044494629
+          ],
+          "bounds_max": [
+            0.2541281580924988,
+            0.49300915002822876,
+            0.20569264888763428
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-6482/chair_4_2.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.813492774963379,
+            -0.4181327819824219,
+            0.7968204617500305
+          ],
+          "bounds_max": [
+            -1.0251808166503906,
+            0.48209047317504883,
+            1.57431161403656
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-6482/nightstand_8_3.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.7465823888778687,
+            -0.3740698993206024,
+            -1.5241038799285889
+          ],
+          "bounds_max": [
+            -1.1884723901748657,
+            0.3740781843662262,
+            -0.9789941906929016
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-6482/table_11_4.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.4839155673980713,
+            -0.318119615316391,
+            1.4431487321853638
+          ],
+          "bounds_max": [
+            -0.8304919600486755,
+            0.3135409653186798,
+            2.0139036178588867
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-6482/wardrobe_13_5.obj",
+          "collides": false,
+          "bounds_min": [
+            0.7240835428237915,
+            -1.0981981754302979,
+            -1.253490686416626
+          ],
+          "bounds_max": [
+            1.3378111124038696,
+            1.1039707660675049,
+            -0.07626074552536011
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-6482/lamp_7_6.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.8724669814109802,
+            2.1428635120391846,
+            0.6443621516227722
+          ],
+          "bounds_max": [
+            -0.284727543592453,
+            2.6251537799835205,
+            1.218868374824524
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-69136",
+      "object_count": 6,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69136/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.4933149814605713,
+            -0.441099613904953,
+            -0.6004008054733276
+          ],
+          "bounds_max": [
+            1.649788737297058,
+            0.44851264357566833,
+            1.588046669960022
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69136/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.9411436319351196,
+            -1.1398532390594482,
+            -0.06349462270736694
+          ],
+          "bounds_max": [
+            -1.3330320119857788,
+            1.1252470016479492,
+            1.52603280544281
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69136/nightstand_8_3.obj",
+          "collides": true,
+          "bounds_min": [
+            1.4791595935821533,
+            -0.1847219169139862,
+            1.2900397777557373
+          ],
+          "bounds_max": [
+            1.8187363147735596,
+            0.18904712796211243,
+            1.578031301498413
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69136/nightstand_8_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.0353320837020874,
+            -0.21324491500854492,
+            1.201585054397583
+          ],
+          "bounds_max": [
+            -0.6356980800628662,
+            0.2155407965183258,
+            1.5132126808166504
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69136/tv_stand_12_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.48751968145370483,
+            -0.26173439621925354,
+            -1.602613925933838
+          ],
+          "bounds_max": [
+            1.3725311756134033,
+            0.2613014280796051,
+            -1.1571346521377563
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69136/lamp_7_6.obj",
+          "collides": false,
+          "bounds_min": [
+            0.6875519156455994,
+            2.33974289894104,
+            -0.2478223294019699
+          ],
+          "bounds_max": [
+            1.1452206373214722,
+            2.5360424518585205,
+            0.22983095049858093
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-69556",
+      "object_count": 6,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69556/bed_1_1.obj",
+          "collides": true,
+          "bounds_min": [
+            -0.5333828926086426,
+            -0.5750322341918945,
+            -1.5174977779388428
+          ],
+          "bounds_max": [
+            1.8762856721878052,
+            0.5702978372573853,
+            0.11179614067077637
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69556/wardrobe_13_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.2561461925506592,
+            -1.2016915082931519,
+            1.1597387790679932
+          ],
+          "bounds_max": [
+            1.546400785446167,
+            1.199567437171936,
+            1.7122548818588257
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69556/table_11_3.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1258816719055176,
+            -0.2640446722507477,
+            0.4912906885147095
+          ],
+          "bounds_max": [
+            1.5283859968185425,
+            0.26488742232322693,
+            0.8837308287620544
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69556/cabinet_3_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4926056861877441,
+            -0.8415488004684448,
+            -1.9614267349243164
+          ],
+          "bounds_max": [
+            -1.021512508392334,
+            0.8392037153244019,
+            -1.1196208000183105
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69556/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.3815883696079254,
+            1.120663046836853,
+            -1.1162035465240479
+          ],
+          "bounds_max": [
+            0.41101130843162537,
+            2.154942512512207,
+            -0.2728509306907654
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-69556/table_11_6.obj",
+          "collides": true,
+          "bounds_min": [
+            1.139392375946045,
+            -0.31706416606903076,
+            -1.8878092765808105
+          ],
+          "bounds_max": [
+            1.5942178964614868,
+            0.31756412982940674,
+            -1.461754560470581
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-739",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-739/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6286952495574951,
+            -0.5513746738433838,
+            -0.2551766037940979
+          ],
+          "bounds_max": [
+            0.24210017919540405,
+            0.5659337043762207,
+            1.1866843700408936
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-739/table_11_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3895207643508911,
+            -0.2555612027645111,
+            1.2575807571411133
+          ],
+          "bounds_max": [
+            -0.9810056686401367,
+            0.25941237807273865,
+            1.6981374025344849
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-739/table_11_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.429889440536499,
+            -0.2504844069480896,
+            -1.2280659675598145
+          ],
+          "bounds_max": [
+            -0.9955976009368896,
+            0.25346243381500244,
+            -0.7017605900764465
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-739/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.6549881100654602,
+            1.245500087738037,
+            0.3466249406337738
+          ],
+          "bounds_max": [
+            -0.10482266545295715,
+            2.2270100116729736,
+            0.9169704914093018
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-8497",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-8497/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7589161396026611,
+            -0.4198947548866272,
+            -1.171646237373352
+          ],
+          "bounds_max": [
+            0.35698699951171875,
+            0.45926642417907715,
+            0.4670003056526184
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-8497/nightstand_8_2.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5116020441055298,
+            -0.24611754715442657,
+            0.7551059722900391
+          ],
+          "bounds_max": [
+            -1.0502617359161377,
+            0.24549628794193268,
+            1.2280561923980713
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-8497/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4806716442108154,
+            -0.28025388717651367,
+            -1.6272560358047485
+          ],
+          "bounds_max": [
+            -1.134581208229065,
+            0.28533416986465454,
+            -1.1741071939468384
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-8497/lamp_7_4.obj",
+          "collides": false,
+          "bounds_min": [
+            0.007874161005020142,
+            1.7086175680160522,
+            -1.2513222694396973
+          ],
+          "bounds_max": [
+            0.7612869739532471,
+            2.609107732772827,
+            -0.4858311116695404
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-860",
+      "object_count": 5,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-860/bed_1_1.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.9234883785247803,
+            -0.5144588947296143,
+            -1.0205438137054443
+          ],
+          "bounds_max": [
+            -0.06383281946182251,
+            0.5064250230789185,
+            0.8770880699157715
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-860/nightstand_8_2.obj",
+          "collides": true,
+          "bounds_min": [
+            0.7597315311431885,
+            -0.2695064842700958,
+            -1.4863524436950684
+          ],
+          "bounds_max": [
+            1.274834394454956,
+            0.27146491408348083,
+            -1.0918335914611816
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-860/nightstand_8_3.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7882816791534424,
+            -0.271511048078537,
+            -1.4861913919448853
+          ],
+          "bounds_max": [
+            -1.2213115692138672,
+            0.28003767132759094,
+            -1.0880844593048096
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-860/wardrobe_13_4.obj",
+          "collides": true,
+          "bounds_min": [
+            1.0179349184036255,
+            -1.1340975761413574,
+            -1.1635069847106934
+          ],
+          "bounds_max": [
+            1.7673792839050293,
+            1.1286933422088623,
+            0.31220901012420654
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/EchoScene/physcene_guidance/vis/2050/echoscene/object_meshes/SecondBedroom-860/lamp_7_5.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4845571517944336,
+            1.314943790435791,
+            -0.6116935014724731
+          ],
+          "bounds_max": [
+            -0.22335141897201538,
+            2.349702835083008,
+            0.3366580605506897
+          ]
+        }
+      ]
+    }
+  ]
+}

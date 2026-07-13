@@ -1,0 +1,3 @@
+acc & L/R: 0.99 & F/B: 0.98 & Bi/Sm: 0.96 & Ta/Sh: 0.95 & Stand: 0.89 & Close: 0.76 & Symm: 0.50. Total: &0.95
+means of mean: 0.86
+
