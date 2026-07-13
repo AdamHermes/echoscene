@@ -143,10 +143,7 @@ released_full_model/
 released_layout_model/
 *.glb
 *.obj
-/output/baseline/vis/2050/render_imgs
-/output/baseline_assets_scenes
-/output/physcene_guidance
-/output/released_full_model 2/vis/2050/render_imgs
+/output
 /to_be_merged
 /baseline
 /baseline_post_processed

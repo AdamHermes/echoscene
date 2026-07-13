@@ -3,9 +3,9 @@ import subprocess
 import shutil
 
 folders = [
-    "../output/baseline/vis/2050",
-    "../output/physcene_guidance/vis/2050",
-    "../output/released_full_model/vis/2050"
+    "./output/baseline/vis/2050",
+    "./output/physcene_guidance/vis/2050",
+    "./output/released_full_model/vis/2050"
 ]
 
 for folder in folders:
