@@ -1,5 +1,4 @@
 {
-  "doors": [],
   "metadata": {
     "schema": "1.0.0",
     "agent": {
@@ -75,7 +74,6 @@
       }
     }
   },
-  "objects": [],
   "proceduralParameters": {
     "floorColliderThickness": 1.0,
     "receptacleHeight": 0.7,
@@ -1611,6 +1609,8 @@
       ]
     }
   ],
+  "objects": [],
+  "doors": [],
   "windows": [],
   "furniture_boxes": [
     [

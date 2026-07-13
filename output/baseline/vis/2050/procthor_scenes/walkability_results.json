@@ -1,7 +1,7 @@
 {
   "summary": {
-    "instance_count": 50,
-    "average_walkability": 0.21177221858731926
+    "instance_count": 51,
+    "average_walkability": 0.20761982214443064
   },
   "scenes": {
     "SecondBedroom-30034": {
@@ -237,6 +237,12 @@
       "walkable_area": 3.375,
       "total_area": 14.031434487932634,
       "navigable_points": 54
+    },
+    "navigation_results": {
+      "walkability_score": 0,
+      "walkable_area": 0,
+      "total_area": 0,
+      "navigable_points": 0
     },
     "Bedroom-430": {
       "walkability_score": 0.19203973404582592,

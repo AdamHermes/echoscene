@@ -22,12 +22,14 @@ def is_clear(x, z, furniture_boxes, l, w):
         return False
     return True
 
-scene_name = "SecondBedroom-6482"
-folders = [
-    "baseline",
-    "physcene_guidance",
-    "released_full_model"
-]
+import argparse
+parser = argparse.ArgumentParser(description="Visualize path planning on EchoScene layouts.")
+parser.add_argument("--scene_name", type=str, required=True, help="Name of the scene (e.g. SecondBedroom-6482)")
+parser.add_argument("--folders", type=str, nargs='+', required=True, help="List of folder names to process (e.g. baseline physcene_guidance)")
+args = parser.parse_args()
+
+scene_name = args.scene_name
+folders = args.folders
 
 controller = Controller(agentMode="default", visibilityDistance=1.5, scene="Procedural", gridSize=0.25)
 
