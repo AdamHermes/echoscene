@@ -121,31 +121,36 @@ for folder in folders:
         print(f"{folder}: No reachable positions found.")
         continue
         
-    # Find the furthest point from start as goal
+    # Find paths to EVERY piece of furniture
     start_pos = {"x": spawn_x, "y": 0.9, "z": spawn_z}
-    goal_pos = start_pos
-    max_dist = -1
-    for p in valid_positions:
-        dist = math.dist([start_pos['x'], start_pos['z']], [p['x'], p['z']])
-        if dist > max_dist:
-            max_dist = dist
-            goal_pos = p
+    all_path_points = []
+    goal_positions = []
+    
+    for obj in objects_raw:
+        min_y = max(0.0, obj['position']['y'] - obj['size']['y'] / 2.0)
+        if min_y >= 1.0: 
+            continue # ignore high ceiling objects
             
-    # ---------------------------------------------------------------------------------
-    # NATIVE AI2-THOR PATHFINDING
-    # Since convert_echoscene_to_procthor.py completely seals the furniture to the ceiling
-    # with horizontal lids, the AI2-THOR NavMesh baker cannot leak voxels inside the furniture.
-    # Therefore, GetShortestPathToPoint now returns a mathematically perfect path that
-    # correctly respects the agent's 0.25m collision radius without cutting corners.
-    # ---------------------------------------------------------------------------------
-    path_event = controller.step(action="GetShortestPathToPoint", target=goal_pos)
-    path_points = []
-    if path_event.metadata["lastActionSuccess"]:
-        path_points = path_event.metadata["actionReturn"]["corners"]
-    else:
-        print(f"{folder}: Failed to get shortest path. Using straight line.")
-        path_points = [start_pos, goal_pos]
+        obj_x = obj['position']['x'] + offset_x
+        obj_z = obj['position']['z'] + offset_z
         
+        # Find closest reachable NavMesh point to this object
+        closest_goal = None
+        min_dist = float('inf')
+        for p in valid_positions:
+            dist = math.dist([obj_x, obj_z], [p['x'], p['z']])
+            if dist < min_dist:
+                min_dist = dist
+                closest_goal = p
+                
+        if closest_goal:
+            goal_positions.append(closest_goal)
+            path_event = controller.step(action="GetShortestPathToPoint", target=closest_goal)
+            if path_event.metadata["lastActionSuccess"]:
+                all_path_points.append(path_event.metadata["actionReturn"]["corners"])
+            else:
+                all_path_points.append([start_pos, closest_goal])
+                
     fig, ax = plt.subplots(figsize=(8, 8))
     ax.set_xlim(0, l)
     ax.set_ylim(0, w)
@@ -195,15 +200,16 @@ for folder in folders:
         rz = [p['z'] for p in valid_positions]
         ax.scatter(rx, rz, c='black', s=10, label='NavMesh Nodes', zorder=3)
         
-    # Plot path
-    if path_points:
-        px = [p['x'] for p in path_points]
-        pz = [p['z'] for p in path_points]
-        ax.plot(px, pz, c='blue', linewidth=2, label='Path')
+    # Plot all paths
+    for i, p_pts in enumerate(all_path_points):
+        px = [p['x'] for p in p_pts]
+        pz = [p['z'] for p in p_pts]
+        ax.plot(px, pz, c='blue', linewidth=2, alpha=0.6, label='Path to object' if i == 0 else "")
         
-    # Plot Start and Goal
-    ax.scatter([start_pos['x']], [start_pos['z']], c='green', marker='*', s=200, label='Start')
-    ax.scatter([goal_pos['x']], [goal_pos['z']], c='red', marker='X', s=150, label='Goal')
+    # Plot Start and Goals
+    ax.scatter([start_pos['x']], [start_pos['z']], c='green', marker='*', s=200, label='Start', zorder=5)
+    for i, goal_pos in enumerate(goal_positions):
+        ax.scatter([goal_pos['x']], [goal_pos['z']], c='red', marker='X', s=100, label='Goal' if i == 0 else "", zorder=5)
     
     plt.title(f"{scene_name} - {folder}")
     plt.xlabel("X")
