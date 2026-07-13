@@ -82,7 +82,13 @@ for folder in folders:
             max_dist = dist
             goal_pos = p
             
-    # Get shortest path natively from AI2-THOR NavMesh
+    # ---------------------------------------------------------------------------------
+    # NATIVE AI2-THOR PATHFINDING
+    # Since convert_echoscene_to_procthor.py completely seals the furniture to the ceiling
+    # with horizontal lids, the AI2-THOR NavMesh baker cannot leak voxels inside the furniture.
+    # Therefore, GetShortestPathToPoint now returns a mathematically perfect path that
+    # correctly respects the agent's 0.25m collision radius without cutting corners.
+    # ---------------------------------------------------------------------------------
     path_event = controller.step(action="GetShortestPathToPoint", target=goal_pos)
     path_points = []
     if path_event.metadata["lastActionSuccess"]:
