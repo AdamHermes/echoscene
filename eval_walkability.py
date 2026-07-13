@@ -1,7 +1,7 @@
 import os
 import json
 import glob
-import math
+import argparse
 
 try:
     from ai2thor.controller import Controller
@@ -12,44 +12,66 @@ except ImportError:
 def calculate_walkability(scene_json_path, controller):
     with open(scene_json_path, 'r') as f:
         house_data = json.load(f)
-    
-    # Extract the floor polygon to compute total expected area
-    # Assuming rectangular floor for simplicity based on our converter
-    floor_poly = house_data['rooms'][0]['floorPolygon']
-    x_coords = [p['x'] for p in floor_poly]
-    z_coords = [p['z'] for p in floor_poly]
-    
-    length = max(x_coords) - min(x_coords)
-    width = max(z_coords) - min(z_coords)
-    total_area = length * width
-    
-    # 1. Initialize environment with the generated scene
+
+    # Real room dimensions stored at conversion time (excludes the 0.5m sceneBounds padding)
+    rd = house_data.get('room_dims', {})
+    l = rd.get('l', 0)
+    w = rd.get('w', 0)
+    true_total_area = l * w
+
+    # Real room occupies [0, l] x [0, w] in scene space
+    room_min_x, room_max_x = 0.0, l
+    room_min_z, room_max_z = 0.0, w
+
+    # 1. Load scene
     controller.reset(scene=house_data)
-    
-    # 1.5 Explicitly teleport agent to the center of the floor to prevent out-of-bounds error
-    fx = (max(x_coords) + min(x_coords)) / 2.0
-    fz = (max(z_coords) + min(z_coords)) / 2.0
-    event_tp = controller.step(action="Teleport", position={"x": fx, "y": 0.9, "z": fz}, forceAction=True)
-    print(f"Teleport success: {event_tp.metadata['lastActionSuccess']}")
-    # 2. Get reachable positions via NavMesh
+
+    # 2. Find a clear teleport position
+    furniture_boxes = house_data.get('furniture_boxes', [])
+    def is_clear(x, z):
+        clearance = 0.3
+        for box in furniture_boxes:
+            min_x, max_x, min_z, max_z = box
+            if (min_x - clearance <= x <= max_x + clearance) and (min_z - clearance <= z <= max_z + clearance):
+                return False
+        if x < clearance or x > l - clearance or z < clearance or z > w - clearance:
+            return False
+        return True
+
+    spawn_x, spawn_z = l / 2.0, w / 2.0  # fallback
+    found = False
+    x = 0.25
+    while x < l and not found:
+        z = 0.25
+        while z < w:
+            if is_clear(x, z):
+                spawn_x, spawn_z = x, z
+                found = True
+                break
+            z += 0.25
+        x += 0.25
+
+    event_tp = controller.step(action="Teleport", position={"x": spawn_x, "y": 0.9, "z": spawn_z}, forceAction=True)
+    print(f"Teleport success to ({spawn_x:.2f}, {spawn_z:.2f}): {event_tp.metadata['lastActionSuccess']}")
+
+    # 3. Get NavMesh reachable positions
     event = controller.step(action="GetReachablePositions")
-    
+
     if event.metadata["lastActionSuccess"]:
         reachable_positions = event.metadata["actionReturn"]
-        
-        # Grid size in ProcTHOR is typically 0.25m
-        # Area = number of points * (gridSize ^ 2)
+        # Filter: only count points inside the real room walls (exclude 0.5m padding zone)
+        valid_positions = [p for p in reachable_positions
+                          if room_min_x <= p['x'] <= room_max_x and room_min_z <= p['z'] <= room_max_z]
+
         grid_size = 0.25
-        walkable_area = len(reachable_positions) * (grid_size ** 2)
-        
-        walkability_score = walkable_area / total_area if total_area > 0 else 0
-        
-        return walkability_score, walkable_area, total_area, len(reachable_positions)
+        walkable_area = len(valid_positions) * (grid_size ** 2)
+        walkability_score = walkable_area / true_total_area if true_total_area > 0 else 0
+
+        return walkability_score, walkable_area, true_total_area, len(valid_positions)
     else:
         print(f"Failed to get reachable positions: {event.metadata['errorMessage']}")
-        return 0, 0, total_area, 0
+        return 0, 0, true_total_area, 0
 
-import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate Walkability for ProcTHOR JSON scenes.")
@@ -71,7 +93,7 @@ if __name__ == "__main__":
     controller = Controller(
         agentMode="default",
         visibilityDistance=1.5,
-        scene="Procedural", # Procedural mode is used for custom house JSONs
+        scene="Procedural", 
         gridSize=0.25
     )
     
