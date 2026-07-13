@@ -186,9 +186,14 @@ for folder in folders:
         
     # Also plot the valid positions if desired
     if valid_positions:
+        # Draw the 0.25m x 0.25m Walkable Area cells
+        for p in valid_positions:
+            rect = patches.Rectangle((p['x'] - 0.125, p['z'] - 0.125), 0.25, 0.25, linewidth=0, facecolor='yellow', alpha=0.5, zorder=2)
+            ax.add_patch(rect)
+            
         rx = [p['x'] for p in valid_positions]
         rz = [p['z'] for p in valid_positions]
-        ax.scatter(rx, rz, c='black', s=10, label='Reachable Area (NavMesh)')
+        ax.scatter(rx, rz, c='black', s=10, label='NavMesh Nodes', zorder=3)
         
     # Plot path
     if path_points:
