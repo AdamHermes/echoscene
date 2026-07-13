@@ -176,8 +176,6 @@ def convert_to_procthor_json(scene_name, scene_data):
         
     procthor_objects = []
     furniture_boxes = []   # list of (min_x, max_x, min_z, max_z) for each piece of furniture
-
-    import math as _math
     for idx, obj in enumerate(scene_data['objects']):
         cx = obj['position']['x'] + offset_x
         cz = obj['position']['z'] + offset_z
@@ -193,29 +191,35 @@ def convert_to_procthor_json(scene_name, scene_data):
         
         theta = obj['rotation']['y']
 
-        # Build the 4 corners of the furniture footprint (axis-aligned for now — rotation handled below)
+        # Build the 4 corners of the furniture footprint
         hw, hd = obj_w / 2.0, obj_d / 2.0
-        # theta from final.json is already in radians!
+        # theta from final.json is already in radians
         rad = theta
-        cos_t, sin_t = _math.cos(rad), _math.sin(rad)
-
+        cos_t, sin_t = math.cos(rad), math.sin(rad)
+        
         def rot(lx, lz):
-            return cx + lx*cos_t - lz*sin_t, cz + lx*sin_t + lz*cos_t
+            # Rotate by theta and translate
+            return (cx + lx*cos_t - lz*sin_t, cz + lx*sin_t + lz*cos_t)
 
-        # 4 corners in order
         c0 = rot(-hw, -hd)
-        c1 = rot( hw, -hd)
-        c2 = rot( hw,  hd)
-        c3 = rot(-hw,  hd)
+        c1 = rot(hw, -hd)
+        c2 = rot(hw, hd)
+        c3 = rot(-hw, hd)
 
         corners = [c0, c1, c2, c3]
-        
-        # Track axis-aligned bounding box for spawn-point selection
-        # ONLY if the object is low enough to block the agent (e.g. min_y < 1.0)
-        if min_y < 1.0:
+        if min_y < 1.0: # Only obstacles near the floor block NavMesh
             xs = [p[0] for p in corners]; zs = [p[1] for p in corners]
             furniture_boxes.append((min(xs), max(xs), min(zs), max(zs)))
 
+        # ---------------------------------------------------------------------------------
+        # AI2-THOR NavMesh Voxelization Fix:
+        # If we use infinitely thin 2D walls for the furniture, the NavMesh baker (which drops
+        # voxels from above) leaks through the corners, allowing paths to cut through them.
+        # To fix this, we extend the walls from the floor to the CEILING (3.0m), and cap them
+        # with a solid horizontal lid. This creates an impenetrable blocked volume.
+        # ---------------------------------------------------------------------------------
+        
+        # 1. Four vertical walls forming the closed box.
         # Must be CLOCKWISE so normals face outward in Unity's left-handed system!
         edges = [(c0, c3), (c3, c2), (c2, c1), (c1, c0)]
         for e_idx, (va, vb) in enumerate(edges):
@@ -227,13 +231,13 @@ def convert_to_procthor_json(scene_name, scene_data):
                 "polygon": [
                     {"x": va[0], "y": min_y, "z": va[1]},
                     {"x": vb[0], "y": min_y, "z": vb[1]},
-                    {"x": vb[0], "y": 3.0, "z": vb[1]},
+                    {"x": vb[0], "y": 3.0, "z": vb[1]}, # Extend to ceiling
                     {"x": va[0], "y": 3.0, "z": va[1]},
                 ]
             })
             
-        # Add a horizontal lid (ceiling) to the furniture box to block NavMesh voxels from falling inside
-        # Must be CLOCKWISE from top-down perspective to face upwards!
+        # 2. Horizontal lid (ceiling cap) to block NavMesh voxels from falling inside.
+        # Must be CLOCKWISE from top-down perspective to face upwards.
         lid_corners = [c0, c1, c2, c3]
         walls.append({
             "id": f"furn|{idx}|lid",
@@ -246,7 +250,6 @@ def convert_to_procthor_json(scene_name, scene_data):
                 {"x": lid_corners[3][0], "y": 3.0, "z": lid_corners[3][1]}
             ]
         })
-
         
     try:
         with open("sample_house.json", "r") as f:
