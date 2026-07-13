@@ -2,6 +2,12 @@
 
 This directory contains documentation and instructions for evaluating EchoScene layouts using AI2-THOR / ProcTHOR.
 
+## Dependencies
+Before running these scripts, ensure you have the required packages installed:
+```bash
+pip install ai2thor prior numpy matplotlib scipy
+```
+
 ## Files and Scripts
 All scripts are located in the main `echoscene` directory and run from there.
 
@@ -25,4 +31,10 @@ To evaluate a new generation run (e.g. `output/physcene_guidance`):
    python eval_navigation.py --scenes_dir ./output/physcene_guidance/vis/2050/procthor_scenes
    ```
 
-The results are saved directly in the `procthor_scenes` folder as `walkability_results.json` and `navigation_results.json`.
+3. **Visualize Navigation Paths**:
+   To generate a visual plot of the layout overlaid with the 0.05m raster grid, AI2-THOR's native NavMesh reachable points, and the shortest path between the EDT-selected spawn point and the furthest valid position:
+   ```bash
+   python plot_path.py --scene_name SecondBedroom-6482 --folders baseline physcene_guidance released_full_model
+   ```
+
+The metric results are saved directly in the `procthor_scenes` folder as `walkability_results.json` and `navigation_results.json`. The generated plots are saved alongside the `final.json` in the respective generation output folders.

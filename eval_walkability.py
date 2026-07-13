@@ -79,7 +79,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     scenes_dir = args.scenes_dir
-    scene_files = glob.glob(os.path.join(scenes_dir, "*.json"))
+    scene_files = [os.path.join(scenes_dir, f) for f in os.listdir(scenes_dir) if f.endswith('.json') and not f.startswith('walkability_') and not f.startswith('navigation_')]
     
     if not scene_files:
         print(f"No converted scenes found in {scenes_dir}.")
