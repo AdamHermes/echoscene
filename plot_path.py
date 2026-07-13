@@ -82,12 +82,28 @@ for folder in folders:
             max_dist = dist
             goal_pos = p
             
-    # Get shortest path
-    path_event = controller.step(action="GetShortestPath", position=goal_pos)
+    import networkx as nx
+    G = nx.Graph()
+    for p in valid_positions:
+        G.add_node((round(p['x'], 3), round(p['z'], 3)))
+    
+    nodes = list(G.nodes())
+    for i in range(len(nodes)):
+        for j in range(i+1, len(nodes)):
+            n1 = nodes[i]
+            n2 = nodes[j]
+            dist = math.dist(n1, n2)
+            if dist < 0.36:
+                G.add_edge(n1, n2, weight=dist)
+                
+    start_n = (round(start_pos['x'], 3), round(start_pos['z'], 3))
+    goal_n = (round(goal_pos['x'], 3), round(goal_pos['z'], 3))
+    
     path_points = []
-    if path_event.metadata["lastActionSuccess"]:
-        path_points = path_event.metadata["actionReturn"]["corners"]
-    else:
+    try:
+        sp = nx.shortest_path(G, source=start_n, target=goal_n, weight='weight')
+        path_points = [{'x': nx_p[0], 'z': nx_p[1]} for nx_p in sp]
+    except Exception as e:
         print(f"{folder}: Failed to get shortest path. Using straight line.")
         path_points = [start_pos, goal_pos]
         
