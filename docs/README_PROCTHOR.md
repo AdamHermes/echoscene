@@ -32,6 +32,12 @@ Both metrics rely on the exact same core feature of ProcTHOR: the **NavMesh** (`
 
 In short, **Walkability** evaluates the free space, while **Navigability** evaluates the functional placement of objects relative to that free space.
 
+### 3. Agent Teleportation (How do we find a safe starting point?)
+Before any AI2-THOR NavMesh metric can run, the agent must be successfully teleported into the room. If the agent spawns inside a wall or a piece of furniture, the physics engine will throw a fatal `InvalidOperationException`.
+* **The Solution (EDT)**: The evaluation scripts use a 2D Euclidean Distance Transform (EDT) via `scipy.ndimage.distance_transform_edt` on the rasterized floor plan.
+* **How it works**: It calculates the physical distance from every free floor pixel to the absolute nearest obstacle (furniture or wall). The pixel with the **maximum distance** (the safest, most open spot in the room) is chosen as the initial spawn coordinate.
+* **The Result**: This mathematical guarantee ensures the AI2-THOR agent is teleported perfectly into the widest available clearing, completely eliminating out-of-bounds spawn crashes!
+
 ## How to run the pipeline
 To evaluate a new generation run (e.g. `output/physcene_guidance`):
 
