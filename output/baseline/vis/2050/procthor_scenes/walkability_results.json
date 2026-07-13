@@ -1,0 +1,308 @@
+{
+  "summary": {
+    "instance_count": 50,
+    "average_walkability": 0.21177221858731926
+  },
+  "scenes": {
+    "SecondBedroom-30034": {
+      "walkability_score": 0.3020954167097053,
+      "walkable_area": 2.25,
+      "total_area": 7.447977941890156,
+      "navigable_points": 36
+    },
+    "MasterBedroom-33296": {
+      "walkability_score": 0.04506258635907924,
+      "walkable_area": 0.75,
+      "total_area": 16.643518728012147,
+      "navigable_points": 12
+    },
+    "MasterBedroom-10364": {
+      "walkability_score": 0.24051818087971447,
+      "walkable_area": 2.9375,
+      "total_area": 12.213213941897694,
+      "navigable_points": 47
+    },
+    "SecondBedroom-11303": {
+      "walkability_score": 0.04476158188907467,
+      "walkable_area": 0.4375,
+      "total_area": 9.774006671260747,
+      "navigable_points": 7
+    },
+    "MasterBedroom-6399": {
+      "walkability_score": 0.08887790627973359,
+      "walkable_area": 0.9375,
+      "total_area": 10.548178273341861,
+      "navigable_points": 15
+    },
+    "SecondBedroom-19119": {
+      "walkability_score": 0.2754167051660244,
+      "walkable_area": 3.9375,
+      "total_area": 14.296518425149372,
+      "navigable_points": 63
+    },
+    "SecondBedroom-860": {
+      "walkability_score": 0.10052051560723019,
+      "walkable_area": 1.0,
+      "total_area": 9.948217972810244,
+      "navigable_points": 16
+    },
+    "Bedroom-2719": {
+      "walkability_score": 0.13227087382730193,
+      "walkable_area": 1.5,
+      "total_area": 11.34036509018954,
+      "navigable_points": 24
+    },
+    "MasterBedroom-196": {
+      "walkability_score": 0.1398181964709168,
+      "walkable_area": 1.6875,
+      "total_area": 12.069244508893462,
+      "navigable_points": 27
+    },
+    "MasterBedroom-132469": {
+      "walkability_score": 0.12255896729799368,
+      "walkable_area": 1.125,
+      "total_area": 9.1792548909509,
+      "navigable_points": 18
+    },
+    "Bedroom-12864": {
+      "walkability_score": 0.1482955592895973,
+      "walkable_area": 1.875,
+      "total_area": 12.643669230434792,
+      "navigable_points": 30
+    },
+    "SecondBedroom-15551": {
+      "walkability_score": 0.35472775500244574,
+      "walkable_area": 3.0625,
+      "total_area": 8.63338139407469,
+      "navigable_points": 49
+    },
+    "Bedroom-18": {
+      "walkability_score": 0.43122962534396714,
+      "walkable_area": 3.3125,
+      "total_area": 7.681522338261915,
+      "navigable_points": 53
+    },
+    "SecondBedroom-266050": {
+      "walkability_score": 0.13671301068222172,
+      "walkable_area": 1.875,
+      "total_area": 13.714861450592183,
+      "navigable_points": 30
+    },
+    "SecondBedroom-2787": {
+      "walkability_score": 0.05180947442075341,
+      "walkable_area": 0.375,
+      "total_area": 7.238058370454837,
+      "navigable_points": 6
+    },
+    "MasterBedroom-514": {
+      "walkability_score": 0.3172188472574874,
+      "walkable_area": 1.5,
+      "total_area": 4.72859671790701,
+      "navigable_points": 24
+    },
+    "MasterBedroom-1362": {
+      "walkability_score": 0.10883939926851888,
+      "walkable_area": 1.25,
+      "total_area": 11.484811643586081,
+      "navigable_points": 20
+    },
+    "SecondBedroom-13841": {
+      "walkability_score": 0.1971182974308181,
+      "walkable_area": 1.4375,
+      "total_area": 7.292575162914616,
+      "navigable_points": 23
+    },
+    "Bedroom-6993": {
+      "walkability_score": 0.153445779555654,
+      "walkable_area": 1.75,
+      "total_area": 11.404679914088376,
+      "navigable_points": 28
+    },
+    "SecondBedroom-35821": {
+      "walkability_score": 0.21180815793526206,
+      "walkable_area": 2.75,
+      "total_area": 12.983447034370233,
+      "navigable_points": 44
+    },
+    "MasterBedroom-935": {
+      "walkability_score": 0.2643424988459943,
+      "walkable_area": 5.375,
+      "total_area": 20.33346897855978,
+      "navigable_points": 86
+    },
+    "Bedroom-18055": {
+      "walkability_score": 0.1103205952377182,
+      "walkable_area": 1.125,
+      "total_area": 10.197551940105619,
+      "navigable_points": 18
+    },
+    "SecondBedroom-739": {
+      "walkability_score": 0.3845132014734836,
+      "walkable_area": 2.5,
+      "total_area": 6.501727354014924,
+      "navigable_points": 40
+    },
+    "SecondBedroom-22370": {
+      "walkability_score": 0.06832620314361532,
+      "walkable_area": 0.625,
+      "total_area": 9.147295931054565,
+      "navigable_points": 10
+    },
+    "SecondBedroom-1145": {
+      "walkability_score": 0.45161111733537534,
+      "walkable_area": 3.4375,
+      "total_area": 7.611637242860973,
+      "navigable_points": 55
+    },
+    "MasterBedroom-12352": {
+      "walkability_score": 0.3252120154552104,
+      "walkable_area": 2.125,
+      "total_area": 6.534198919512752,
+      "navigable_points": 34
+    },
+    "MasterBedroom-6351": {
+      "walkability_score": 0.3164956080392024,
+      "walkable_area": 2.25,
+      "total_area": 7.109103389900141,
+      "navigable_points": 36
+    },
+    "SecondBedroom-52584": {
+      "walkability_score": 0.27027355116546214,
+      "walkable_area": 1.75,
+      "total_area": 6.474921398907604,
+      "navigable_points": 28
+    },
+    "SecondBedroom-11167": {
+      "walkability_score": 0.24584551637454197,
+      "walkable_area": 3.375,
+      "total_area": 13.728133218660119,
+      "navigable_points": 54
+    },
+    "Bedroom-47437": {
+      "walkability_score": 0.364330825915804,
+      "walkable_area": 2.1875,
+      "total_area": 6.004158430737689,
+      "navigable_points": 35
+    },
+    "SecondBedroom-6482": {
+      "walkability_score": 0.33154109058142106,
+      "walkable_area": 4.875,
+      "total_area": 14.704059733442843,
+      "navigable_points": 78
+    },
+    "SecondBedroom-69136": {
+      "walkability_score": 0.3273029601387756,
+      "walkable_area": 5.125,
+      "total_area": 15.658275738865955,
+      "navigable_points": 82
+    },
+    "MasterBedroom-21684": {
+      "walkability_score": 0.14874373056535029,
+      "walkable_area": 2.0,
+      "total_area": 13.445944863681524,
+      "navigable_points": 32
+    },
+    "MasterBedroom-104323": {
+      "walkability_score": 0.2887390744334521,
+      "walkable_area": 1.3125,
+      "total_area": 4.545626540416517,
+      "navigable_points": 21
+    },
+    "MasterBedroom-4089": {
+      "walkability_score": 0.13471974398200526,
+      "walkable_area": 1.5,
+      "total_area": 11.134225434694692,
+      "navigable_points": 24
+    },
+    "SecondBedroom-19262": {
+      "walkability_score": 0.20986588373910814,
+      "walkable_area": 2.75,
+      "total_area": 13.103606698736343,
+      "navigable_points": 44
+    },
+    "MasterBedroom-18415": {
+      "walkability_score": 0.3473319867352438,
+      "walkable_area": 7.0625,
+      "total_area": 20.333572114633483,
+      "navigable_points": 113
+    },
+    "MasterBedroom-118594": {
+      "walkability_score": 0.16781852598282854,
+      "walkable_area": 2.0625,
+      "total_area": 12.290061469202978,
+      "navigable_points": 33
+    },
+    "Bedroom-87322": {
+      "walkability_score": 0.24053135856512603,
+      "walkable_area": 3.375,
+      "total_area": 14.031434487932634,
+      "navigable_points": 54
+    },
+    "Bedroom-430": {
+      "walkability_score": 0.19203973404582592,
+      "walkable_area": 1.1875,
+      "total_area": 6.183616145378696,
+      "navigable_points": 19
+    },
+    "MasterBedroom-9404": {
+      "walkability_score": 0.1814247296396118,
+      "walkable_area": 3.1875,
+      "total_area": 17.56926967085335,
+      "navigable_points": 51
+    },
+    "MasterBedroom-7894": {
+      "walkability_score": 0.212963015405339,
+      "walkable_area": 3.0,
+      "total_area": 14.086953052810642,
+      "navigable_points": 48
+    },
+    "MasterBedroom-27127": {
+      "walkability_score": 0.08288630376195677,
+      "walkable_area": 0.875,
+      "total_area": 10.556629506763073,
+      "navigable_points": 14
+    },
+    "SecondBedroom-69556": {
+      "walkability_score": 0.33924234511341667,
+      "walkable_area": 4.625,
+      "total_area": 13.63332162573559,
+      "navigable_points": 74
+    },
+    "MasterBedroom-75552": {
+      "walkability_score": 0.062349159326146306,
+      "walkable_area": 0.5625,
+      "total_area": 9.02177360656271,
+      "navigable_points": 9
+    },
+    "Bedroom-68718": {
+      "walkability_score": 0.024370031311220296,
+      "walkable_area": 0.25,
+      "total_area": 10.258501386696889,
+      "navigable_points": 4
+    },
+    "MasterBedroom-13100": {
+      "walkability_score": 0.16460444928990822,
+      "walkable_area": 2.25,
+      "total_area": 13.669132333338124,
+      "navigable_points": 36
+    },
+    "SecondBedroom-2311": {
+      "walkability_score": 0.1804928295809661,
+      "walkable_area": 1.4375,
+      "total_area": 7.964305304190277,
+      "navigable_points": 23
+    },
+    "SecondBedroom-8497": {
+      "walkability_score": 0.3209838720764726,
+      "walkable_area": 2.3125,
+      "total_area": 7.204411813715861,
+      "navigable_points": 37
+    },
+    "SecondBedroom-11204": {
+      "walkability_score": 0.22628213543187697,
+      "walkable_area": 2.75,
+      "total_area": 12.152969984799782,
+      "navigable_points": 44
+    }
+  }
+}

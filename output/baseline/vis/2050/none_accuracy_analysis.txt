@@ -1,0 +1,3 @@
+acc & L/R: 0.97 & F/B: 1.00 & Bi/Sm: 1.00 & Ta/Sh: 0.98 & Stand: 1.00 & Close: 0.67 & Symm: nan. Total: &0.97
+means of mean: nan
+
