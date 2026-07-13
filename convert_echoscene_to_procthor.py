@@ -216,9 +216,8 @@ def convert_to_procthor_json(scene_name, scene_data):
             xs = [p[0] for p in corners]; zs = [p[1] for p in corners]
             furniture_boxes.append((min(xs), max(xs), min(zs), max(zs)))
 
-        # 4 wall panels forming a closed box around the furniture footprint + 2 diagonals to prevent NavMesh leak
         # Must be CLOCKWISE so normals face outward in Unity's left-handed system!
-        edges = [(c0, c3), (c3, c2), (c2, c1), (c1, c0), (c0, c2), (c1, c3)]
+        edges = [(c0, c3), (c3, c2), (c2, c1), (c1, c0)]
         for e_idx, (va, vb) in enumerate(edges):
             wall_id = f"furn|{idx}|{e_idx}"
             walls.append({
@@ -228,10 +227,25 @@ def convert_to_procthor_json(scene_name, scene_data):
                 "polygon": [
                     {"x": va[0], "y": min_y, "z": va[1]},
                     {"x": vb[0], "y": min_y, "z": vb[1]},
-                    {"x": vb[0], "y": max_y, "z": vb[1]},
-                    {"x": va[0], "y": max_y, "z": va[1]},
+                    {"x": vb[0], "y": 3.0, "z": vb[1]},
+                    {"x": va[0], "y": 3.0, "z": va[1]},
                 ]
             })
+            
+        # Add a horizontal lid (ceiling) to the furniture box to block NavMesh voxels from falling inside
+        # Must be CLOCKWISE from top-down perspective to face upwards!
+        lid_corners = [c0, c1, c2, c3]
+        walls.append({
+            "id": f"furn|{idx}|lid",
+            "roomId": "room|0",
+            "material": {"name": "PureWhite"},
+            "polygon": [
+                {"x": lid_corners[0][0], "y": 3.0, "z": lid_corners[0][1]},
+                {"x": lid_corners[1][0], "y": 3.0, "z": lid_corners[1][1]},
+                {"x": lid_corners[2][0], "y": 3.0, "z": lid_corners[2][1]},
+                {"x": lid_corners[3][0], "y": 3.0, "z": lid_corners[3][1]}
+            ]
+        })
 
         
     try:
