@@ -1,0 +1,211 @@
+% ==========================================================================
+%  method.tex — Physically-Guided Collision-Free Indoor Scene Generation
+% ==========================================================================
+\section{Method}
+\label{sec:method}
+
+Given a scene graph $\mathcal{G} = (\mathcal{V}, \mathcal{E})$ encoding object categories and spatial relationships, our goal is to generate a collision-free 3D indoor scene layout where objects respect both the relational semantics of $\mathcal{G}$ and fundamental physical constraints.
+We build upon EchoScene~\cite{echoscene}, a graph-conditioned diffusion framework, and introduce a \emph{coarse-to-fine} collision resolution pipeline consisting of two complementary stages (Fig.~\ref{fig:pipeline}):
+\textbf{(i)} \emph{Physics-Guided Diffusion}, which steers the layout denoising process toward plausible, non-overlapping configurations via three differentiable guidance losses; and
+\textbf{(ii)} \emph{OBB-SAT Post-Processing}, which resolves any residual interpenetrations by applying the Separating Axis Theorem on oriented bounding boxes.
+
+% ------------------------------------------------------------------
+\subsection{Preliminaries}
+\label{sec:method:prelim}
+% ------------------------------------------------------------------
+
+\paragraph{Scene graph diffusion.}
+EchoScene encodes a scene graph $\mathcal{G}$ through a Relation Encoder (a triplet-GCN) to produce per-node latent features $\mathcal{V}_z = \{v_i^z\}$ that encapsulate both semantic identities and relational context.
+A layout diffusion branch then learns to denoise bounding box parameters
+$\mathbf{b}_i = (l_i, h_i, w_i, x_i, y_i, z_i, \sin\theta_i, \cos\theta_i) \in \mathbb{R}^{8}$
+for each node $i$, conditioned on the graph features.
+At every denoising timestep $t$, an \emph{Information Exchange Unit} $U$ (another triplet-GCN) aggregates the current noisy states across neighboring nodes, forming an echoed condition
+$\mathcal{C}_{\mathcal{D}_t} = U(\mathcal{G}_{\mathcal{D}_t})$
+that keeps each object aware of its neighbors' evolving layouts throughout the reverse process.
+We refer the reader to~\cite{echoscene} for full architectural details and focus here on the novel components we introduce.
+
+\paragraph{Notation.}
+Let $\mathbf{d}_t = \{\mathbf{b}_t^i\}_{i=1}^{M}$ denote the set of $M$ noisy bounding box parameters at denoising timestep $t$.
+The denoiser predicts the clean sample estimate $\hat{\mathbf{d}}_0^{(t)}$ and produces a posterior mean $\boldsymbol{\mu}_t$ and variance $\sigma_t^2$ following the standard DDPM formulation~\cite{ho2020ddpm}.
+We define an \emph{objectness mask} $\mathbf{o} \in \{0,1\}^M$ to distinguish real furniture nodes from auxiliary nodes (e.g., \texttt{floor}, \texttt{\_scene\_}), ensuring guidance is applied only to movable objects.
+
+% ------------------------------------------------------------------
+\subsection{Physics-Guided Diffusion (Coarse Stage)}
+\label{sec:method:guidance}
+% ------------------------------------------------------------------
+
+The key observation motivating our approach is that the standard layout diffusion training objective in EchoScene---an L1 reconstruction loss over bounding box parameters---does not explicitly penalize inter-object collisions or out-of-room placements.
+While the Information Exchange Unit provides implicit relational awareness, it offers no \emph{hard} physical guarantees, leading to frequent interpenetrations in practice.
+
+We address this by injecting physics-based guidance into the \emph{inference-time} reverse process.
+Crucially, this guidance is \emph{training-free}: we do not modify the pretrained EchoScene weights, thereby preserving the model's learned distribution while steering samples toward physically valid configurations.
+
+At each active denoising timestep $t$, we compute three guidance losses on the predicted clean layout $\hat{\mathbf{d}}_0^{(t)}$ and use their gradients to shift the posterior mean:
+
+\begin{equation}
+\tilde{\boldsymbol{\mu}}_t = \boldsymbol{\mu}_t - \lambda \cdot \sigma_t^2 \cdot \nabla_{\hat{\mathbf{d}}_0^{(t)}} \mathcal{L}_{\mathrm{phys}}(\hat{\mathbf{d}}_0^{(t)})
+\label{eq:guided_mean}
+\end{equation}
+
+\noindent where $\lambda$ is a global guidance strength, $\sigma_t^2$ is the model-predicted variance that naturally anneals the guidance magnitude (large corrections early, fine adjustments later), and $\mathcal{L}_{\mathrm{phys}}$ is the composite physical guidance loss defined below.
+
+% --- Loss 1: Collision ---
+\subsubsection{Collision Guidance Loss}
+\label{sec:method:collision_loss}
+
+To penalize inter-object overlaps, we first de-normalize the predicted boxes $\hat{\mathbf{d}}_0^{(t)}$ to metric space using the dataset statistics.
+For each scene, we compute pairwise collision metrics between all furniture objects (filtered by the objectness mask $\mathbf{o}$):
+
+\begin{equation}
+\mathcal{L}_{\mathrm{col}} = \frac{1}{|\mathcal{S}|} \sum_{s \in \mathcal{S}} \;\frac{1}{|\mathcal{P}_s|}\sum_{(i,j) \in \mathcal{P}_s} \Big[\,
+    w_{\mathrm{iou}} \cdot [\text{IoU}_{3\mathrm{D}}(i,j) - \tau_{\mathrm{iou}}]_+ \;+\;
+    w_{\mathrm{pen}} \cdot [\text{Pen}(i,j) - \tau_{\mathrm{pen}}]_+
+\,\Big]
+\label{eq:collision_loss}
+\end{equation}
+
+\noindent where $\mathcal{S}$ is the set of scenes in the batch, $\mathcal{P}_s$ denotes all unique furniture pairs in scene $s$, $[\cdot]_+ = \max(\cdot, 0)$ is the hinge function, and $\tau_{\mathrm{iou}}, \tau_{\mathrm{pen}}$ are thresholds below which collisions are tolerated (set to $0$ by default).
+
+The 3D IoU term $\text{IoU}_{3\mathrm{D}}$ is computed using a differentiable oriented bounding box intersection method~\cite{zhou2019iou} that accounts for object rotation.
+The penetration term $\text{Pen}(i,j)$ measures axis-aligned penetration volume by computing per-axis overlap extents:
+
+\begin{equation}
+\text{Pen}(i,j) = \prod_{a \in \{x,y,z\}} \Big[\,
+    \tfrac{\tilde{s}_i^a + \tilde{s}_j^a}{2} - |c_i^a - c_j^a|
+\,\Big]_+
+\label{eq:penetration}
+\end{equation}
+
+\noindent where $\tilde{s}_i^a$ denotes the effective axis-aligned extent of object $i$ along axis $a$ (computed from the rotated bounding box envelope), and $c_i^a$ is the center coordinate.
+
+% --- Loss 2: Room Layout ---
+\subsubsection{Room-Layout Guidance Loss}
+\label{sec:method:room_loss}
+
+Objects should remain within the room boundary.
+We define the room-layout loss as:
+
+\begin{equation}
+\mathcal{L}_{\mathrm{room}} = \sum_{i:\, o_i=1} \sum_{a \in \{x,z\}} \Big(
+    [\,c_i^a + \tfrac{s_i^a}{2} - B_{\max}^a\,]_+ \;+\;
+    [\,B_{\min}^a - c_i^a + \tfrac{s_i^a}{2}\,]_+
+\Big)
+\label{eq:room_loss}
+\end{equation}
+
+\noindent where $B_{\min}^a, B_{\max}^a$ are the room boundaries along axis $a$.
+When a floor node is present in the scene graph, we dynamically extract its bounding box as the room boundary; otherwise, we fall back to a default $6\text{m} \times 6\text{m}$ bound.
+The penalty is applied along the horizontal plane ($x, z$) since vertical (height) placement is typically well-constrained by the ground plane.
+
+% --- Loss 3: Walkability ---
+\subsubsection{Reachability Guidance Loss}
+\label{sec:method:walkable_loss}
+
+A plausible room layout should leave sufficient space for human traversal.
+We introduce a soft reachability penalty that discourages dense object clustering near the room center:
+
+\begin{equation}
+\mathcal{L}_{\mathrm{reach}} = \sum_{i:\, o_i=1} \exp\!\Big(-\frac{(x_i)^2 + (z_i)^2}{\sigma^2}\Big)
+\label{eq:walkable_loss}
+\end{equation}
+
+\noindent where $(x_i, z_i)$ are the horizontal center coordinates and $\sigma$ controls the radius of the penalty region.
+This Gaussian-shaped penalty is strongest at the origin and decays with distance, encouraging objects to spread out and leave a traversable central pathway.
+
+% --- Composite Loss ---
+\subsubsection{Composite Guidance}
+\label{sec:method:composite}
+
+The full physical guidance loss combines the three terms:
+
+\begin{equation}
+\mathcal{L}_{\mathrm{phys}} = w_{\mathrm{col}} \cdot \mathcal{L}_{\mathrm{col}} + w_{\mathrm{room}} \cdot \mathcal{L}_{\mathrm{room}} + w_{\mathrm{reach}} \cdot \mathcal{L}_{\mathrm{reach}}
+\label{eq:total_loss}
+\end{equation}
+
+\noindent where $w_{\mathrm{col}}, w_{\mathrm{room}}, w_{\mathrm{reach}}$ are per-loss weights (default $10, 10, 1$ respectively).
+
+\paragraph{Scheduling and stability.}
+Applying guidance at every denoising step is computationally wasteful and can destabilize early steps where the predicted $\hat{\mathbf{d}}_0^{(t)}$ is highly noisy.
+We introduce two scheduling controls:
+\begin{itemize}[nosep]
+    \item \textbf{Start ratio} $r_s \in [0, 1]$: guidance activates only after $r_s \cdot T$ denoising steps have elapsed, allowing the diffusion model to establish a coarse layout before physical constraints are enforced.
+    \item \textbf{Interval} $k$: guidance is applied every $k$-th step to amortize the overhead of gradient computation.
+\end{itemize}
+Additionally, we apply gradient clipping with threshold $\gamma$ to prevent abrupt displacements:
+\begin{equation}
+\nabla \mathcal{L}_{\mathrm{phys}} \leftarrow \nabla \mathcal{L}_{\mathrm{phys}} \cdot \min\!\Big(1, \;\frac{\gamma}{\|\nabla \mathcal{L}_{\mathrm{phys}}\|_2 + \epsilon}\Big)
+\label{eq:grad_clip}
+\end{equation}
+
+\paragraph{Non-object node freezing.}
+Auxiliary graph nodes such as \texttt{floor} and \texttt{\_scene\_} should maintain their ground-truth positions to serve as spatial anchors.
+During guided reverse sampling, we freeze these nodes by replacing their denoised states with the corresponding noisy ground-truth at each timestep:
+$\mathbf{b}_t^i \leftarrow q(\mathbf{b}_{\mathrm{gt}}^i, t)$ for all $i$ where $o_i = 0$, where $q(\cdot, t)$ is the forward diffusion process.
+At $t=0$, the clean ground-truth is used directly.
+
+% ------------------------------------------------------------------
+\subsection{OBB-SAT Post-Processing (Fine Stage)}
+\label{sec:method:postprocess}
+% ------------------------------------------------------------------
+
+While the physics-guided diffusion significantly reduces collisions, the gradient-based steering operates in the continuous, normalized parameter space and can leave small residual overlaps---particularly between tightly packed objects whose rotations create complex footprints not fully captured by the axis-aligned penetration approximation.
+
+We therefore apply a deterministic \emph{fine-grained} collision resolution step after the full reverse diffusion completes.
+This module operates on Oriented Bounding Boxes (OBBs) using the Separating Axis Theorem (SAT)~\cite{gottschalk1996sat} in the floor plane ($xz$).
+
+\paragraph{SAT-based collision detection.}
+For each pair of furniture objects $(i, j)$, we project their 3D bounding boxes onto the floor plane to obtain 2D oriented rectangles.
+Let $R_i$ be the rotation matrix corresponding to the yaw angle $\theta_i$.
+The four corners of object $i$'s footprint are:
+
+\begin{equation}
+\mathbf{p}_i^{(k)} = \mathbf{c}_i^{xz} + R_i \cdot (\pm \tfrac{l_i}{2},\, \pm \tfrac{w_i}{2})^\top, \quad k = 1,\ldots,4
+\label{eq:obb_corners}
+\end{equation}
+
+\noindent The SAT tests four candidate separating axes (the two edge normals of each rectangle).
+A collision exists if and only if the projections overlap on \emph{all} four axes.
+When a collision is detected, the axis with minimum overlap depth $\delta^*$ identifies the minimum translation direction $\hat{\mathbf{n}}$ to separate the pair.
+
+\paragraph{Iterative resolution.}
+We resolve detected collisions by symmetrically translating the two objects apart along $\hat{\mathbf{n}}$:
+
+\begin{equation}
+\mathbf{c}_i^{xz} \leftarrow \mathbf{c}_i^{xz} - \frac{\delta^* + \varepsilon}{2}\,\hat{\mathbf{n}}, \quad
+\mathbf{c}_j^{xz} \leftarrow \mathbf{c}_j^{xz} + \frac{\delta^* + \varepsilon}{2}\,\hat{\mathbf{n}}
+\label{eq:push}
+\end{equation}
+
+\noindent where $\varepsilon$ is a small clearance margin (default $2$\,cm).
+Since resolving one pair may introduce new overlaps, we iterate this sweep over all pairs until convergence (no remaining collisions) or a maximum iteration count is reached.
+
+\paragraph{Complexity.}
+Each iteration performs $O(M^2)$ pairwise SAT checks with constant-time per-pair computation, and convergence is typically achieved within 5--15 iterations for scenes with 5--20 objects, making the post-processing negligible compared to the diffusion sampling cost.
+
+% ------------------------------------------------------------------
+\subsection{Coarse-to-Fine Synergy}
+\label{sec:method:synergy}
+% ------------------------------------------------------------------
+
+The two stages are complementary by design.
+The \emph{coarse} physics-guided diffusion operates in the model's learned latent space during generation, ensuring that the overall layout structure remains semantically coherent: objects maintain plausible relative positions dictated by the scene graph while being pushed away from collisions.
+However, it works with approximate collision proxies (axis-aligned envelopes and IoU) and is limited by gradient precision and the inherent noise of intermediate denoising states.
+
+The \emph{fine} OBB-SAT post-processing operates on the final metric-space layout with exact oriented geometry, deterministically eliminating any residual interpenetrations that survive the guidance stage.
+Since the coarse stage has already handled the majority of collisions, the post-processor only needs to apply small, local corrections that do not disrupt the global arrangement.
+
+This decomposition avoids the pitfalls of relying on either approach alone: guidance-only methods leave residual overlaps, while post-processing-only methods must make large displacements that can destroy the scene graph semantics learned by the diffusion model.
+
+% ------------------------------------------------------------------
+\subsection{Implementation Details}
+\label{sec:method:impl}
+% ------------------------------------------------------------------
+
+We use the pretrained EchoScene model without any fine-tuning.
+The layout diffusion operates with $T=1000$ timesteps and an 8-dimensional box parameterization $(l, h, w, x, y, z, \sin\theta, \cos\theta)$.
+Physical guidance is activated after $r_s = 0.5$ of the denoising process with an interval of $k=1$, global strength $\lambda = 1.0$, and gradient clip $\gamma = 1.0$.
+Default loss weights are $w_{\mathrm{col}} = 10$, $w_{\mathrm{room}} = 10$, $w_{\mathrm{reach}} = 1$.
+The oriented 3D IoU is computed using the differentiable method of~\cite{zhou2019iou}, and the collision loss uses both IoU weight $w_{\mathrm{iou}} = 1$ and penetration weight $w_{\mathrm{pen}} = 1$ with thresholds $\tau_{\mathrm{iou}} = \tau_{\mathrm{pen}} = 0$.
+For the OBB-SAT post-processor, we set maximum iterations to 80 and clearance $\varepsilon = 0.02$\,m.
+The walkability penalty uses $\sigma = 0.5$\,m.

@@ -1,0 +1,89 @@
+# EchoScene: Indoor Scene Generation via Information Echo over Scene Graph Diffusion
+
+## Bibliography:
+
+
+> [!intro]
+> **Problem addressed:** Controllable Scene Generation (CSG) is vastly used to synthesize 3D scene. Recently, with the advancements of diffusion scene graph,  CSG has been shifted towards the field because scene graph successfully capture the structure and spatial relationships among objects within a scene. Importantly, users could modify the scene graph to dynamically change the generated scenes in an intuitive manner.
+> **Difficulties: ** Due to varying number of graph nodes and node-edge operations, Diffusion scene graph need high adaptability to dynamically capture the changing states of object relationships within a scene graph. This includes nodes appearing and disappearing during scene generation.
+> 	Difficulties: It is crucial to encapsulate the fine grained structure of node and edge relation in a scene graph. Most previous work only treat 3D scene synthesis as generating object as pure node and no relation. Or they convert nodes and edges to tokens for transformer-based denoiser which is effective for layout branch for simple graph but is not scalable for larger ones due to exponential token growth (O(n^2))
+> 	CommonScene collapse graph  to triplets (subject, predicate, object) and employs graph convolution to aggregate features for each node, which are then conditioned on denoising processes for shape generation.-> Problem: Each denoising process is isolated from each other leading to insufficient awareness of global shape states.
+> 	==EchoScene introduces a scene generative framework equipped with dual branch diffusion models capable of producing object shapes and scene layouts simultaneously.==
+> 		==To enforce global awareness, in each individual denoising process there is an information echo scheme to exchange information at each denoising scheme. More clearly, for a single denoising process, the echo route is {current denoising input -> information echo unit -> denoising conditioner}==
+> 	We show in the experiments that the proposed generative framework achieves more generation fidelity, more robustness in handling graph manipulation, and effectively handles inter-object style consistency.
+>
+> **Why it matters:** EchoScene took a step further as a scene generation model to perform dual branch generation (generate layout and shape simultaneously)
+
+> [!related]
+> **Related Work**:
+> - **Semantic Scene Graph**: Scene graph offer a structured and symbolic representation of scenes through nodes and edges. Scene graph has been widely used for 2D generation due to its ability to capture spatial inter-objects relationships. Beyond 2D, scene graphs have been used for 3D scene understanding, dynamic modeling and controllable scene synthesis. 
+> - **Diffusion Models**: 
+> 			- Direction 1: Text to 3D via SDS (Score Distillation Sampling): (DreamFusion styled) Instead of training a 3D diffusion model directly, these methods use a powerful pretrained 2d diffusion model as a teacher. Best for limited 3D training data. Training objective, for a clean 3D representation in Nerf (x,y,z theta, phi) we use an MLP to transform these features into RGB and density value. Then these are rendered to a 2D image. We use that 2D image as clean sample for diffusion process where it will be conditioned on text prompt to denoise. The gradient we got from loss between the predicted and ground truth noise would be used to update the weights of the MLP in Nerf to generate refined 3D objects.
+> 			- Direction 2: Multi objects scene synthesis use Nerf or Gaussian Splatting to generate objects independently but still lack inter-object relationship.
+> 			- Direction 3: Explicit 3D Shape Diffusion: instead of using 2D diffusion to supervise 3D, 
+> 
+> - **Differences from prior work:** CommonScenes [58] came up with a scene graph conditioned scene generation method, which is based on a VAE and a GAN for capturing the layout and creating shapes via a latent diffusion model. Even though these methods have high quality in layout generation, their shape generation abilities are limited, as well as their manipulation quality still has room for improvement. EchoScene addresses these challenges through a diffusion-based layout generation with a novel information echo scheme.
+
+> [!method]
+> **Premilinary**
+> - Scene Graph: Each node vi and edge ei→j can encompass various extensible attributes, e.g., object categorical information.
+> - Scene Graph Convolution: The paper employs a fundamental module processing scene graph - triplet GCN (Graph Convolutional Network) 
+> ![[Pasted image 20260607084931.png]]
+> h1 and h2 are MLP. Avg denotes average pooling. The initial states of nodes and edges are to be customized after Kth layers for specific usages.
+> - Contextual Graph: CLIP text embeddings of nodes serve as semantic anchors pi, pi->j, and each node and edge have their own learnable vector oi and ti->j. Ultimately, the node and edge features of a contextual graph is vi = {pi, oi} and     ei->j = {pi->j, ti->j}. 
+> - Conditional Diffusion Models: Diffusion Models learn to estimate a target distribution through a progressive Markov process of length T where the denoiser learn to predict the noise added to a data sample d.> 
+> **Core method:**
+> - The pipeline of EchoScene is divided into 2 main phases: Graph Preprocessing and Dual Branch Generation.
+> 	- Graph Preprocessing: First, the author intialize the first layer embedding to be the input of the GCN with the contextual graph that contains vi = {pi,oi} and ei->j = {pi->j, ti->j} After kth layers of the Relation Encoding (a triplet-GCN) the final node features are Vz = {vzi} where vzi = {vi, zi} where vi is the explicit semantic representation of scene graph and zi is the implicit embedding that encapsulate relation information with other nodes.
+> 	- Graph Manipulation: This is an optional module whose baseline is also a triplet-GCN that includes node addition and relation change mimicking user interaction. (Research Gap here) After graph manipulation module, the final scene graph are updated to new Vz and this new Vz are subsequently fed to the layout and shape branch for further training.
+> 	- Information Echo Scheme in Graph Diffusion: 
+> 			- Challenges from a Dynamic Graph: DDPM did great there are still places for improvement especially in the local controllability of generation is limited when user want to manipulate specific elements.
+> 				- Echo-Formed Condition: If each generation proceeds on their own then the graph consistency or the overall awareness of scene graph will not be preserved. So for both highly controllable and consistent generation, the paper propose to handle the inverse diffusion process, enabling graph node features to echo or exchange information to each other in a recurrent manner -> The introduction of information exchange unit U; U here is another triplet GCN. 
+> 				- At every denoising step, each diffusion process will ## Information Exchange Unit $U$
+
+At every denoising timestep $t$, each node $i$ has accumulated three pieces of information that get concatenated together:
+
+$$\mathcal{V}_{\mathcal{D}_t} = {f(d_t^i, v_i^z, \pi(t)) | i = 1, \ldots, M}$$
+
+- $d_t^i$ — the **current noisy state** of node $i$ (noisy bounding box or noisy shape latent)
+- $v_i^z$ — the **latent graph feature** from the Relation Encoder (semantic + relational context)
+- $\pi(t)$ — the **timestep embedding** (tells the model how much noise is present)
+
+This assembled set $\mathcal{V}_{\mathcal{D}_t}$ is then passed through $U$ which is another **triplet-GCN**:
+
+$$\mathcal{C}_{\mathcal{D}_t} = U(\mathcal{G}_{\mathcal{D}_t}), \quad \mathcal{G}_{\mathcal{D}_t} = {\mathcal{V}_{\mathcal{D}_t}, E}$$
+
+The GCN uses the **original graph edges** $E$ to aggregate information - so a bed node only receives information from nodes it has relationships with (nightstand, wardrobe) not from unrelated nodes. The output $\mathcal{C}_{\mathcal{D}_t}$ becomes the condition for each node's denoiser:
+
+$$d_{t-1}^i = \frac{1}{\sqrt{\alpha_t}}\left(d_t^i - \frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}}\varepsilon_\theta(d_t^i, \pi(t), \mathcal{C}_{\mathcal{D}_t})\right) + \sigma_t z$$
+
+This happens at **every single timestep** from $T$ down to $0$, continuously updating each node's awareness of its neighbors' current denoising states.
+
+---
+
+The Information Exchange Unit is a triplet-GCN that runs at every denoising timestep, taking each node's current noisy state combined with its graph features and timestep embedding, then aggregating information from neighboring nodes via graph edges to produce a globally-aware condition for each node's denoiser. This ensures that when generating a bed's bounding box or shape, it is always aware of what the nightstand and wardrobe are currently generating at that same timestep, preventing the isolation problem where objects are generated independently without awareness of each other.
+> - This means the shape branch uses a Vector Quantized Variational AutoEncoder (VQ-VAE) to compress 3D meshes into a latent grid (SDFs), and then a UNet is used to denoise that latent grid.
+>
+> **Architecture:**
+>Diffusion Layout Branch: Each bounding box is represented by 8 parameters (x,y,z,l,h,w, sin(theta), cos(theta)). 
+> **Training details:**
+
+> [!experiments]
+> **Dataset:** SG-FRONT : 15 relationship types, 45k object instances from 3 types of scenes
+> - Shape consistency and diversity is tested with dining rooms a typical scenarios in which tables and chairs should be in suits.
+>
+> **Metrics:** FID, FID clip , KID
+>
+> **Baselines:**
+
+> [!notes]
+> **My notes:**
+>
+> **Possible extensions:**
+
+## Connections
+- [[Diffusion Models]]
+- [[3D Scene Generation]]
+
+## Tags
+#paper #research

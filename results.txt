@@ -176,3 +176,212 @@ KID fake : 100%|█████████████████████�
 iter: 0, kid: 0.009078
 iter: 0, kid avg: 0.009078
 iter: 0, kid std: 0.000000
+
+
+
+
+
+Found 50 scenes. Starting SAT/OBB post-processing...
+--- Scene 1/50 ---
+  [OBB resolve] converged at iteration 13
+--- Scene 2/50 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 3/50 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 4/50 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 5/50 ---
+  [OBB resolve] converged at iteration 12
+--- Scene 6/50 ---
+  [OBB resolve] converged at iteration 17
+--- Scene 7/50 ---
+  [OBB resolve] converged at iteration 28
+--- Scene 8/50 ---
+  [OBB resolve] converged at iteration 16
+--- Scene 9/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 10/50 ---
+  [OBB resolve] converged at iteration 11
+--- Scene 11/50 ---
+  [OBB resolve] converged at iteration 11
+--- Scene 12/50 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 13/50 ---
+  [OBB resolve] converged at iteration 9
+--- Scene 14/50 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 15/50 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 16/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 17/50 ---
+  [OBB resolve] converged at iteration 11
+--- Scene 18/50 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 19/50 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 20/50 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 21/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 22/50 ---
+  [OBB resolve] converged at iteration 12
+--- Scene 23/50 ---
+  [OBB resolve] converged at iteration 13
+--- Scene 24/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 25/50 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 26/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 27/50 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 28/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 29/50 ---
+  [OBB resolve] converged at iteration 10
+--- Scene 30/50 ---
+  [OBB resolve] converged at iteration 11
+--- Scene 31/50 ---
+  [OBB resolve] converged at iteration 3
+--- Scene 32/50 ---
+  [OBB resolve] converged at iteration 11
+--- Scene 33/50 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 34/50 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 35/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 36/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 37/50 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 38/50 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 39/50 ---
+  [OBB resolve] converged at iteration 12
+--- Scene 40/50 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 41/50 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 42/50 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 43/50 ---
+  [OBB resolve] converged at iteration 12
+--- Scene 44/50 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 45/50 ---
+  [OBB resolve] converged at iteration 10
+--- Scene 46/50 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 47/50 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 48/50 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 49/50 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 50/50 ---
+  [OBB resolve] converged at iteration 16
+
+
+
+
+  --- Scene 1/100 ---
+  [OBB resolve] converged at iteration 11
+--- Scene 2/100 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 3/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 4/100 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 5/100 ---
+  [OBB resolve] converged at iteration 9
+--- Scene 6/100 ---
+  [OBB resolve] converged at iteration 15
+--- Scene 7/100 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 8/100 ---
+  [OBB resolve] converged at iteration 13
+--- Scene 9/100 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 10/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 11/100 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 12/100 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 13/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 14/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 15/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 16/100 ---
+  [OBB resolve] converged at iteration 12
+--- Scene 17/100 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 18/100 ---
+  [OBB resolve] converged at iteration 11
+--- Scene 19/100 ---
+  [OBB resolve] converged at iteration 9
+--- Scene 20/100 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 21/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 22/100 ---
+  [OBB resolve] converged at iteration 9
+--- Scene 23/100 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 24/100 ---
+  [OBB resolve] converged at iteration 13
+--- Scene 25/100 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 26/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 27/100 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 28/100 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 29/100 ---
+  [OBB resolve] converged at iteration 9
+--- Scene 30/100 ---
+  [OBB resolve] converged at iteration 9
+--- Scene 31/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 32/100 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 33/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 34/100 ---
+  [OBB resolve] converged at iteration 6
+--- Scene 35/100 ---
+  [OBB resolve] converged at iteration 10
+--- Scene 36/100 ---
+  [OBB resolve] converged at iteration 13
+--- Scene 37/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 38/100 ---
+  [OBB resolve] converged at iteration 9
+--- Scene 39/100 ---
+  [OBB resolve] converged at iteration 11
+--- Scene 40/100 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 41/100 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 42/100 ---
+  [OBB resolve] converged at iteration 13
+--- Scene 43/100 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 44/100 ---
+  [OBB resolve] converged at iteration 8
+--- Scene 45/100 ---
+  [OBB resolve] converged at iteration 12
+--- Scene 46/100 ---
+  [OBB resolve] converged at iteration 9
+--- Scene 47/100 ---
+  [OBB resolve] converged at iteration 7
+--- Scene 48/100 ---
+  [OBB resolve] converged at iteration 5
+--- Scene 49/100 ---
+  [OBB resolve] converged at iteration 4
+--- Scene 50/100 ---

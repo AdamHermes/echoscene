@@ -1,0 +1,81 @@
+% ==========================================================================
+%  related_work.tex — Physically-Guided Collision-Free Indoor Scene Generation
+% ==========================================================================
+\section{Related Work}
+\label{sec:related}
+
+% ------------------------------------------------------------------
+\subsection{3D Indoor Scene Synthesis}
+\label{sec:related:scene_synth}
+% ------------------------------------------------------------------
+
+Indoor scene synthesis aims to arrange furniture and objects within a room in configurations that are both aesthetically pleasing and functionally plausible.
+Early approaches relied on handcrafted rules, design guidelines, and optimization over spatial grammars~\cite{placeholder_grammars, placeholder_yeh2012, placeholder_fisher2012}.
+Data-driven methods subsequently learned arrangement priors from real-world datasets, formulating layout generation as autoregressive sequence prediction~\cite{placeholder_autoreg_ritchie, placeholder_sceneformer, placeholder_atiss} or variational inference over object attributes~\cite{placeholder_fastsynth, placeholder_planit}.
+With the advent of diffusion models~\cite{placeholder_ddpm_ho, placeholder_song_score}, recent work has shown that denoising-based generation can produce diverse, high-quality layouts by iteratively refining object positions, sizes, and orientations from noise~\cite{placeholder_diffuscene, placeholder_layoutdiffusion}.
+While these methods achieve strong distributional fidelity, they generally optimize reconstruction losses that do not explicitly penalize inter-object collisions, resulting in scenes that are statistically plausible but often physically invalid.
+
+% ------------------------------------------------------------------
+\subsection{Scene Graph-Conditioned Generation}
+\label{sec:related:sg_gen}
+% ------------------------------------------------------------------
+
+Scene graphs provide a structured, human-interpretable interface for controllable generation by encoding object categories as nodes and spatial relationships as labeled edges.
+In 2D, scene graph-to-image synthesis has been widely studied through adversarial~\cite{placeholder_sg2im, placeholder_canonical_sg2im} and diffusion-based~\cite{placeholder_sgdiff_2d} approaches.
+Extending this paradigm to 3D, Graph-to-3D~\cite{placeholder_graph2threed} proposed a variational framework that generates object shapes and layouts from scene graphs.
+CommonScenes~\cite{placeholder_commonscenes} improved upon this by collapsing the graph into subject--predicate--object triplets and applying graph convolution to aggregate per-node features, which then condition a latent diffusion model for shape generation.
+However, CommonScenes processes each object's denoising independently, leading to limited global coherence across the generated scene.
+
+EchoScene~\cite{echoscene} addressed this limitation through a dual-branch diffusion framework (layout and shape) equipped with an \emph{Information Exchange Unit}---a triplet-GCN that, at every denoising timestep, aggregates the current noisy states of neighboring nodes via the original graph edges.
+This ``echo'' mechanism ensures each object's denoiser is aware of its neighbors' evolving states, improving style consistency and manipulation quality.
+Our work builds upon EchoScene's layout branch and complements its relational awareness with explicit physical constraints, addressing the collision problem that the echo mechanism alone cannot guarantee to solve.
+
+% ------------------------------------------------------------------
+\subsection{Physical Plausibility in Scene Generation}
+\label{sec:related:physical}
+% ------------------------------------------------------------------
+
+Ensuring physical plausibility---particularly collision avoidance---in generated 3D scenes has received growing attention.
+One line of work incorporates physics constraints during \emph{training}.
+ScenePriors~\cite{placeholder_scenepriors} learns a layout prior via normalizing flows and applies collision penalties as regularization during the variational learning process.
+DiffuScene~\cite{placeholder_diffuscene} integrates scene-level constraints into the diffusion training objective.
+However, training-time approaches require access to the full training pipeline and risk altering the learned distribution in unpredictable ways.
+
+A second line of work applies constraints at \emph{inference time} or during \emph{post-processing}.
+PhyScene~\cite{placeholder_physcene} pioneered inference-time physical guidance for layout diffusion, introducing differentiable losses for collision avoidance, room boundary compliance, and walkability (path reachability) that steer the reverse sampling process via gradient updates.
+LEGO-Net~\cite{placeholder_legonet} learns to predict physically valid object placements through an iterative refinement network.
+ControlRoom3D~\cite{placeholder_controlroom3d} uses a mesh-level collision detection and response to refine generated rooms.
+
+Our work draws inspiration from PhyScene's inference-time guidance paradigm but differs in several important ways.
+First, we integrate the physical guidance into a \emph{scene graph-conditioned} diffusion model (EchoScene), whereas PhyScene operates on unconditional or text-conditioned layout diffusion---the scene graph structure introduces additional challenges such as auxiliary non-object nodes (floor, scene boundaries) that must be handled via objectness masking and ground-truth freezing.
+Second, we introduce a complementary \emph{post-processing stage} based on the Separating Axis Theorem that provides geometrically exact, rotation-aware collision resolution.
+This coarse-to-fine decomposition is novel: to our knowledge, no prior work combines inference-time physical guidance with a deterministic geometric post-processor for scene graph-conditioned generation.
+
+% ------------------------------------------------------------------
+\subsection{Collision Detection and Resolution}
+\label{sec:related:collision}
+% ------------------------------------------------------------------
+
+Collision detection is a classic problem in computational geometry and real-time simulation~\cite{placeholder_ericson_rtcd}.
+For convex polygons, the Separating Axis Theorem (SAT)~\cite{placeholder_sat_gottschalk} provides an exact and efficient test: two convex shapes are separated if and only if there exists an axis along which their projections do not overlap.
+For pairs of 2D rectangles (or 3D cuboids projected onto a plane), SAT requires testing only four candidate axes (the edge normals of each rectangle), making it $O(1)$ per pair.
+
+In the context of scene generation, prior collision resolution methods typically operate on axis-aligned bounding boxes (AABBs)~\cite{placeholder_aabb_methods}, which ignore object rotation and can both miss true collisions (false negatives for rotated objects) and report spurious overlaps (false positives for diagonal arrangements).
+GIoU-based penalties~\cite{placeholder_giou} offer differentiable alternatives but remain axis-aligned.
+More recently, differentiable oriented IoU computations~\cite{placeholder_oriented_iou_zhou} have been proposed, but these are designed for loss computation during training rather than exact post-hoc resolution.
+
+Our post-processing module uses SAT on oriented bounding boxes in the floor plane, providing exact collision detection that accounts for yaw rotation.
+Unlike standard minimum-translation-vector (MTV) resolution, which can push objects in unintuitive directions (e.g., behind an adjacent piece of furniture), we employ a \emph{center-biased axis selection} strategy that preferentially pushes objects apart along the direction connecting their centers, producing more natural separations.
+
+% ------------------------------------------------------------------
+\subsection{Classifier Guidance for Diffusion Models}
+\label{sec:related:classifier_guidance}
+% ------------------------------------------------------------------
+
+Our physics-guided diffusion mechanism is conceptually related to classifier guidance~\cite{placeholder_classifier_guidance_dhariwal} and its generalizations.
+In the original formulation, a separately trained classifier provides gradients that steer the reverse process toward a target class.
+Subsequent work has extended this idea to arbitrary differentiable objectives: DPS~\cite{placeholder_dps} uses measurement-consistency losses for inverse problems, and Universal Guidance~\cite{placeholder_universal_guidance} demonstrates that any differentiable loss function can guide diffusion sampling.
+In the 3D domain, DreamFusion~\cite{placeholder_dreamfusion} uses Score Distillation Sampling to guide 3D representations via a 2D diffusion prior.
+
+We apply this principle to scene layout generation: our physical guidance losses (collision, room boundary, reachability) serve as the ``classifier,'' and their gradients are injected into the reverse process via variance-preconditioned mean shifting.
+The key design consideration specific to our setting is \emph{scheduling}---we delay guidance activation until the diffusion process has established a coarse layout, avoiding destabilization of early high-noise steps where the predicted clean sample $\hat{\mathbf{d}}_0^{(t)}$ is unreliable.

@@ -1,0 +1,55 @@
+% ==========================================================================
+%  introduction.tex — Physically-Guided Collision-Free Indoor Scene Generation
+% ==========================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Synthesizing realistic 3D indoor scenes is a fundamental problem in computer vision and graphics, with direct applications in virtual reality~\cite{placeholder_vr}, robotics simulation~\cite{placeholder_robotics}, interior design~\cite{placeholder_interior}, and training data generation for embodied AI~\cite{placeholder_embodied}.
+A practical scene generation system must satisfy two requirements simultaneously:
+\textbf{(i)}~semantic plausibility---objects should be arranged in configurations that respect high-level spatial relationships (e.g., a nightstand \emph{beside} a bed, chairs \emph{surrounding} a table); and
+\textbf{(ii)}~physical validity---objects must not interpenetrate, must remain within room boundaries, and the resulting layout should be navigable by a human or robotic agent.
+
+Recent advances in scene graph-conditioned generation have made significant progress toward the first requirement.
+By representing a scene as a graph $\mathcal{G} = (\mathcal{V}, \mathcal{E})$ whose nodes encode object categories and edges encode spatial predicates (e.g., \texttt{left-of}, \texttt{close-by}), methods such as Graph-to-3D~\cite{placeholder_graph2threed}, CommonScenes~\cite{placeholder_commonscenes}, and EchoScene~\cite{echoscene} can generate diverse, controllable layouts that faithfully follow the input specification.
+EchoScene, in particular, introduces a dual-branch diffusion framework with an \emph{Information Exchange Unit} that propagates each object's denoising state to its graph neighbors at every reverse step, achieving state-of-the-art fidelity and manipulation robustness.
+
+However, \textbf{physical validity remains an open challenge}.
+The training objectives of existing scene graph diffusion models---typically reconstruction losses over bounding box parameters---do not explicitly penalize inter-object collisions.
+The Information Exchange Unit in EchoScene provides implicit relational awareness that helps objects distribute spatially, but it offers no hard physical guarantees.
+As illustrated in Fig.~\ref{fig:teaser}, generated scenes frequently exhibit interpenetrating furniture, objects protruding outside room walls, and cluttered central areas that would be impassable in practice.
+These artifacts severely limit the applicability of generated scenes for downstream tasks such as robotic navigation planning~\cite{placeholder_nav_planning} or physics-based simulation~\cite{placeholder_physics_sim}, where even minor overlaps cause solver failures.
+
+A natural question arises: \emph{how can we enforce physical constraints without sacrificing the semantic coherence learned by the diffusion model?}
+One approach is to add collision penalties during training, but this requires costly retraining and risks destabilizing the learned distribution.
+Another is to apply heuristic post-processing to push apart overlapping objects, but large post-hoc displacements can destroy the carefully generated spatial relationships.
+We observe that neither approach alone is sufficient: training-time losses lack geometric precision at inference, while post-processing lacks awareness of semantic context.
+
+In this paper, we propose a \textbf{coarse-to-fine collision resolution framework} that combines the best of both paradigms.
+Our approach operates in two complementary stages:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Physics-Guided Diffusion (Coarse Stage).}
+    During the reverse denoising process, we inject three differentiable guidance losses---a collision loss based on 3D oriented IoU and penetration volume, a room-layout boundary loss, and a reachability loss---that steer the predicted clean layout $\hat{\mathbf{d}}_0^{(t)}$ toward physically valid configurations at each timestep.
+    Crucially, this guidance is \emph{training-free}: we compute loss gradients with respect to the predicted layout and use them to shift the posterior mean, following the classifier-guidance paradigm~\cite{placeholder_classifier_guidance}.
+    The model's pretrained weights remain frozen, preserving its learned distribution while redirecting samples away from collisions.
+
+    \item \textbf{OBB-SAT Post-Processing (Fine Stage).}
+    After the full reverse process completes, we apply a deterministic collision resolution module that uses the Separating Axis Theorem (SAT) on Oriented Bounding Boxes (OBBs) in the floor plane.
+    This stage detects and resolves any residual interpenetrations with geometrically exact, rotation-aware checks, making only small, local corrections since the coarse stage has already handled the bulk of the overlaps.
+\end{enumerate}
+
+This decomposition is effective because the two stages address complementary failure modes.
+The coarse guidance operates in the model's learned latent space during generation, maintaining semantic coherence while broadly reducing collisions.
+The fine post-processing operates on the final metric-space output with exact oriented geometry, eliminating residual overlaps that the approximate gradient-based guidance cannot fully resolve.
+Together, they achieve collision-free layouts without the large displacements that degrade semantic quality.
+
+\paragraph{Contributions.}
+Our main contributions are as follows:
+
+\begin{itemize}[nosep]
+    \item We propose a \textbf{training-free physical guidance} mechanism for scene graph layout diffusion that integrates three complementary losses---collision avoidance, room-boundary enforcement, and reachability---into the reverse denoising process via variance-preconditioned gradient steering.
+
+    \item We introduce an \textbf{OBB-SAT post-processing} module that performs rotation-aware collision detection and center-biased resolution in the floor plane, providing geometrically exact fine-grained correction.
+
+    \item We demonstrate that the \textbf{coarse-to-fine combination} of both stages significantly reduces inter-object collisions compared to the EchoScene baseline and post-processing-only approaches, while preserving or improving layout quality metrics on the SG-FRONT benchmark~\cite{placeholder_sgfront}.
+\end{itemize}
