@@ -63,9 +63,21 @@ If an object is trapped, barricaded, or spawned in a corner with no physical pat
 
 ---
 
+## 4. Fair Evaluation via Post-Process Collision Resolution
+
+A major flaw in naive floor-space evaluation is that models generating heavily overlapping objects (or objects clipping into walls) will artificially report **higher Walkability**. Because two overlapping beds take up significantly less physical footprint than two properly separated beds, a failing model is unfairly rewarded with extra "free space."
+
+To solve this and ensure a fair metric comparison, we introduce a **post-processing collision resolution step** (`resolve_bbox_collisions_obb`) using the Separating Axis Theorem (SAT). 
+- Before calculating ProcTHOR metrics, this algorithmic pass pushes overlapping Oriented Bounding Boxes (OBB) apart until they no longer intersect. 
+- It forces all generated objects to occupy their true, uncompromised physical space in the room.
+
+It is only reasonable to evaluate Walkability and Navigability on a scene where objects do not collide anymore. By enforcing this post-process separation, poorly optimized baselines are forced to spread their objects out, which realistically devours their artificially inflated "Walkability" space and accurately exposes choke-points. This guarantees that our evaluation metrics reflect true functional layout capabilities rather than rewarding impossible physics.
+
+---
+
 ## Summary of Impact
 
-By implementing this ProcTHOR verification suite, we successfully prove the real-world viability of our generative layout model. 
+By implementing this ProcTHOR verification suite and our collision-resolution pre-step, we successfully prove the real-world viability of our generative layout model. 
 
 While the Python-based `physical_guidance` operates as the generative engine pushing the model toward better layouts, the **ProcTHOR Walkability and Navigability metrics provide the empirical, physics-backed evidence** that our contribution fundamentally improves the quality, logic, and human-usability of the generated 3D environments. Our evaluations show a marked improvement in functional accessibility, proving that our generation isn't just mathematically optimized—it is physically sound.
 
