@@ -511,6 +511,17 @@ class GaussianDiffusion:
             return model_mean, step_stats
 
         collision_cfg = self._collision_guidance_cfg()
+        
+        # Get individual weights from config (falling back to original defaults)
+        constraints_cfg = self.inference_guidance.get('constraints', {}) if self.inference_guidance is not None else {}
+        room_outer_cfg = constraints_cfg.get('room_outer', {}) if isinstance(constraints_cfg, dict) else {}
+        walkable_cfg = constraints_cfg.get('walkable', {}) if isinstance(constraints_cfg, dict) else {}
+        
+        collision_weight = float(cfg_get(collision_cfg, 'weight', 10.0)) if collision_cfg is not None else 10.0
+        room_outer_weight = float(cfg_get(room_outer_cfg, 'weight', 10.0))
+        walkable_weight = float(cfg_get(walkable_cfg, 'weight', 1.0))
+        
+        # Keep strength as a global multiplier for backward compatibility
         strength = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
         if strength <= 0.0:
             step_stats['skip_reason'] = 'zero_strength'
@@ -534,9 +545,9 @@ class GaussianDiffusion:
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0
         if collision_loss is not None:
-            total_guidance_loss = total_guidance_loss + collision_loss * 10
+            total_guidance_loss = total_guidance_loss + collision_loss * collision_weight
             
-        total_guidance_loss = total_guidance_loss + room_outer_loss * 10 + walkable_loss
+        total_guidance_loss = total_guidance_loss + room_outer_loss * room_outer_weight + walkable_loss * walkable_weight
 
         # Ensure that if all losses were effectively 0 or None, we don't try to compute grads if not required
         if isinstance(total_guidance_loss, float) and total_guidance_loss == 0.0:

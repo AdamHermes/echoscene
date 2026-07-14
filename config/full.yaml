@@ -58,6 +58,11 @@ layout_branch:
         collision:
           enabled: true
           strength: 0.05
+          weight: 10.0
+        room_outer:
+          weight: 10.0
+        walkable:
+          weight: 1.0
           iou_threshold: 0.02
           metric: aabb
 
