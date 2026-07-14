@@ -59,6 +59,11 @@ layout_branch:
         collision:
           enabled: true
           strength: 20.0
+          weight: 10.0
+        room_outer:
+          weight: 10.0
+        walkable:
+          weight: 1.0
           iou_threshold: 0.02
           penetration_threshold: 0.0
           iou_weight: 0.5
