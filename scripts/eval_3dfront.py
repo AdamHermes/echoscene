@@ -5,7 +5,6 @@ import argparse
 import os
 import random
 import numpy as np
-from helpers.resolve_collision import resolve_bbox_collisions_obb
 import torch
 import torch.nn.parallel
 import torch.utils.data
@@ -20,6 +19,8 @@ from helpers.util import bool_flag, preprocess_angle2sincos, batch_torch_destand
 from helpers.metrics_3dfront import validate_constrains, validate_constrains_changes, estimate_angular_std
 from helpers.visualize_scene import render_full, render_box
 from helpers.structured_scene_export import export_structured_scene
+from helpers.resolve_collision import resolve_bbox_collisions_obb
+
 from omegaconf import OmegaConf
 import json
 
