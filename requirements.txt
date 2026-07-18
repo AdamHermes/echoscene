@@ -12,4 +12,4 @@ imageio
 scikit-image
 fvcore
 opencv-python==4.8.0.76
-PyYAML==6.0.2
+pyyaml==6.0
