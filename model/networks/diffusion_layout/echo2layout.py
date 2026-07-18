@@ -3,7 +3,7 @@ from torch.nn import Module
 
 from .diffusion_ddpm import DiffusionPoint
 from .denoise_net import UNet1DModel
-from model.optimizer.collision import CollisionOptimizer
+
 class EchoToLayout(Module):
 
     def __init__(self, config, n_classes=None):
@@ -40,13 +40,6 @@ class EchoToLayout(Module):
 
         self.df.to(self.device)
         self.scene_ids=None
-        self.df.physcene_optimizer = CollisionOptimizer(
-            cfg=config.layout_branch.inference_guidance, # Assuming your config is here
-            device=self.device
-        )
-        # PHYSCENE needs to know tensor dimensions to slice correctly
-        self.df.physcene_optimizer.d_bbox = 7
-        self.df.physcene_optimizer.d_class = n_classes if n_classes else 16 # Replace with actual number of classes
 
     def set_requires_grad(self, nets, requires_grad=False):
         """Set requies_grad=Fasle for all the networks to avoid unnecessary computations
@@ -63,11 +56,13 @@ class EchoToLayout(Module):
 
     def set_input(self, data_dict):
         vars_list = []
-        if 'box' in data_dict and data_dict['box'] is not None:
+        try:
             self.x = data_dict['box']
+            self.scene_ids = data_dict['obj_id_to_scene']
+            B, D = self.x.shape
             vars_list.append('x')
-        self.scene_ids = data_dict.get('obj_id_to_scene', None)
-        self.class_labels = data_dict.get('class_labels', None)
+        except:
+            print('inference mode, no gt boxes and scene ids')
 
         self.preds = data_dict['preds']
         self.rel = data_dict['c_b']
@@ -104,13 +99,13 @@ class EchoToLayout(Module):
 
         return loss, loss_dict
 
-    def sample(self, box_dim, batch_size, obj_embed=None, obj_triples=None, text=None, rel=None, ret_traj=False, ddim=False, clip_denoised=False, freq=40, batch_seeds=None, class_labels=None):
+    def sample(self, box_dim, batch_size, obj_embed=None, obj_triples=None, text=None, rel=None, ret_traj=False, ddim=False, clip_denoised=False, freq=40, batch_seeds=None):
 
         noise_shape = (batch_size, box_dim)
         condition = rel if self.rel_condition else None
         condition_cross = None
         # reverse sampling
-        samples = self.df.gen_samples_sg(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, clip_denoised=clip_denoised, scene_ids=self.scene_ids, class_labels=class_labels)
+        samples = self.df.gen_samples_sg(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, clip_denoised=clip_denoised)
         
         return samples
 
@@ -121,14 +116,11 @@ class EchoToLayout(Module):
         obj_embed = self.uc_rel
         triples = self.preds
 
-        samples = self.sample(box_dim, batch_size=len(obj_embed), obj_embed=obj_embed, obj_triples=triples, text=text, rel=rel, ret_traj=ret_traj, ddim=ddim, clip_denoised=clip_denoised, batch_seeds=batch_seeds, class_labels=self.class_labels)
+        samples = self.sample(box_dim, batch_size=len(obj_embed), obj_embed=obj_embed, obj_triples=triples, text=text, rel=rel, ret_traj=ret_traj, ddim=ddim, clip_denoised=clip_denoised, batch_seeds=batch_seeds)
         samples_dict = {
             "sizes": samples[:, 0:self.size_dim].contiguous(),
             "translations": samples[:, self.size_dim:self.size_dim + self.translation_dim].contiguous(),
             "angles": samples[:, self.size_dim + self.translation_dim:self.bbox_dim].contiguous(),
         }
-        collision_stats = self.df.get_latest_sampling_stats()
-        if collision_stats is not None:
-            samples_dict["collision_stats"] = collision_stats
         
         return samples_dict
