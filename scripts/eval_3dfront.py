@@ -440,6 +440,13 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         all_pred_boxes.append(boxes_pred_den.cpu().detach())
         all_pred_angles.append(angles_pred.cpu().detach())
         accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_pred, None, model.vocab, accuracy)
+        
+        export_path = os.path.join(
+            modelArgs['store_path'], 'physcene_collision_input.json'
+        )
+        os.makedirs(modelArgs['store_path'], exist_ok=True)
+        with open(export_path, 'w') as f:
+            json.dump(physcene_export, f)
 
     keys = list(accuracy.keys())
 
