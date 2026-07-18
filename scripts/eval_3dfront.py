@@ -36,8 +36,9 @@ parser.add_argument('--export_3d', default=False, type=bool_flag, help='Export t
 parser.add_argument('--room_type', default='all', help='all, bedroom, livingroom, diningroom, library')
 parser.add_argument('--max_samples', type=int, default=None, help='Limit evaluation to the first N samples')
 parser.add_argument('--start_idx', type=int, default=0, help='Start evaluation from this sample index')
-parser.add_argument('--save_3d', default=False, type=bool_flag, help='Save .obj and .glb files')
+parser.add_argument('--save_3d', default=True, type=bool_flag, help='Save .obj and .glb files')
 parser.add_argument('--default_exp', default='../released_full_model', help='default exp load arguments')
+parser.add_argument('--debug', default=False, type=bool_flag, help='Print debug bbox info')
 args = parser.parse_args()
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
@@ -120,7 +121,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         shuffle=False,
         num_workers=0)
     vocab = testdataset.vocab
-    obj_classes = sorted(list(set(vocab['object_idx_to_name'])))
+    obj_classes = testdataset.classes_r
     pred_classes = vocab['pred_idx_to_name']
 
     accuracy = {}
@@ -169,6 +170,15 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         all_pred_boxes = []
         all_pred_angles = []
 
+        class_idx = dec_objs.cpu().numpy().astype(int)
+        objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
+        for i, idx in enumerate(class_idx):
+            label = obj_classes[int(idx)].strip('\n')
+            if label in ['_scene_', 'floor']:
+                objectness_mask[i] = False
+        model.diff.current_objectness = objectness_mask
+        model.diff.current_gt_boxes = dec_tight_boxes
+
         with torch.no_grad():
             original = 0
             if original:
@@ -189,7 +199,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
             print("***manipulated graph***")
             if len(manipulated_subs) and len(manipulated_objs):
                 manipulated_nodes = manipulated_subs + manipulated_objs
-                print('previous:' , obj_classes[enc_objs[manipulated_subs[0]]], pred_classes[manipulated_preds[0]], obj_classes[enc_objs[manipulated_objs[0]]])
+                print('previous:' , obj_classes[int(enc_objs[manipulated_subs[0]].item())], pred_classes[int(manipulated_preds[0].item())], obj_classes[int(enc_objs[manipulated_objs[0]].item())])
                 keep, data_dict = model.sample_boxes_and_shape_with_changes(enc_objs, enc_triples, encoded_enc_text_feat,
                                                                             encoded_enc_rel_feat, dec_objs, dec_triples,
                                                                             encoded_dec_text_feat, encoded_dec_rel_feat,
@@ -215,7 +225,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                 boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
 
             if args.visualize:
-                print("rendering", [obj_classes[i].strip('\n') for i in dec_objs])
+                print("rendering", [obj_classes[i.item()].strip('\n') for i in dec_objs])
                 if model.type_ == 'echoscene':
                     if original:
                         if original_shapes_pred is not None:
@@ -224,7 +234,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                                     datasize=datasize,
                                     classes=obj_classes, render_type=args.render_type, shapes_pred=original_shapes_pred,
                                     store_img=True,
-                                    render_boxes=False, visual=True, demo=True, without_lamp=True,
+                                    render_boxes=False, visual=True, demo=True, without_lamp=False,
                                     store_path=modelArgs['store_path']+"_before",save_3d=args.save_3d)
 
                     if shapes_pred is not None:
@@ -232,7 +242,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                     render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred,
                                 datasize=datasize,
                                 classes=obj_classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True,
-                                render_boxes=False, visual=True, demo=True, without_lamp=True,
+                                render_boxes=False, visual=True, demo=True, without_lamp=False,
                                 store_path=modelArgs['store_path']+"_after",save_3d=args.save_3d)
                 else:
                     raise NotImplementedError
@@ -290,12 +300,15 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
     accuracy = {}
     for k in ['left', 'right', 'front', 'behind', 'smaller', 'bigger', 'shorter', 'taller', 'standing on', 'close by', 'symmetrical to', 'total']:
         accuracy[k] = []
-
+    physcene_export = {
+        "class_labels": [], "translations": [], "sizes": [],
+        "angles": [], "objfeats_32": [], "objectness": [], "scene_ids": []
+    }
     for i, data in enumerate(test_dataloader_no_changes, 0):
         print(data['scan_id'])
 
         try:
-            dec_objs, dec_triples = data['decoder']['objs'], data['decoder']['tripltes']
+            dec_objs, dec_triples, dec_tight_boxes = data['decoder']['objs'], data['decoder']['tripltes'], data['decoder']['boxes']
             instances = data['instance_id'][0]
             scan = data['scan_id'][0]
         except Exception as e:
@@ -309,6 +322,15 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
 
         all_pred_boxes = []
         all_pred_angles = []
+
+        class_idx = dec_objs.cpu().numpy().astype(int)
+        objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
+        for i, idx in enumerate(class_idx):
+            label = test_dataset.classes_r[int(idx)].strip('\n')
+            if label in ['_scene_', 'floor']:
+                objectness_mask[i] = False
+        model.diff.current_objectness = objectness_mask
+        model.diff.current_gt_boxes = dec_tight_boxes.cuda()
 
         with torch.no_grad():
 
@@ -327,17 +349,84 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                 angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
                 boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
 
+        if args.debug:
+            # ── BBOX DEBUG PRINT ──────────────────────────────────────────────
+            debug_log_path = os.path.join(modelArgs['store_path'], 'debug_bbox.txt')
+            os.makedirs(modelArgs['store_path'], exist_ok=True)
+            
+            with open(debug_log_path, 'a' if i > 0 else 'w') as dbg_file:
+                def dprint(msg):
+                    print(msg)
+                    dbg_file.write(msg + '\n')
+
+                classes_sorted = test_dataset.classes_r
+                obj_ids = dec_objs.detach().cpu().numpy()
+                boxes_np  = boxes_pred_den.detach().cpu().numpy()   # (N, 6): [l, h, w, x, y, z]
+                angles_np = angles_pred.detach().cpu().numpy()      # (N, 1): degrees
+
+                dprint(f"\n{'='*60}")
+                dprint(f"SCENE: {data['scan_id'][0]}  |  {len(obj_ids)} objects")
+                dprint(f"{'='*60}")
+                dprint(f"{'Obj':<20} {'l':>6} {'h':>6} {'w':>6}  {'x':>7} {'y':>7} {'z':>7}  {'angle':>7}")
+                dprint(f"{'-'*70}")
+                for n in range(len(obj_ids)):
+                    name = classes_sorted[int(obj_ids[n])].strip('\n')
+                    l, h, w = boxes_np[n, 0], boxes_np[n, 1], boxes_np[n, 2]
+                    x, y, z = boxes_np[n, 3], boxes_np[n, 4], boxes_np[n, 5]
+                    a = float(angles_np[n])
+                    dprint(f"{name:<20} {l:>6.3f} {h:>6.3f} {w:>6.3f}  {x:>7.3f} {y:>7.3f} {z:>7.3f}  {a:>7.2f}°")
+
+                # pairwise bounding-box IoU to flag colliders immediately
+                dprint(f"\n  Pairwise overlap check (axis-aligned bbox):")
+                any_collision = False
+                for ni in range(len(obj_ids)):
+                    for nj in range(ni + 1, len(obj_ids)):
+                        bi = boxes_np[ni]   # [l,h,w,x,y,z]
+                        bj = boxes_np[nj]
+                        # compute axis-aligned extents
+                        min_i = bi[3:6] - bi[0:3] / 2.0
+                        max_i = bi[3:6] + bi[0:3] / 2.0
+                        min_j = bj[3:6] - bj[0:3] / 2.0
+                        max_j = bj[3:6] + bj[0:3] / 2.0
+                        overlap = np.all(max_i > min_j) and np.all(max_j > min_i)
+                        if overlap:
+                            any_collision = True
+                            name_i = classes_sorted[int(obj_ids[ni])].strip('\n')
+                            name_j = classes_sorted[int(obj_ids[nj])].strip('\n')
+                            # compute overlap depth on each axis as a rough severity measure
+                            depth = np.minimum(max_i, max_j) - np.maximum(min_i, min_j)
+                            dprint(f"  !! OVERLAP: {name_i} <-> {name_j}  "
+                                  f"depth=[{depth[0]:.3f}, {depth[1]:.3f}, {depth[2]:.3f}]")
+                if not any_collision:
+                    dprint("  (no axis-aligned overlaps)")
+                dprint(f"{'='*60}\n")
+            # ── END BBOX DEBUG ────────────────────────────────────────────────
+
+        entry = build_physcene_json_entry(
+            dec_objs        = dec_objs,
+            boxes_pred_den  = boxes_pred_den,
+            angles_pred     = angles_pred,     # degrees, shape (N,1)
+            obj_classes     = test_dataset.classes_r,
+            scan_id         = data['scan_id'][0],
+        )
+        physcene_export["class_labels"].append(entry["class_labels"])
+        physcene_export["translations"].append(entry["translations"])
+        physcene_export["sizes"].append(entry["sizes"])
+        physcene_export["angles"].append(entry["angles"])
+        physcene_export["objfeats_32"].append(entry["objfeats_32"])
+        physcene_export["objectness"].append(entry["objectness"])
+        physcene_export["scene_ids"].append(entry["scene_id"])
         if args.visualize:
-            classes = sorted(list(set(vocab['object_idx_to_name'])))
-            print("rendering", [classes[i].strip('\n') for i in dec_objs])
+            classes = test_dataset.classes_r
+            print("rendering", [classes[i.item()].strip('\n') for i in dec_objs])
             if model.type_ == 'echolayout':
                 render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
             elif model.type_ == 'echoscene':
                 if shapes_pred is not None:
                     shapes_pred = shapes_pred.cpu().detach()
                 render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=True, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
                 if args.export_3d:
                     if not args.save_3d:
                         print("Skipping structured scene export because --save_3d is False.")
@@ -351,8 +440,16 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         all_pred_boxes.append(boxes_pred_den.cpu().detach())
         all_pred_angles.append(angles_pred.cpu().detach())
         accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_pred, None, model.vocab, accuracy)
+        
+        export_path = os.path.join(
+            modelArgs['store_path'], 'physcene_collision_input.json'
+        )
+        os.makedirs(modelArgs['store_path'], exist_ok=True)
+        with open(export_path, 'w') as f:
+            json.dump(physcene_export, f)
 
     keys = list(accuracy.keys())
+
     file_path_for_output = os.path.join(modelArgs['store_path'], f'{test_dataset.eval_type}_accuracy_analysis.txt')
     with open(file_path_for_output, 'w') as file:
         for dic, typ in [(accuracy, "acc")]:
@@ -374,7 +471,69 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                 '{} & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}\n'.format(
                     typ, lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean, total_mean))
             file.write('means of mean: {:.2f}\n\n'.format(means_of_mean))
+    export_path = os.path.join(
+        modelArgs['store_path'], 'physcene_collision_input.json'
+    )
+    os.makedirs(modelArgs['store_path'], exist_ok=True)
+    with open(export_path, 'w') as f:
+        json.dump(physcene_export, f)
+    print(f"PhyScene input saved to: {export_path}")
 
+def build_physcene_json_entry(
+    dec_objs,        # (N_obj,) int tensor — class indices
+    boxes_pred_den,  # (N_obj, 6) float tensor — [l,h,w,x,y,z] denormalized
+    angles_pred,     # (N_obj, 1) float tensor — degrees (from postprocess_sincos2arctan)
+    obj_classes,
+    scan_id,
+):
+    """
+    Convert EchoScene per-scene output to PhyScene JSON format.
+    Returns dict with numpy arrays ready for JSON serialization.
+    """
+
+    n_classes   = len(obj_classes)
+    N           = dec_objs.shape[0]
+
+    # ── Sizes: EchoScene boxes_pred_den = [l, h, w, x, y, z]
+    sizes_np = boxes_pred_den[:, 0:3].cpu().numpy()        # (N, 3) in meters
+
+    # ── Translations
+    trans_np = boxes_pred_den[:, 3:6].cpu().numpy()        # (N, 3) in meters
+
+    # ── Angles: EchoScene gives degrees → convert to radians
+    angles_deg = angles_pred.cpu().numpy()                  # (N, 1) degrees
+    angles_rad = angles_deg / 180.0 * np.pi                # (N, 1) radians
+
+    # ── Class labels: integer → one-hot (N, n_classes+1)
+    #    last column = empty/padding class (PhyScene convention)
+    class_idx  = dec_objs.cpu().numpy().astype(int)        # (N,)
+    one_hot    = np.zeros((N, n_classes + 1), dtype=np.float32)
+    for i, idx in enumerate(class_idx):
+        label = obj_classes[int(idx)].strip('\n')
+        if label in ['_scene_', 'floor']:
+            one_hot[i, n_classes] = 1.0    # mark as empty/padding
+        else:
+            one_hot[i, idx] = 1.0
+
+    # ── Objectness: 0 for _scene_/floor, 1 for real objects
+    objectness = np.zeros((N, 1), dtype=np.float32)
+    for i, idx in enumerate(class_idx):
+        label = obj_classes[int(idx)].strip('\n')
+        if label not in ['_scene_', 'floor']:
+            objectness[i, 0] = 1.0
+
+    # ── objfeats_32: zeros (PhyScene uses this for mesh retrieval only)
+    objfeats = np.zeros((N, 32), dtype=np.float32)
+
+    return {
+        "class_labels": one_hot.tolist(),    # (N, n_classes+1)
+        "translations": trans_np.tolist(),   # (N, 3)
+        "sizes":        sizes_np.tolist(),   # (N, 3)
+        "angles":       angles_rad.tolist(), # (N, 1)
+        "objfeats_32":  objfeats.tolist(),   # (N, 32)
+        "objectness":   objectness.tolist(), # (N, 1)
+        "scene_id":     scan_id,
+    }
 def evaluate():
     reseed(48)
 
