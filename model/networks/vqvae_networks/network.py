@@ -93,6 +93,14 @@ class VQVAE(nn.Module):
         return dec
 
     def decode_no_quant(self, h, force_not_quantize=False):
+        import torch
+        chunk_size = 4
+        if h.shape[0] > chunk_size:
+            decs = []
+            for i in range(0, h.shape[0], chunk_size):
+                decs.append(self.decode_no_quant(h[i:i+chunk_size], force_not_quantize))
+            return torch.cat(decs, dim=0)
+            
         # also go through quantization layer
         if not force_not_quantize:
             quant, emb_loss, info = self.quantize(h, is_voxel=True)
