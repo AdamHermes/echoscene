@@ -257,10 +257,12 @@ def normalize_py3d_meshes(meshes):
 
     return normalized_meshes
 
-def pytorch3d_to_trimesh(pytorch3d_mesh):
-    trimesh_verts = pytorch3d_mesh.verts_list()[0].cpu().numpy()
-    trimesh_faces = pytorch3d_mesh.faces_list()[0].cpu().numpy()
-    trimesh_normals = pytorch3d_mesh.verts_normals_list()[0].cpu().numpy()
+def pytorch3d_to_trimesh(pytorch3d_mesh, batch_idx=0):
+    trimesh_verts = pytorch3d_mesh.verts_list()[batch_idx].cpu().numpy()
+    trimesh_faces = pytorch3d_mesh.faces_list()[batch_idx].cpu().numpy()
+    if len(trimesh_verts) == 0 or len(trimesh_faces) == 0:
+        return trimesh.Trimesh()
+    trimesh_normals = pytorch3d_mesh.verts_normals_list()[batch_idx].cpu().numpy()
     tri_mesh = trimesh.Trimesh(vertices=trimesh_verts, faces=trimesh_faces, process=False)
     tri_mesh.vertex_normals = trimesh_normals
     tri_mesh.invert()
@@ -298,7 +300,7 @@ def pytorch3d_to_trimesh(pytorch3d_mesh):
 def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes=False, colors=None, without_lamp=False):
     mesh_gen = sdf_to_mesh(shapes,render_all=True)
     colors = iter(colors)
-    trimesh_meshes = iter([pytorch3d_to_trimesh(mesh) for mesh in mesh_gen])
+    trimesh_meshes = iter([pytorch3d_to_trimesh(mesh_gen, i) for i in range(len(mesh_gen.verts_list()))])
     obj_list = []
     lamp_mesh_list = []
     raw_obj_list = []
