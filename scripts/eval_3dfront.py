@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn.parallel
 import torch.utils.data
+import gc
 
 import sys
 from pathlib import Path
@@ -447,6 +448,13 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         os.makedirs(modelArgs['store_path'], exist_ok=True)
         with open(export_path, 'w') as f:
             json.dump(physcene_export, f)
+            
+        # Free memory at the end of the loop to prevent VRAM spikes across scenes
+        del data_dict, boxes_pred, angles_pred, boxes_pred_den
+        if shapes_pred is not None:
+            del shapes_pred
+        gc.collect()
+        torch.cuda.empty_cache()
 
     keys = list(accuracy.keys())
 
