@@ -45,6 +45,6 @@ def resolve_json(input_path, output_path):
     print(f"Saved resolved bboxes to {output_path}")
 
 if __name__ == '__main__':
-    input_file = "physcene_collision_input_all.json"
-    output_file = "resolved_physcene_collision_input.json"
+    input_file = "physcene_collision_input_guidance.json"
+    output_file = "resolved_physcene_collision_input_guidance.json"
     resolve_json(input_file, output_file)

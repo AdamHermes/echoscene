@@ -19,7 +19,7 @@ def get_obb_corners(x, z, l, w, angle_rad):
 
 def main():
     parser = argparse.ArgumentParser(description="Visualize a scene from a physcene input JSON.")
-    parser.add_argument("--json", type=str, default="resolved_physcene_collision_input.json",
+    parser.add_argument("--json", type=str, default="physcene_collision_input_all.json",
                         help="Path to the JSON file.")
     # Support both `--scene` and `--Library-2159` style passing
     parser.add_argument("scene", type=str, nargs='?', default=None, help="Scene ID to visualize, e.g., Library-2159")
@@ -80,15 +80,13 @@ def main():
     # Generate distinct colors for classes
     cmap = plt.colormaps.get_cmap('tab20')
     
+    all_xs = []
+    all_zs = []
+    
     for i in range(len(class_labels)):
-        # Skip if objectness is 0
-        if obj_mask[i][0] < 0.5:
-            continue
-            
         # Parse data
         cls_idx = int(np.argmax(class_labels[i]))
-        name = f"Class_{cls_idx}"
-        color = cmap(cls_idx % 20)
+        is_layout = (obj_mask[i][0] < 0.5) or (cls_idx == 14) # Usually floor/wall has objectness 0 or is the last class
         
         # translations: [x, y, z] -> we need x and z
         x = translations[i][0]
@@ -98,6 +96,15 @@ def main():
         l = sizes[i][0]
         w = sizes[i][2]
         
+        # Ignore outlier/scene anchor (extremely small size + layout class)
+        if is_layout and l < 0.15 and w < 0.15:
+            continue
+            
+        name = "Floor/Layout" if is_layout else f"Class_{cls_idx}"
+        color = "#bdc3c7" if is_layout else cmap(cls_idx % 20)
+        alpha = 0.25 if is_layout else 0.7
+        zorder = 0 if is_layout else 10
+        
         # angle: radians
         angle_rad = angles[i][0]
         
@@ -105,28 +112,33 @@ def main():
         min_x, min_z = np.min(obb_corners, axis=0)
         max_x, max_z = np.max(obb_corners, axis=0)
         
-        alpha = 0.7
+        all_xs.extend(obb_corners[:, 0])
+        all_zs.extend(obb_corners[:, 1])
+        
         # Draw OBB (Oriented Bounding Box)
         obb_polygon = patches.Polygon(
             obb_corners, closed=True, facecolor=color, 
-            edgecolor='black', alpha=alpha, linewidth=1.5
+            edgecolor='black', alpha=alpha, linewidth=1.5, zorder=zorder
         )
         ax.add_patch(obb_polygon)
         
         # Label
-        ax.text(x, z, name, ha='center', va='center', 
-                fontsize=9, weight='bold',
-                bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=2))
+        if not is_layout:
+            ax.text(x, z, name, ha='center', va='center', 
+                    fontsize=9, weight='bold', zorder=zorder+1,
+                    bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=2))
+        else:
+            # For layout/floor, draw label at the corner to not obstruct
+            ax.text(min_x, min_z, name, ha='left', va='bottom', 
+                    fontsize=8, color='#555555', zorder=zorder+1)
                 
     # View settings
     ax.set_aspect('equal')
-    # Auto-scale limits based on objects
-    if len(translations) > 0:
-        xs = [t[0] for t in translations]
-        zs = [t[2] for t in translations]
-        margin = 2.0
-        ax.set_xlim(min(xs) - margin, max(xs) + margin)
-        ax.set_ylim(min(zs) - margin, max(zs) + margin)
+    # Auto-scale limits based on object corners
+    if len(all_xs) > 0:
+        margin = 0.5
+        ax.set_xlim(min(all_xs) - margin, max(all_xs) + margin)
+        ax.set_ylim(min(all_zs) - margin, max(all_zs) + margin)
     else:
         ax.set_xlim(-3.5, 3.5)
         ax.set_ylim(-3.5, 3.5)
