@@ -1,7 +1,7 @@
-# Merging Dataset Chunks (`scripts/merge.py`)
+# Merging Dataset Chunks (`scripts/merge/merge.py`)
 
 ## Overview
-The `scripts/merge.py` script is designed to consolidate multiple chunked output folders (e.g., `released_full_model_0_50`, `released_full_model_50_100`) located in the `to_be_merged/` directory into a single, cohesive dataset structure named `complete_released_full_model`.
+The `scripts/merge/merge.py` script is designed to consolidate multiple chunked output folders (e.g., `released_full_model_0_50`, `released_full_model_50_100`) located in the `to_be_merged/` directory into a single, cohesive dataset structure named `complete_released_full_model`.
 
 ## Key Features
 
@@ -22,6 +22,6 @@ The `scripts/merge.py` script is designed to consolidate multiple chunked output
 1. Ensure all your dataset chunk folders (`released_full_model_*`) and the `test_rooms_list.txt` reference file are placed inside the `to_be_merged/` directory.
 2. From the root directory of the project, execute:
    ```bash
-   python scripts/merge.py
+   python scripts/merge/merge.py
    ```
 3. The script will print the processing order, merge the files, and output a missing-rooms report at the end. The final unified dataset will be ready in `to_be_merged/complete_released_full_model`.
