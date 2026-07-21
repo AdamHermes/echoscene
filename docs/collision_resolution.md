@@ -11,10 +11,9 @@ Make sure you have all your input JSON data in the appropriate directories. The 
 
 Before any collisions can be resolved or accurately visualized side-by-side, the raw scene data must be identically aligned to the validation list order (`test_rooms_list_utf8.txt`). 
 
-Run the sort script to produce an aligned input file:
+Run the sort script to produce an aligned input file from the project root:
 ```bash
-cd scripts/collision
-python sort_json.py
+python scripts/collision/sort_json.py
 ```
 **Output**: `to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json`
 
@@ -32,7 +31,7 @@ The core collision solver is executed by `resolve_collision_json.py`, which heav
 
 Run the resolution process (can take a minute or two to converge over all iterations):
 ```bash
-python resolve_collision_json.py
+python scripts/collision/resolve_collision_json.py
 ```
 **Output**: `to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json`
 
@@ -43,10 +42,10 @@ Once the output is generated, you can visually compare the original scrambled/co
 The visualizer script creates a side-by-side Matplotlib plot. It correctly colors layouts in gray (whether they are strictly index 14, index 0, or just have low objectness) and colors furniture bounding boxes in blue. It automatically sorts the raw inputs dynamically in memory so the left and right screens perfectly match up scene-by-scene.
 
 ```bash
-python obbz_resolve_visualization.py
+python scripts/collision/obbz_resolve_visualization.py
 ```
 
 *Optional: To jump straight to a specific scene index (e.g. index 3), just pass the number:*
 ```bash
-python obbz_resolve_visualization.py 3
+python scripts/collision/obbz_resolve_visualization.py 3
 ```
