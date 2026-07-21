@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import torch
 
 # ── OBB helpers ──────────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ def _sat_overlap(corners_a, corners_b, axis):
     pb = corners_b @ axis
     return min(pa.max(), pb.max()) - max(pa.min(), pb.min())
 
-def _obb_sat_xz(box_i, ang_i, box_j, ang_j, alignment_bias=2.0):
+def _obb_sat_xz(box_i, ang_i, box_j, ang_j, room_bounds=None, alignment_bias=2.0):
     """
     Separating Axis Theorem for two OBBs in the xz floor plane.
     Returns (colliding, translation_depth, push_axis_xz).
@@ -91,36 +92,59 @@ def _obb_sat_xz(box_i, ang_i, box_j, ang_j, alignment_bias=2.0):
         else:
             sign = 1.0
         signed_axis = axis * sign
-        axis_info.append((overlap, signed_axis))
+        
+        penalty = 1.0
+        if room_bounds is not None:
+            cxL, czL, hxL, hzL, axL, azL = room_bounds
+            shift = overlap / 2.0
+            
+            def get_out(corners):
+                c_rel = corners - np.array([cxL, czL])
+                proj_x = c_rel @ axL
+                proj_z = c_rel @ azL
+                return max(0, proj_x.max() - hxL) + max(0, -hxL - proj_x.min()) + max(0, proj_z.max() - hzL) + max(0, -hzL - proj_z.min())
+            
+            out_i_before = get_out(corners_i)
+            out_j_before = get_out(corners_j)
+            
+            ci_new = corners_i - shift * signed_axis
+            cj_new = corners_j + shift * signed_axis
+            
+            out_i_after = get_out(ci_new)
+            out_j_after = get_out(cj_new)
+            
+            diff_i = out_i_after - out_i_before
+            diff_j = out_j_after - out_j_before
+            
+            if diff_i > 1e-3 or diff_j > 1e-3:
+                penalty = 1000.0
+                
+        axis_info.append((overlap * penalty, signed_axis, overlap))
         if overlap < min_depth:
             min_depth = overlap
 
-    # ── Axis selection ──────────────────────────────────────────────
     if c2c_unit is None:
-        # Objects are nearly coincident: just use the shallowest axis
         best_axis = min(axis_info, key=lambda x: x[0])
-        return True, best_axis[0], best_axis[1]
+        return True, best_axis[2], best_axis[1]
 
     ALIGN_THRESHOLD = 0.15
-    best_score  = float('inf')
-    best_depth  = min_depth
-    best_push   = None
+    best_score = float('inf')
+    best_axis = None
+    best_true_overlap = 0.0
 
-    for overlap, signed_axis in axis_info:
+    for penalized_overlap, signed_axis, true_overlap in axis_info:
         alignment = abs(np.dot(signed_axis, c2c_unit))
         if alignment < ALIGN_THRESHOLD:
-            continue                          # nearly perpendicular → skip
-        score = overlap / (alignment ** alignment_bias + 1e-12)
+            continue
+        score = penalized_overlap / (alignment ** alignment_bias + 1e-12)
         if score < best_score:
             best_score = score
-            best_depth = overlap
-            best_push  = signed_axis
+            best_axis = signed_axis
+            best_true_overlap = true_overlap
 
-    if best_push is not None:
-        return True, best_depth, best_push
+    if best_axis is not None:
+        return True, best_true_overlap, best_axis
 
-    # Fallback: no SAT axis is well-aligned → push along center-to-center
-    # using the minimum overlap depth (safe, always separates)
     return True, min_depth, c2c_unit
 
 # ── public API ────────────────────────────────────────────────────────────────
@@ -156,16 +180,16 @@ def resolve_bbox_collisions_obb(
             if not bool(objectness_mask[i]) or (labels_idx is not None and labels_idx[i] in [0, 6, 14]):
                 layout_indices.append(i)
                 
-    main_layout_idx = None
+    main_layout_idx = -1
     if layout_indices:
         areas = [float(boxes_np[i, 0]) * float(boxes_np[i, 2]) for i in layout_indices]
         main_layout_idx = layout_indices[np.argmax(areas)]
 
     for iteration in range(max_iter):
         moved = False
-
-        # 1. Enforce layout containment for all objects (including lamps)
-        if main_layout_idx is not None:
+        
+        room_bounds = None
+        if main_layout_idx != -1:
             L_i = main_layout_idx
             l_L, w_L = float(boxes_np[L_i, 0]), float(boxes_np[L_i, 2])
             cxL, czL = float(boxes_np[L_i, 3]), float(boxes_np[L_i, 5])
@@ -174,7 +198,11 @@ def resolve_bbox_collisions_obb(
             axL = np.array([ np.cos(theta_L),  np.sin(theta_L)])
             azL = np.array([-np.sin(theta_L),  np.cos(theta_L)])
             hxL, hzL = l_L / 2.0, w_L / 2.0
-            
+            room_bounds = (cxL, czL, hxL, hzL, axL, azL)
+
+        # 1. Enforce layout containment for all objects (including lamps)
+        if room_bounds is not None:
+            cxL, czL, hxL, hzL, axL, azL = room_bounds
             for i in range(N):
                 if i in layout_indices: continue
                 
@@ -193,12 +221,18 @@ def resolve_bbox_collisions_obb(
                 min_z, max_z = proj_z.min(), proj_z.max()
                 
                 shift_x = 0.0
-                if max_x > hxL: shift_x = hxL - max_x
-                elif min_x < -hxL: shift_x = -hxL - min_x
+                if (max_x - min_x) > 2 * hxL:
+                    shift_x = - (max_x + min_x) / 2.0
+                else:
+                    if max_x > hxL: shift_x = hxL - max_x
+                    elif min_x < -hxL: shift_x = -hxL - min_x
                 
                 shift_z = 0.0
-                if max_z > hzL: shift_z = hzL - max_z
-                elif min_z < -hzL: shift_z = -hzL - min_z
+                if (max_z - min_z) > 2 * hzL:
+                    shift_z = - (max_z + min_z) / 2.0
+                else:
+                    if max_z > hzL: shift_z = hzL - max_z
+                    elif min_z < -hzL: shift_z = -hzL - min_z
                 
                 if abs(shift_x) > 1e-4 or abs(shift_z) > 1e-4:
                     boxes_np[i, 3] += shift_x * axL[0] + shift_z * azL[0]
@@ -230,6 +264,7 @@ def resolve_bbox_collisions_obb(
                 colliding, depth, push_axis = _obb_sat_xz(
                     boxes_np[i], angles_np[i],
                     boxes_np[j], angles_np[j],
+                    room_bounds=room_bounds
                 )
 
                 if colliding and push_axis is not None:
