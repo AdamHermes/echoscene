@@ -5,7 +5,7 @@ import sys
 import os
 
 # Ensure helpers module can be imported
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append('/Users/lehoangan/Documents/GitHub/ROOM/echoscene')
 from helpers.resolve_collision import resolve_bbox_collisions_obb
 
 def resolve_json(input_path, output_path):
@@ -21,19 +21,22 @@ def resolve_json(input_path, output_path):
         sizes = torch.tensor(data['sizes'][i], dtype=torch.float32)
         translations = torch.tensor(data['translations'][i], dtype=torch.float32)
         angles_rad = torch.tensor(data['angles'][i], dtype=torch.float32)
-        objectness = torch.tensor(data['objectness'][i], dtype=torch.float32)
         
-        # Convert angles from radians to degrees as expected by the function
+        # Angles in JSON are radians, solver expects degrees
         angles_deg = angles_rad * (180.0 / np.pi)
         
+        objectness = torch.tensor(data['objectness'][i], dtype=torch.float32)
+        class_labels = np.array(data['class_labels'][i])
+        
         boxes = torch.cat([sizes, translations], dim=-1)
-        class_labels = np.array(data['class_labels'][i]) if 'class_labels' in data else None
         
         resolved_boxes = resolve_bbox_collisions_obb(
             boxes=boxes,
             angles_pred=angles_deg,
             objectness_mask=objectness,
             class_labels=class_labels,
+            max_iter=500,
+            push_eps=0.02,
             verbose=True
         )
         
@@ -46,6 +49,6 @@ def resolve_json(input_path, output_path):
     print(f"Saved resolved bboxes to {output_path}")
 
 if __name__ == '__main__':
-    input_file = "to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json"
-    output_file = "to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json"
+    input_file = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json"
+    output_file = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json"
     resolve_json(input_file, output_file)

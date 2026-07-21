@@ -4,7 +4,7 @@ This guide explains how to properly resolve physically impossible object collisi
 
 ## Prerequisites
 
-All operations happen within the `echoscene/` root folder. 
+All operations happen within the `echoscene/scripts/collision/` directory.
 Make sure you have all your input JSON data in the appropriate directories. The following steps assume your input JSON is located at: `to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input.json`.
 
 ## Step 1: Data Alignment and Sorting
@@ -13,7 +13,7 @@ Before any collisions can be resolved or accurately visualized side-by-side, the
 
 Run the sort script to produce an aligned input file:
 ```bash
-cd scripts
+cd scripts/collision
 python sort_json.py
 ```
 **Output**: `to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json`
@@ -25,13 +25,13 @@ python sort_json.py
 The core collision solver is executed by `resolve_collision_json.py`, which heavily utilizes the PyTorch-based algorithm inside `helpers/resolve_collision.py`.
 
 **Custom rules applied during the resolution loop:**
-1. **Layout Containment (No Oscillations)**: The algorithm finds the single largest `Floor/Layout` footprint in each scene (preventing disjoint layout oscillations) and perfectly mathematically restricts all objects inside of it. If an object is placed outside the floor boundaries, the solver slides it precisely back within the room perimeter.
-2. **Lamp Exception (Idx 7)**: Lamps are uniquely skipped during the object-to-object pushing logic, allowing them to hang near or above other furniture without forcefully knocking everything else away.
-3. **Vertical Checking**: Standard vertical alignment checks ensure objects above or below one another don't falsely register as collisions in the top-down 2D SAT matrix.
+1. **Layout Containment (No Oscillations)**: The algorithm finds the single largest `Floor/Layout` footprint in each scene (preventing disjoint layout oscillations). If an object is larger than the layout dimension, it centers the object to prevent bouncing. If an object is placed outside the floor boundaries, the solver slides it precisely back within the room perimeter.
+2. **Boundary-Aware SAT Resolution**: During object-to-object collision resolution, if the solver wants to separate objects along an axis that pushes them out of the layout bounds, it heavily penalizes that axis and chooses a different one (e.g. pushing a wardrobe horizontally rather than forcing a nightstand vertically through a wall).
+3. **Lamp Exception (Idx 7)**: Lamps are uniquely skipped during the object-to-object pushing logic, allowing them to hang near or above other furniture without forcefully knocking everything else away.
+4. **Vertical Checking**: Standard vertical alignment checks ensure objects above or below one another don't falsely register as collisions in the top-down 2D SAT matrix.
 
 Run the resolution process (can take a minute or two to converge over all iterations):
 ```bash
-cd ..
 python resolve_collision_json.py
 ```
 **Output**: `to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json`
@@ -43,7 +43,6 @@ Once the output is generated, you can visually compare the original scrambled/co
 The visualizer script creates a side-by-side Matplotlib plot. It correctly colors layouts in gray (whether they are strictly index 14, index 0, or just have low objectness) and colors furniture bounding boxes in blue. It automatically sorts the raw inputs dynamically in memory so the left and right screens perfectly match up scene-by-scene.
 
 ```bash
-cd scripts
 python obbz_resolve_visualization.py
 ```
 
