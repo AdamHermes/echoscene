@@ -16,7 +16,7 @@ During generation, our model relies on physical guidance (as defined in our Pyth
 
 **The Verification Pipeline:**
 1. **Layout Translation:** We export the generative model outputs (`final.json`) which contain 2D/3D bounding boxes, orientations, and scales.
-2. **Procedural Instantiation:** Using `convert_echoscene_to_procthor.py`, these generated layouts are mapped precisely into the physics engine. The furniture footprints are instantiated as rigid, solid obstacles, explicitly projecting the scene into a rigorous continuous pathing environment.
+2. **Procedural Instantiation:** Using `scripts/procthor_eval/convert_echoscene_to_procthor.py`, these generated layouts are mapped precisely into the physics engine. The furniture footprints are instantiated as rigid, solid obstacles, explicitly projecting the scene into a rigorous continuous pathing environment.
 3. **Agent Simulation & Pathfinding:** An AI2-THOR agent is securely spawned into the room (using a 2D Euclidean Distance Transform algorithm to find the safest spawn coordinate) to probe the environment.
 
 This pipeline ensures that we are not just evaluating simple 2D intersection math, but rather **solving a continuous 2D pathfinding simulation where the agent has a strict physical radius (capsule constraint) that cannot squeeze through unrealistic gaps.**
