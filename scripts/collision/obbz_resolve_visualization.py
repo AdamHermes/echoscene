@@ -124,16 +124,29 @@ class Visualizer:
             if isinstance(self.data_in[k], list) and len(self.data_in[k]) == len(scene_ids_in):
                 self.data_in[k] = [self.data_in[k][i] for i in sort_indices_in]
                 
-        # Sort data_out INDEPENDENTLY
+        # Align data_out strictly to data_in (because data_in has 371 scenes with a duplicate, data_out has 370)
         scene_ids_out = self.data_out.get('scene_ids', [])
-        if len(order_map) > 0:
-            sort_indices_out = sorted(range(len(scene_ids_out)), key=lambda i: order_map.get(scene_ids_out[i], 999999))
-        else:
-            sort_indices_out = sorted(range(len(scene_ids_out)), key=lambda i: scene_ids_out[i])
-
-        for k in self.data_out.keys():
-            if isinstance(self.data_out[k], list) and len(self.data_out[k]) == len(scene_ids_out):
-                self.data_out[k] = [self.data_out[k][i] for i in sort_indices_out]
+        out_idx_map = {sid: i for i, sid in enumerate(scene_ids_out)}
+        
+        aligned_data_out = {k: [] for k in self.data_out.keys()}
+        for i, sid in enumerate(self.data_in['scene_ids']):
+            if sid in out_idx_map:
+                out_idx = out_idx_map[sid]
+                for k in self.data_out.keys():
+                    if isinstance(self.data_out[k], list) and len(self.data_out[k]) == len(scene_ids_out):
+                        aligned_data_out[k].append(self.data_out[k][out_idx])
+                    else:
+                        aligned_data_out[k] = self.data_out[k] # keep scalar/dict values unchanged
+            else:
+                # If missing from data_out, fallback to displaying data_in
+                for k in self.data_out.keys():
+                    if isinstance(self.data_out[k], list) and len(self.data_out[k]) == len(scene_ids_out):
+                        aligned_data_out[k].append(self.data_in[k][i])
+                        
+        # Only overwrite the list values
+        for k in aligned_data_out.keys():
+            if isinstance(aligned_data_out[k], list) and len(aligned_data_out[k]) == len(self.data_in['scene_ids']):
+                self.data_out[k] = aligned_data_out[k]
             
         self.num_scenes = len(self.data_in['scene_ids'])
         self.idx = start_idx
