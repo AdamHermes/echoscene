@@ -52,8 +52,15 @@ def main():
     physcene_paths = []
     final_paths = []
     
-    # Sort folders to ensure deterministic merging
-    folders = sorted([f for f in base_dir.glob("released_full_model_*") if f.is_dir()])
+    # Sort folders numerically to ensure correct merging order
+    def extract_start(f):
+        # f.name is like 'released_full_model_50_100'
+        try:
+            return int(f.name.split('_')[-2])
+        except:
+            return 0
+            
+    folders = sorted([f for f in base_dir.glob("released_full_model_*") if f.is_dir()], key=extract_start)
     
     for folder in folders:
         print(f"Processing folder: {folder.name}")

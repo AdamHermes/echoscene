@@ -129,7 +129,8 @@ def resolve_bbox_collisions_obb(
     boxes,                    # (N, 6) tensor  [l, h, w, x, y, z]
     angles_pred,              # (N,) or (N,1) tensor — yaw in DEGREES
     objectness_mask=None,     # (N,) bool tensor — False → skip (floor, _scene_)
-    max_iter=80,
+    class_labels=None,        # (N, C) class probabilities or None
+    max_iter=500,             # Increased iterations for better convergence
     push_eps=0.02,            # extra clearance added after resolving each overlap (m)
     verbose=True,
 ):
@@ -143,17 +144,88 @@ def resolve_bbox_collisions_obb(
         angles_np = np.array(angles_pred, dtype=float).flatten()
 
     boxes_np = boxes.detach().cpu().numpy().astype(float)
+    
+    labels_idx = None
+    if class_labels is not None:
+        labels_idx = np.argmax(class_labels, axis=-1)
+
+    layout_indices = []
+    if objectness_mask is not None:
+        for i in range(N):
+            # Identify layout or floor instances
+            if not bool(objectness_mask[i]) or (labels_idx is not None and labels_idx[i] in [0, 6, 14]):
+                layout_indices.append(i)
+                
+    main_layout_idx = None
+    if layout_indices:
+        areas = [float(boxes_np[i, 0]) * float(boxes_np[i, 2]) for i in layout_indices]
+        main_layout_idx = layout_indices[np.argmax(areas)]
 
     for iteration in range(max_iter):
         moved = False
 
+        # 1. Enforce layout containment for all objects (including lamps)
+        if main_layout_idx is not None:
+            L_i = main_layout_idx
+            l_L, w_L = float(boxes_np[L_i, 0]), float(boxes_np[L_i, 2])
+            cxL, czL = float(boxes_np[L_i, 3]), float(boxes_np[L_i, 5])
+            ang_L = angles_np[L_i]
+            theta_L = np.radians(ang_L)
+            axL = np.array([ np.cos(theta_L),  np.sin(theta_L)])
+            azL = np.array([-np.sin(theta_L),  np.cos(theta_L)])
+            hxL, hzL = l_L / 2.0, w_L / 2.0
+            
+            for i in range(N):
+                if i in layout_indices: continue
+                
+                # Check corners of i
+                corners_i = _obb_corners_xz(float(boxes_np[i, 3]), float(boxes_np[i, 5]), 
+                                           float(boxes_np[i, 0]), float(boxes_np[i, 2]), angles_np[i])
+                
+                # Shift relative to layout center
+                c_rel = corners_i - np.array([cxL, czL])
+                
+                # Project onto layout axes
+                proj_x = c_rel @ axL
+                proj_z = c_rel @ azL
+                
+                min_x, max_x = proj_x.min(), proj_x.max()
+                min_z, max_z = proj_z.min(), proj_z.max()
+                
+                shift_x = 0.0
+                if max_x > hxL: shift_x = hxL - max_x
+                elif min_x < -hxL: shift_x = -hxL - min_x
+                
+                shift_z = 0.0
+                if max_z > hzL: shift_z = hzL - max_z
+                elif min_z < -hzL: shift_z = -hzL - min_z
+                
+                if abs(shift_x) > 1e-4 or abs(shift_z) > 1e-4:
+                    boxes_np[i, 3] += shift_x * axL[0] + shift_z * azL[0]
+                    boxes_np[i, 5] += shift_x * axL[1] + shift_z * azL[1]
+                    moved = True
+
+        # 2. Resolve object-object collisions
         for i in range(N):
-            if objectness_mask is not None and not bool(objectness_mask[i]):
+            if i in layout_indices:
                 continue
+            if labels_idx is not None and labels_idx[i] == 7:
+                continue # Ignore lamps for collisions
 
             for j in range(i + 1, N):
-                if objectness_mask is not None and not bool(objectness_mask[j]):
+                if j in layout_indices:
                     continue
+                if labels_idx is not None and labels_idx[j] == 7:
+                    continue # Ignore lamps for collisions
+
+                # Vertical check
+                hy_i = float(boxes_np[i, 1]) / 2.0
+                cy_i = float(boxes_np[i, 4])
+                hy_j = float(boxes_np[j, 1]) / 2.0
+                cy_j = float(boxes_np[j, 4])
+                
+                if (cy_i + hy_i) <= (cy_j - hy_j) or (cy_j + hy_j) <= (cy_i - hy_i):
+                    continue # No vertical intersection
 
                 colliding, depth, push_axis = _obb_sat_xz(
                     boxes_np[i], angles_np[i],

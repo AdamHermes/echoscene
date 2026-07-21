@@ -26,13 +26,14 @@ def resolve_json(input_path, output_path):
         # Convert angles from radians to degrees as expected by the function
         angles_deg = angles_rad * (180.0 / np.pi)
         
-        # boxes shape: (N, 6) -> [l, h, w, x, y, z]
         boxes = torch.cat([sizes, translations], dim=-1)
+        class_labels = np.array(data['class_labels'][i]) if 'class_labels' in data else None
         
         resolved_boxes = resolve_bbox_collisions_obb(
             boxes=boxes,
             angles_pred=angles_deg,
             objectness_mask=objectness,
+            class_labels=class_labels,
             verbose=True
         )
         
@@ -45,6 +46,6 @@ def resolve_json(input_path, output_path):
     print(f"Saved resolved bboxes to {output_path}")
 
 if __name__ == '__main__':
-    input_file = "physcene_collision_input_guidance.json"
-    output_file = "resolved_physcene_collision_input_guidance.json"
+    input_file = "to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json"
+    output_file = "to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json"
     resolve_json(input_file, output_file)
