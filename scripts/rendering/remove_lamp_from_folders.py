@@ -179,16 +179,14 @@ def main():
     orig_out = os.path.join(root_dir, "complete_released_full_model_without_lamp")
     
     # 2. Post Processed (After Resolution) without lamp
-    post_json = os.path.join(root_dir, "complete_released_full_model_post_processed/vis/2050/physcene_collision_resolved.json")
+    post_json = os.path.join(root_dir, "complete_released_full_model_post_processed/vis/2050/physcene_collision_input.json")
     post_out = os.path.join(root_dir, "complete_released_full_model_post_processed_without_lamp")
     
     # First, let's just make sure the destination folders are clean if they existed from the botched previous run
-    if os.path.exists(orig_out):
-        shutil.rmtree(orig_out)
     if os.path.exists(post_out):
         shutil.rmtree(post_out)
         
-    process_folder(orig_json, raw_mesh_dir, orig_out)
+    # process_folder(orig_json, raw_mesh_dir, orig_out) # Already completed!
     process_folder(post_json, raw_mesh_dir, post_out)
     
     print("Finished processing all folders without lamps. Renders are now correctly scaled!")

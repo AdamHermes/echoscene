@@ -49,3 +49,13 @@ python scripts/collision/obbz_resolve_visualization.py
 ```bash
 python scripts/collision/obbz_resolve_visualization.py 3
 ```
+
+## Step 4: Post-Processing to GLB and Renders
+
+After validating the resolved bounding boxes, you must translate these new bounds back into actual 3D meshes and `.png` top-down snapshot images. 
+
+Run the post-processing script:
+```bash
+python scripts/collision/post_process.py
+```
+**Output**: A new folder named `to_be_merged/complete_released_full_model_post_processed` containing the updated dataset where all geometries have been properly scaled, rotated, and shifted according to the newly resolved bounding boxes. The background floor/walls are omitted to perfectly mirror the standard output format.

@@ -134,21 +134,10 @@ After obtaining object meshes, modify the path in `compute_mmd_cov_1nn.py` and r
 ### Consistency
 This metric is based on Chamfer Distance. which checks how the generated shapes of two identical objects are similar to each other. To evaluate this, you need to download the consistency information from [here](https://www.campar.in.tum.de/public_datasets/2023_commonscenes_zhai/consistencies_check.zip), modify the paths in `consistency_check.py`, and run this script.
 
-### Rendering Missing Outputs
-If your evaluation script (`eval_3dfront.py`) completed but missed top-down renders for some `.glb` scenes, you can use the standalone renderer to generate them:
-```bash
-python scripts/rendering/render_missing_glb.py
-```
-This script will parse your generated `.glb` files and render 256x256 top-down images (using PyRender and Trimesh) into the `render_imgs` directory to align with the FID/KID evaluation pipeline. Ensure you have `pyrender` and `trimesh` installed. For macOS users, the EGL backend is automatically disabled for compatibility.
-
-### Removing Lamps from Generated Datasets
-If you evaluated your model with `without_lamp=False`, but later need lamp-free top-down images and `.glb` files for strict FID/KID evaluations (as mentioned above), you can strip the lamps post-generation without rerunning the heavy diffusion models.
-
-Run the script:
-```bash
-python scripts/rendering/remove_lamp_from_folders.py
-```
-This script will create two new folders (one for the standard model and one for the post-processed model) with the `_without_lamp` suffix, strip out the lamp geometries from the scenes, and regenerate the `.glb` files and `.png` top-down renders perfectly. The original folders are kept untouched.
+### Rendering and Post-Processing Utilities
+We provide standalone scripts for missing renders and lamp removal. See [docs/rendering.md](./docs/rendering.md) for full details on:
+- Generating missing top-down 256x256 renders for FID/KID pipelines (`scripts/rendering/render_missing_glb.py`).
+- Creating `_without_lamp` dataset copies from existing generated models without rerunning the main architecture (`scripts/rendering/remove_lamp_from_folders.py`).
 
 ### Post-processing Collision Resolution
 To resolve collisions from a generated scene layout and regenerate the updated `.glb` meshes and top-down images, you can run the standalone post-processing script:
