@@ -155,5 +155,5 @@ def convert_to_procthor_house_assets(final_json_path, out_dir):
             json.dump(procthor_house, f, indent=2)
 
 if __name__ == "__main__":
-    convert_to_procthor_house_assets("./output/baseline/vis/2050/final.json", "./output/baseline_assets_scenes")
+    convert_to_procthor_house_assets("./output/baseline/vis/2050/physcene_collision_input.json", "./output/baseline_assets_scenes")
     print("Successfully converted baseline to true asset scenes!")

@@ -132,4 +132,4 @@ if __name__ == "__main__":
     with open(results_path, 'w') as f:
         json.dump(final_output, f, indent=2)
         
-    print(f"\nEvaluation complete! Results saved to {results_path}")
+    print(f"\nEvaluation complete! Total rooms evaluated: {len(results)}. Results saved to {results_path}")

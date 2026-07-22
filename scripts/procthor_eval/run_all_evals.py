@@ -11,7 +11,7 @@ folders = [
 for folder in folders:
     print(f"\n======================================")
     print(f"Processing {folder}...")
-    final_json = os.path.join(folder, "final.json")
+    final_json = os.path.join(folder, "physcene_collision_input.json")
     out_dir = os.path.join(folder, "procthor_scenes")
     
     # 1. Delete the procthor folders if they exist
@@ -21,7 +21,7 @@ for folder in folders:
         
     # 2. Convert echoscene to procthor
     print("Converting scenes to ProcTHOR format...")
-    subprocess.run(["python", "scripts/procthor_eval/convert_echoscene_to_procthor.py", "--bbox_path", final_json, "--out_dir", out_dir], check=True)
+    subprocess.run(["python", "scripts/procthor_eval/convert_echoscene_to_procthor.py", "--full", "--bbox_path", final_json, "--out_dir", out_dir], check=True)
     
     # 3. Evaluate walkability with AI2-THOR Unity engine
     print("Running Unity walkability evaluation...")

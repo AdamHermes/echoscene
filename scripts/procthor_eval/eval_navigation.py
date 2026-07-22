@@ -124,7 +124,7 @@ def evaluate_navigation(scenes_dir):
             "scenes": results
         }, f, indent=2)
         
-    print(f"\nNavigation Evaluation Complete for {scenes_dir}!")
+    print(f"\nNavigation Evaluation Complete for {scenes_dir}! Total rooms evaluated: {len(results)}")
     print(f"Overall Accessibility Rate: {avg_accessibility * 100:.2f}% ({total_objects_accessible}/{total_objects_evaluated} objects)")
     print(f"Results saved to {save_path}")
 

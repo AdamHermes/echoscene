@@ -15,7 +15,7 @@ python run_all_evals.py && python plot_path.py
 ```
 
 ### What this does:
-1. **Conversion (`convert_echoscene_to_procthor.py`)**: Converts the `final.json` ATISS/EchoScene outputs into AI2-THOR compatible JSON scenes. It correctly handles physical dimensions, bounds shifting to the positive quadrant, and filters out floating objects (e.g., ceiling lamps > 1.8m high) so they don't block the floor.
+1. **Conversion (`convert_echoscene_to_procthor.py`)**: Converts the `physcene_collision_input.json` ATISS/EchoScene outputs into AI2-THOR compatible JSON scenes. It correctly handles physical dimensions, bounds shifting to the positive quadrant, and filters out floating objects (e.g., ceiling lamps > 1.8m high) so they don't block the floor.
 2. **Evaluation (`eval_walkability.py`)**: Boots up a headless AI2-THOR physics simulation, loads each room as a solid 3D mesh, securely teleports the agent into a valid reachable coordinate, and calculates the NavMesh grid.
 3. **Plotting (`plot_path.py`)**: Parses the Unity NavMesh reachability output and plots the true rotated Oriented Bounding Boxes (OBB) of the generated furniture, alongside the valid walkable grid points and a sample path.
 
@@ -66,9 +66,9 @@ The plots below visualize the output of the physics engine for `SecondBedroom-64
 
 | Model Config | Walkability Score (Free Space) | Navigation Accessibility (Objects Reachable) |
 |---|---|---|
-| `baseline` | 21.18% | 77.04% |
-| `released_full_model` | 19.30% | 79.08% |
-| `physcene_guidance` | **20.73%** | **84.18%** |
+| `baseline` |  | 77.04% |
+| `physcene_guidance` | **23.183952970768457%** | **81.14792347176855%** |
+| `physcene_guidance (post processed)` | **22.035530299231296%** | **80.02799813345777%** |
 
 ### Conclusion
 The **Navigation Accessibility** metric clearly demonstrates the superiority of the `physcene_guidance` model. By preventing objects from overlapping and colliding (which creates "unreachable" islands of space), the guidance model ensures that the AI2-THOR agent can physically walk up to and access **84.18%** of all generated furniture pieces, compared to just 77.04% in the unguided baseline. The slight decrease in total Walkability Area compared to the baseline is expected, as properly spacing objects out natively takes up more floor space than stacking them on top of each other in a corner.

@@ -193,7 +193,7 @@ def convert_to_procthor_json(scene_name, scene_data):
 
         # Build the 4 corners of the furniture footprint
         hw, hd = obj_w / 2.0, obj_d / 2.0
-        # theta from final.json is already in radians
+        # theta from physcene_collision_input.json is already in radians
         rad = theta
         cos_t, sin_t = math.cos(rad), math.sin(rad)
         
@@ -320,7 +320,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert echoscene bounding boxes to ProcTHOR JSON scenes.")
-    parser.add_argument("--bbox_path", type=str, required=True, help="Path to the debug_bbox.txt or final.json file")
+    parser.add_argument("--bbox_path", type=str, required=True, help="Path to the debug_bbox.txt or physcene_collision_input.json file")
     parser.add_argument("--out_dir", type=str, required=True, help="Directory to save the converted JSON files")
     parser.add_argument("--full", action="store_true", help="If specified, converts all scenes. If not, limits to the first 50 scenes.")
     args = parser.parse_args()
