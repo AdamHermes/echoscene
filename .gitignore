@@ -139,3 +139,6 @@ dmypy.json
 *.pth
 released_full_model/
 released_layout_model/
+/baseline
+/output
+/to_be_merged
