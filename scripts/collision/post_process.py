@@ -171,11 +171,17 @@ def render_img(trimesh_meshes):
 
 
 def main():
-    base_dir = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged"
-    in_json = os.path.join(base_dir, "complete_released_full_model/vis/2050/physcene_collision_resolved.json")
-    old_mesh_dir_base = os.path.join(base_dir, "complete_released_full_model/vis/2050/echoscene/object_meshes")
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--in_json", default="/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json")
+    parser.add_argument("--old_mesh_dir", default="/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/echoscene/object_meshes")
+    parser.add_argument("--out_base_dir", default="/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model_post_processed/vis/2050")
+    args = parser.parse_args()
 
-    out_base_dir = os.path.join(base_dir, "complete_released_full_model_post_processed/vis/2050")
+    in_json = args.in_json
+    old_mesh_dir_base = args.old_mesh_dir
+    out_base_dir = args.out_base_dir
+
     out_json = os.path.join(out_base_dir, "physcene_collision_input.json")
     out_mesh_dir_base = os.path.join(out_base_dir, "echoscene/object_meshes")
     out_mesh_shifted_dir_base = os.path.join(out_base_dir, "echoscene/object_meshes_shifted")

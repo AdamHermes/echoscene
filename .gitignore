@@ -149,3 +149,4 @@ released_layout_model/
 /output/released_full_model 2/vis/2050/render_imgs
 /to_be_merged
 /baseline
+/baseline_post_processed

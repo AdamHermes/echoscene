@@ -66,9 +66,10 @@ The plots below visualize the output of the physics engine for `SecondBedroom-64
 
 | Model Config | Walkability Score (Free Space) | Navigation Accessibility (Objects Reachable) |
 |---|---|---|
-| `baseline` |  |  |
-| `physcene_guidance` | **23.183952970768457%** | **81.14792347176855%** |
-| `physcene_guidance (post processed)` | **22.035530299231296%** | **80.02799813345777%** |
+| `baseline` | 22.73361575306406% | 79.25682031984949% |
+| `baseline (post processed)` | 20.123233621153744% | 74.92944496707432% |
+| `physcene_guidance` | 23.183952970768457% | 81.14792347176855% |
+| `physcene_guidance (post processed)` | 22.035530299231296% | 80.02799813345777% |
 
 ### Conclusion
 The **Navigation Accessibility** metric clearly demonstrates the superiority of the `physcene_guidance` model. By preventing objects from overlapping and colliding (which creates "unreachable" islands of space), the guidance model ensures that the AI2-THOR agent can physically walk up to and access **84.18%** of all generated furniture pieces, compared to just 77.04% in the unguided baseline. The slight decrease in total Walkability Area compared to the baseline is expected, as properly spacing objects out natively takes up more floor space than stacking them on top of each other in a corner.

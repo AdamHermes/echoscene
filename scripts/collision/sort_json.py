@@ -1,9 +1,16 @@
 import json
 import os
 
-txt_file = '/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/test_rooms_list.txt'
-in_file = '/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input.json'
-out_file = '/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json'
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--txt_file", default='/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/test_rooms_list.txt')
+parser.add_argument("--in_file", default='/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input.json')
+parser.add_argument("--out_file", default='/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json')
+args = parser.parse_args()
+
+txt_file = args.txt_file
+in_file = args.in_file
+out_file = args.out_file
 
 with open(txt_file, 'r', encoding='utf-16') as f:
     lines = [l.strip() for l in f if l.strip()]

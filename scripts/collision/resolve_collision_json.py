@@ -49,6 +49,9 @@ def resolve_json(input_path, output_path):
     print(f"Saved resolved bboxes to {output_path}")
 
 if __name__ == '__main__':
-    input_file = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json"
-    output_file = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json"
-    resolve_json(input_file, output_file)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--in_file", default="/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input_sorted.json")
+    parser.add_argument("--out_file", default="/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json")
+    args = parser.parse_args()
+    resolve_json(args.in_file, args.out_file)
