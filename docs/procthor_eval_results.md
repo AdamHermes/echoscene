@@ -66,7 +66,7 @@ The plots below visualize the output of the physics engine for `SecondBedroom-64
 
 | Model Config | Walkability Score (Free Space) | Navigation Accessibility (Objects Reachable) |
 |---|---|---|
-| `baseline` |  | 77.04% |
+| `baseline` |  |  |
 | `physcene_guidance` | **23.183952970768457%** | **81.14792347176855%** |
 | `physcene_guidance (post processed)` | **22.035530299231296%** | **80.02799813345777%** |
 
