@@ -176,6 +176,7 @@ def main():
     parser.add_argument("--in_json", default="/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json")
     parser.add_argument("--old_mesh_dir", default="/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model/vis/2050/echoscene/object_meshes")
     parser.add_argument("--out_base_dir", default="/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged/complete_released_full_model_post_processed/vis/2050")
+    parser.add_argument("--without_lamp", action="store_true", help="Do not render lamps")
     args = parser.parse_args()
 
     in_json = args.in_json
@@ -257,7 +258,11 @@ def main():
                 
             instance_id += 1
 
-        all_meshes = list(trimesh_meshes) + list(lamp_mesh_list)
+        if args.without_lamp:
+            all_meshes = list(trimesh_meshes)
+        else:
+            all_meshes = list(trimesh_meshes) + list(lamp_mesh_list)
+            
         # In the original pipeline, floor/walls/ceiling are only appended if demo=True.
         # Since they lack materials, appending them makes them appear as black boxes in the .glb.
         # We omit them here to perfectly mirror the original dataset's outputs.
