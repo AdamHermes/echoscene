@@ -115,13 +115,6 @@ def plot_scene(ax, objects, title, limits, no_title=False, sideways=False):
         max_x, max_z = np.max(obb_corners, axis=0)
         
         if obj["name"] == "floor":
-            # Draw semi-transparent floor
-            floor_bg = patches.Polygon(
-                obb_corners, closed=True, facecolor="#cccccc", 
-                edgecolor='none', alpha=0.25
-            )
-            ax.add_patch(floor_bg)
-            
             # Draw solid red boundary for the room
             room_boundary = patches.Polygon(
                 obb_corners, closed=True, facecolor='none', 
@@ -214,23 +207,27 @@ def main():
         max_z = max(bounds1[3], bounds2[3]) + pad
         limits = (min_x, max_x, min_z, max_z)
         
+        out_ext = os.path.splitext(args.out)[1]
+        if not out_ext:
+            out_ext = '.png'
+
         if args.individual:
             fig1, ax1 = plt.subplots(figsize=(8, 8))
             plot_scene(ax1, objects1, f"Input:\n{args.json1.split('/')[-3]}/{os.path.basename(args.json1)}", limits, no_title=True, sideways=args.sideways)
             if args.scene_id == "all":
-                out_path1 = os.path.join(args.out_dir, f"{s_id}_input.png")
+                out_path1 = os.path.join(args.out_dir, f"{s_id}_input{out_ext}")
             else:
-                out_path1 = args.out.replace(".png", "_input.png")
-            fig1.savefig(out_path1, dpi=150, bbox_inches='tight', pad_inches=0)
+                out_path1 = args.out.replace(out_ext, f"_input{out_ext}")
+            fig1.savefig(out_path1, dpi=150, bbox_inches='tight', pad_inches=0.1, format=out_ext.strip('.'), transparent=True)
             plt.close(fig1)
 
             fig2, ax2 = plt.subplots(figsize=(8, 8))
             plot_scene(ax2, objects2, f"Resolved:\n{args.json2.split('/')[-3]}/{os.path.basename(args.json2)}", limits, no_title=True, sideways=args.sideways)
             if args.scene_id == "all":
-                out_path2 = os.path.join(args.out_dir, f"{s_id}_resolved.png")
+                out_path2 = os.path.join(args.out_dir, f"{s_id}_resolved{out_ext}")
             else:
-                out_path2 = args.out.replace(".png", "_resolved.png")
-            fig2.savefig(out_path2, dpi=150, bbox_inches='tight', pad_inches=0)
+                out_path2 = args.out.replace(out_ext, f"_resolved{out_ext}")
+            fig2.savefig(out_path2, dpi=150, bbox_inches='tight', pad_inches=0.1, format=out_ext.strip('.'), transparent=True)
             plt.close(fig2)
         else:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
@@ -240,11 +237,10 @@ def main():
             plt.tight_layout()
             
             if args.scene_id == "all":
-                out_path = os.path.join(args.out_dir, f"{s_id}_compare.png")
+                out_path = os.path.join(args.out_dir, f"{s_id}{out_ext}")
             else:
                 out_path = args.out
-                
-            fig.savefig(out_path, dpi=150)
+            fig.savefig(out_path, dpi=150, bbox_inches='tight', format=out_ext.strip('.'), transparent=True)
             plt.close(fig)
         
     print("Done!")

@@ -169,24 +169,26 @@ def process_folder(json_path, raw_mesh_dir, out_dir):
                 print(f"Error rendering {scene_id}: {e}")
 
 def main():
-    root_dir = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene/to_be_merged"
+    root_dir = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene"
     
-    # We always pull the raw, unshifted unscaled .obj files from the original complete folder!
-    raw_mesh_dir = os.path.join(root_dir, "complete_released_full_model/vis/2050/echoscene/object_meshes")
+    # We always pull the raw, unshifted unscaled .obj files from the original baseline folder!
+    raw_mesh_dir = os.path.join(root_dir, "baseline/vis/2050/echoscene/object_meshes")
     
     # 1. Original (Before Resolution) without lamp
-    orig_json = os.path.join(root_dir, "complete_released_full_model/vis/2050/physcene_collision_input.json")
-    orig_out = os.path.join(root_dir, "complete_released_full_model_without_lamp")
+    orig_json = os.path.join(root_dir, "baseline/vis/2050/physcene_collision_input.json")
+    orig_out = os.path.join(root_dir, "baseline_without_lamp")
     
     # 2. Post Processed (After Resolution) without lamp
-    post_json = os.path.join(root_dir, "complete_released_full_model_post_processed/vis/2050/physcene_collision_input.json")
-    post_out = os.path.join(root_dir, "complete_released_full_model_post_processed_without_lamp")
+    post_json = os.path.join(root_dir, "baseline_post_processed/vis/2050/physcene_collision_input.json")
+    post_out = os.path.join(root_dir, "baseline_post_processed_without_lamp")
     
-    # First, let's just make sure the destination folders are clean if they existed from the botched previous run
+    # First, let's just make sure the destination folders are clean
+    if os.path.exists(orig_out):
+        shutil.rmtree(orig_out)
     if os.path.exists(post_out):
         shutil.rmtree(post_out)
         
-    # process_folder(orig_json, raw_mesh_dir, orig_out) # Already completed!
+    process_folder(orig_json, raw_mesh_dir, orig_out)
     process_folder(post_json, raw_mesh_dir, post_out)
     
     print("Finished processing all folders without lamps. Renders are now correctly scaled!")

@@ -129,7 +129,6 @@ def setup_plot(ax, title, bounds):
     ax.set_xlim(bounds[0] - pad, bounds[1] + pad)
     ax.set_ylim(bounds[2] - pad, bounds[3] + pad)
     ax.set_aspect('equal')
-    ax.set_title(title, fontsize=12, pad=10)
     ax.axis('off')
 
 def plot_base_objects(ax, objects, fade_floor=True):
@@ -189,7 +188,8 @@ def visualize_outer_loss(objects, bounds, out_path):
                 except:
                     pass
     plt.tight_layout()
-    fig.savefig(out_path, dpi=150)
+    ext = os.path.splitext(out_path)[1].strip('.')
+    fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0, format=ext)
     plt.close(fig)
 
 def visualize_collision_loss(objects, bounds, out_path):
@@ -227,7 +227,8 @@ def visualize_collision_loss(objects, bounds, out_path):
                     pass
                     
     plt.tight_layout()
-    fig.savefig(out_path, dpi=150)
+    ext = os.path.splitext(out_path)[1].strip('.')
+    fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0, format=ext)
     plt.close(fig)
 
 def visualize_walkable_loss(objects, bounds, out_path):
@@ -267,7 +268,8 @@ def visualize_walkable_loss(objects, bounds, out_path):
         ax.add_patch(poly)
         
     plt.tight_layout()
-    fig.savefig(out_path, dpi=150)
+    ext = os.path.splitext(out_path)[1].strip('.')
+    fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0, format=ext)
     plt.close(fig)
 
 
@@ -277,6 +279,7 @@ def main():
     parser.add_argument("--json", required=True)
     parser.add_argument("--old_mesh_dir", required=True)
     parser.add_argument("--out_dir", required=True)
+    parser.add_argument("--ext", default=".png", help="Output file extension (e.g. .png, .svg, .pdf)")
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -289,13 +292,13 @@ def main():
     bounds = get_scene_bounds(objects)
     
     print(f"Generating Outer Loss Visualization...")
-    visualize_outer_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_outer_loss.png"))
+    visualize_outer_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_outer_loss{args.ext}"))
     
     print(f"Generating Collision Loss Visualization...")
-    visualize_collision_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_collision_loss.png"))
+    visualize_collision_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_collision_loss{args.ext}"))
     
     print(f"Generating Walkable Loss Visualization...")
-    visualize_walkable_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_walkable_loss.png"))
+    visualize_walkable_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_walkable_loss{args.ext}"))
     
     print(f"Done! Check the {args.out_dir} directory.")
 
