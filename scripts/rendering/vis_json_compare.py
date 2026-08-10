@@ -72,15 +72,16 @@ def load_scene_from_json(file_path, scene_id, mesh_dir):
         cat_id = cats[j]
         class_name = classes[cat_id] if cat_id < len(classes) else f"Obj_{cat_id}"
         
-        is_object = data["objectness"][scene_idx][j][0] == 1.0
-        l, h, w = sizes[j]
         
-        if not is_object:
-            # If it's a dummy object with large dimensions, it's the floor
-            if l > 1.0 and w > 1.0:
-                class_name = "floor"
-            else:
-                continue
+        # Assume everything is an object unless its class_name is 'floor' or '_scene_'
+        is_object = True
+        l, h, w = sizes[j]
+        l, h, w = l * 2.0, h * 2.0, w * 2.0
+        
+        # If it's a dummy object with large dimensions or explicit class_name, it's the floor
+        if class_name in ['floor', '_scene_'] or (l > 5.0 and w > 5.0):
+            class_name = "floor"
+            is_object = False
                 
         # Skip lamps since they aren't involved in collisions
         if "lamp" in class_name.lower():
@@ -102,6 +103,21 @@ def load_scene_from_json(file_path, scene_id, mesh_dir):
 
 def plot_scene(ax, objects, title, limits, no_title=False, sideways=False):
     ax.clear()
+    has_floor = False
+    for obj in objects:
+        if obj["name"] == "floor":
+            has_floor = True
+            break
+            
+    # Draw limits as room boundary if no floor exists
+    if not has_floor:
+        min_x, max_x, min_z, max_z = limits
+        room_boundary = patches.Rectangle(
+            (min_x, min_z), max_x - min_x, max_z - min_z,
+            linewidth=2.5, edgecolor='red', facecolor='none', alpha=0.9
+        )
+        ax.add_patch(room_boundary)
+        
     for obj in objects:
         obb_corners = get_obb_corners(obj["x"], obj["z"], obj["l"], obj["w"], obj["angle"])
         
@@ -142,8 +158,8 @@ def plot_scene(ax, objects, title, limits, no_title=False, sideways=False):
                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=1))
 
     ax.set_aspect('equal')
-    ax.set_xlim(limits[0], limits[1])
-    ax.set_ylim(limits[2], limits[3])
+    ax.set_xlim(limits[0] - 0.5, limits[1] + 0.5)
+    ax.set_ylim(limits[2] - 0.5, limits[3] + 0.5)
     if not no_title:
         ax.set_title(title, fontsize=10)
     ax.axis('off')
@@ -171,6 +187,7 @@ def main():
     parser.add_argument("--out", default="compare_vis.png", help="Output file if processing a single scene")
     parser.add_argument("--out_dir", default="compare", help="Output directory if processing all scenes")
     parser.add_argument("--individual", action="store_true", help="Save separate images instead of side-by-side")
+    parser.add_argument("--both", action="store_true", help="Save both separate images and side-by-side")
     parser.add_argument("--sideways", action="store_true", help="Rotate the room layout by 90 degrees")
     args = parser.parse_args()
 
@@ -185,8 +202,6 @@ def main():
         scene_ids = [args.scene_id]
     else:
         os.makedirs(args.out_dir, exist_ok=True)
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
     
     for i, s_id in enumerate(scene_ids):
         print(f"Processing {s_id} ({i+1}/{len(scene_ids)})...")
@@ -200,7 +215,7 @@ def main():
         bounds1 = get_scene_bounds(objects1, args.sideways)
         bounds2 = get_scene_bounds(objects2, args.sideways)
         
-        pad = 0.1 if args.individual else 0.5
+        pad = 0.1 if (args.individual and not args.both) else 0.5
         min_x = min(bounds1[0], bounds2[0]) - pad
         max_x = max(bounds1[1], bounds2[1]) + pad
         min_z = min(bounds1[2], bounds2[2]) - pad
@@ -211,9 +226,9 @@ def main():
         if not out_ext:
             out_ext = '.png'
 
-        if args.individual:
+        if args.individual or args.both:
             fig1, ax1 = plt.subplots(figsize=(8, 8))
-            plot_scene(ax1, objects1, f"Input:\n{args.json1.split('/')[-3]}/{os.path.basename(args.json1)}", limits, no_title=True, sideways=args.sideways)
+            plot_scene(ax1, objects1, f"Input:\n{os.path.basename(os.path.dirname(args.json1))}/{os.path.basename(args.json1)}", limits, no_title=True, sideways=args.sideways)
             if args.scene_id == "all":
                 out_path1 = os.path.join(args.out_dir, f"{s_id}_input{out_ext}")
             else:
@@ -222,22 +237,23 @@ def main():
             plt.close(fig1)
 
             fig2, ax2 = plt.subplots(figsize=(8, 8))
-            plot_scene(ax2, objects2, f"Resolved:\n{args.json2.split('/')[-3]}/{os.path.basename(args.json2)}", limits, no_title=True, sideways=args.sideways)
+            plot_scene(ax2, objects2, f"Resolved:\n{os.path.basename(os.path.dirname(args.json2))}/{os.path.basename(args.json2)}", limits, no_title=True, sideways=args.sideways)
             if args.scene_id == "all":
                 out_path2 = os.path.join(args.out_dir, f"{s_id}_resolved{out_ext}")
             else:
                 out_path2 = args.out.replace(out_ext, f"_resolved{out_ext}")
             fig2.savefig(out_path2, dpi=150, bbox_inches='tight', pad_inches=0.1, format=out_ext.strip('.'), transparent=True)
             plt.close(fig2)
-        else:
+            
+        if not args.individual or args.both:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
-            plot_scene(ax1, objects1, f"Input:\n{args.json1.split('/')[-3]}/{os.path.basename(args.json1)}", limits, sideways=args.sideways)
-            plot_scene(ax2, objects2, f"Resolved:\n{args.json2.split('/')[-3]}/{os.path.basename(args.json2)}", limits, sideways=args.sideways)
+            plot_scene(ax1, objects1, f"Input:\n{os.path.basename(os.path.dirname(args.json1))}/{os.path.basename(args.json1)}", limits, sideways=args.sideways)
+            plot_scene(ax2, objects2, f"Resolved:\n{os.path.basename(os.path.dirname(args.json2))}/{os.path.basename(args.json2)}", limits, sideways=args.sideways)
             
             plt.tight_layout()
             
             if args.scene_id == "all":
-                out_path = os.path.join(args.out_dir, f"{s_id}{out_ext}")
+                out_path = os.path.join(args.out_dir, f"{s_id}_compare{out_ext}")
             else:
                 out_path = args.out
             fig.savefig(out_path, dpi=150, bbox_inches='tight', format=out_ext.strip('.'), transparent=True)

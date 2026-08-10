@@ -177,7 +177,7 @@ def resolve_bbox_collisions_obb(
     if objectness_mask is not None:
         for i in range(N):
             # Identify layout or floor instances
-            if not bool(objectness_mask[i]) or (labels_idx is not None and labels_idx[i] in [0, 6, 14]):
+            if not bool(objectness_mask[i]) or (labels_idx is not None and labels_idx[i] in [0]):
                 layout_indices.append(i)
                 
     main_layout_idx = -1
@@ -243,13 +243,13 @@ def resolve_bbox_collisions_obb(
         for i in range(N):
             if i in layout_indices:
                 continue
-            if labels_idx is not None and labels_idx[i] == 7:
+            if labels_idx is not None and labels_idx[i] in []:
                 continue # Ignore lamps for collisions
 
             for j in range(i + 1, N):
                 if j in layout_indices:
                     continue
-                if labels_idx is not None and labels_idx[j] == 7:
+                if labels_idx is not None and labels_idx[j] in []:
                     continue # Ignore lamps for collisions
 
                 # Vertical check
