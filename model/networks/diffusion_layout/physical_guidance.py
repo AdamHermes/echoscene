@@ -181,7 +181,7 @@ def calc_loss_on_path(image, shortest_path, robot_width, robot_width_real, robot
         
     return loss_walkable
 
-def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.5, robot_hight_real=1.5):
+def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.35, robot_hight_real=1.5):
     """
     Computes Reachability Guidance by verifying an agent can traverse the room.
     """
@@ -225,9 +225,10 @@ def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.
         if isinstance(faces, torch.Tensor):
             faces = faces.cpu().numpy()
             
-        vertices = vertices - np.mean(vertices, axis=0)
-        vertices = vertices[:, 0::2]
-        scale = np.abs(vertices).max() + 0.2
+        floor_centroid = np.mean(vertices, axis=0)
+        vertices_centered = vertices - floor_centroid
+        vertices_2d = vertices_centered[:, 0::2]
+        scale = np.abs(vertices_2d).max() + 0.2
         
         bbox_floor = bbox_cur[0, bbox_cur[0, :, 4] < robot_hight_real]
         
@@ -248,7 +249,7 @@ def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.
             return x_map, y_map
 
         for face in faces:
-            face_vertices = vertices[face]
+            face_vertices = vertices_2d[face]
             face_vertices_image = [map_to_image_coordinate(v) for v in face_vertices]
             pts = np.array(face_vertices_image, np.int32).reshape(-1, 1, 2)
             cv2.fillPoly(image, [pts], (255, 0, 0))
@@ -260,7 +261,9 @@ def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.
 
         for box in bbox_floor:
             box = box.cpu().detach().numpy()
-            center = map_to_image_coordinate((box[3], box[5]))
+            rel_x = box[3] - floor_centroid[0]
+            rel_z = box[5] - floor_centroid[2]
+            center = map_to_image_coordinate((rel_x, rel_z))
             size = (int(box[0] / scale * image_size / 2), int(box[2] / scale * image_size / 2))
             angle = box[-1]
 
@@ -310,7 +313,9 @@ def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.
                     (minimum_area_2_position[0], minimum_area_2_position[1])
                 )
                 if shortest_path is not None:
-                    mapped_bbox_floor = bbox_floor[:, [3, 5, 4, 0, 2, 1, 6]]
+                    mapped_bbox_floor = bbox_floor[:, [3, 5, 4, 0, 2, 1, 6]].clone()
+                    mapped_bbox_floor[:, 0] -= torch.tensor(floor_centroid[0], device=mapped_bbox_floor.device, dtype=mapped_bbox_floor.dtype)
+                    mapped_bbox_floor[:, 1] -= torch.tensor(floor_centroid[2], device=mapped_bbox_floor.device, dtype=mapped_bbox_floor.dtype)
                     loss_walkable = loss_walkable + calc_loss_on_path(
                         image, shortest_path, robot_width, robot_width_real, robot_hight_real,
                         map_to_image_coordinate, image_to_map_coordinate,

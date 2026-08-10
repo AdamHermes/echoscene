@@ -9,7 +9,7 @@ except ImportError:
     print("Warning: ai2thor is not installed. Please install it using 'pip install ai2thor prior' to running this script.")
     exit(1)
 
-def calculate_walkability(scene_json_path, controller):
+def calculate_walkability(scene_json_path, controller, clearance=0.35):
     with open(scene_json_path, 'r') as f:
         house_data = json.load(f)
 
@@ -29,7 +29,6 @@ def calculate_walkability(scene_json_path, controller):
     # 2. Find a clear teleport position
     furniture_boxes = house_data.get('furniture_boxes', [])
     def is_clear(x, z):
-        clearance = 0.3
         for box in furniture_boxes:
             min_x, max_x, min_z, max_z = box
             if (min_x - clearance <= x <= max_x + clearance) and (min_z - clearance <= z <= max_z + clearance):

@@ -62,6 +62,8 @@ layout_branch:
           strength: 0.05
           iou_threshold: 0.02
           metric: aabb
+          robot_width_real: 0.35
+          robot_hight_real: 1.5
 
 shape_branch:
     model: sdfusion-txt2shape_concat_mp

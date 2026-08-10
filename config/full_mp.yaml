@@ -69,6 +69,8 @@ layout_branch:
           iou_weight: 0.5
           penetration_weight: 2.0
           metric: aabb
+          robot_width_real: 0.35
+          robot_hight_real: 1.5
 
 shape_branch:
     model: sdfusion-txt2shape_mp

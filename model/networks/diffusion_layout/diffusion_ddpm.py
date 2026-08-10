@@ -520,6 +520,8 @@ class GaussianDiffusion:
         collision_weight = float(cfg_get(collision_cfg, 'weight', 10.0)) if collision_cfg is not None else 10.0
         room_outer_weight = float(cfg_get(room_outer_cfg, 'weight', 10.0))
         walkable_weight = float(cfg_get(walkable_cfg, 'weight', 1.0))
+        robot_width_real = float(cfg_get(walkable_cfg, 'robot_width_real', 0.35))
+        robot_hight_real = float(cfg_get(walkable_cfg, 'robot_hight_real', 1.5))
         
         # Keep strength as a global multiplier for backward compatibility
         strength = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
@@ -540,7 +542,7 @@ class GaussianDiffusion:
             
         # Pass the full denorm_boxes, scene_ids, and objectness to dynamically find the floor
         room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
-        walkable_loss = compute_walkable_loss(denorm_boxes, floor_plan, objectness=objectness)
+        walkable_loss = compute_walkable_loss(denorm_boxes, floor_plan, objectness=objectness, robot_width_real=robot_width_real, robot_hight_real=robot_hight_real)
         
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0

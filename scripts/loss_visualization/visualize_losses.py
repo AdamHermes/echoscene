@@ -7,6 +7,7 @@ import matplotlib.patches as patches
 from shapely.geometry import Polygon
 import seaborn as sns
 import glob
+import cv2
 
 def get_obb_corners(x, z, l, w, angle_deg):
     angle_rad = np.deg2rad(angle_deg)
@@ -231,42 +232,166 @@ def visualize_collision_loss(objects, bounds, out_path):
     fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0, format=ext)
     plt.close(fig)
 
-def visualize_walkable_loss(objects, bounds, out_path):
-    fig, ax = plt.subplots(figsize=(8, 8))
-    setup_plot(ax, "Walkable (Reachability) Loss\n(Penalizes objects placed near the center (0,0))", bounds)
+def visualize_walkable_loss(objects, bounds, out_path, robot_width_real=0.35, robot_hight_real=1.5):
+    """Visualize walkability loss using the same grid-based approach as physical_guidance.py.
     
-    # Draw heatmap background
-    pad = 0.5
-    x = np.linspace(bounds[0] - pad, bounds[1] + pad, 500)
-    z = np.linspace(bounds[2] - pad, bounds[3] + pad, 500)
-    xx, zz = np.meshgrid(x, z)
-    dist_sq = xx**2 + zz**2
-    sigma = 0.5
-    walk_penalty = np.exp(-dist_sq / sigma)
+    Renders floor plan on a 256x256 image, erodes by agent width, draws object OBBs
+    with agent-width expansion, and shows walkable vs blocked regions with connected
+    component analysis.
+    """
+    import cv2
     
-    extent = [bounds[0] - pad, bounds[1] + pad, bounds[2] - pad, bounds[3] + pad]
-    im = ax.imshow(walk_penalty, extent=extent, origin='lower', cmap='Reds', alpha=0.6, vmin=0, vmax=1)
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
     
-    # Plot origin marker
-    ax.plot(0, 0, marker='x', color='darkred', markersize=10, markeredgewidth=2, zorder=5)
+    # Find the floor object
+    floor_obj = next((o for o in objects if o["name"] == "floor"), None)
+    furnitures = [o for o in objects if o["name"] != "floor"]
     
-    # Plot objects on top
-    for obj in objects:
-        if obj["name"] == "floor": continue
+    if not floor_obj:
+        # Fallback: just draw objects with a note
+        for ax_idx, (agent_size, title) in enumerate([(robot_width_real, f"Agent={robot_width_real}m (config)"), (0.5, "Agent=0.5m (old default)")]):
+            ax = axes[ax_idx]
+            ax.set_xlim(bounds[0] - 0.5, bounds[1] + 0.5)
+            ax.set_ylim(bounds[2] - 0.5, bounds[3] + 0.5)
+            ax.set_aspect('equal')
+            ax.set_title(f"Walkability: {title}\n(no floor object found)", fontsize=11)
+            for obj in furnitures:
+                poly = patches.Polygon(obj["corners"], closed=True, facecolor=obj["color"], edgecolor='black', alpha=0.6)
+                ax.add_patch(poly)
+        plt.tight_layout()
+        ext = os.path.splitext(out_path)[1].strip('.')
+        fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0, format=ext)
+        plt.close(fig)
+        return
+    
+    # Get floor vertices and compute floor centroid
+    floor_corners = floor_obj["corners"]
+    floor_cx, floor_cz = floor_obj["x"], floor_obj["z"]
+    
+    # Center floor corners and furniture relative to floor centroid
+    floor_corners_centered = floor_corners - np.array([floor_cx, floor_cz])
+    
+    all_pts_centered = [floor_corners_centered]
+    for o in furnitures:
+        all_pts_centered.append(o["corners"] - np.array([floor_cx, floor_cz]))
+    all_pts = np.vstack(all_pts_centered)
+    scale = np.abs(all_pts).max() + 0.2
+    
+    image_size = 256
+    
+    def map_to_image(point):
+        x, y = point
+        return int(x / scale * image_size / 2) + image_size // 2, int(y / scale * image_size / 2) + image_size // 2
+    
+    for ax_idx, (agent_size, title) in enumerate([
+        (robot_width_real, f"Agent={robot_width_real}m (config)"),
+        (0.5, "Agent=0.5m (old default)")
+    ]):
+        ax = axes[ax_idx]
+        robot_width_px = max(1, int(agent_size / scale * image_size / 2))
         
-        # Calculate penalty for this specific object
-        dist_sq_obj = obj["x"]**2 + obj["z"]**2
-        penalty = np.exp(-dist_sq_obj / sigma)
+        # Build the walkability image (same as physical_guidance.py)
+        image = np.zeros((image_size, image_size, 3), dtype=np.uint8)
         
-        # Color the object face itself red if it has high penalty
-        # Mix the original color with red based on penalty weight
-        orig_color = np.array(obj["color"])
-        red_color = np.array([1.0, 0.0, 0.0])
-        blended_color = orig_color * (1 - penalty) + red_color * penalty
+        # Draw floor polygon (centered)
+        floor_img_pts = np.array([map_to_image(v) for v in floor_corners_centered], np.int32).reshape(-1, 1, 2)
+        cv2.fillPoly(image, [floor_img_pts], (255, 0, 0))
         
-        poly = patches.Polygon(obj["corners"], closed=True, facecolor=blended_color, edgecolor='black', alpha=0.9, linewidth=1.0)
-        ax.add_patch(poly)
+        # Erode floor by agent width
+        kernel = np.ones((robot_width_px, robot_width_px), dtype=np.uint8)
+        image[:, :, 0] = cv2.erode(image[:, :, 0], kernel, iterations=1)
         
+        # Draw object OBBs with agent-width expansion (relative to floor centroid)
+        for obj in furnitures:
+            # Filter by height (only objects touching the ground)
+            if obj["y"] > robot_hight_real:
+                continue
+            rel_x = obj["x"] - floor_cx
+            rel_z = obj["z"] - floor_cz
+            center = map_to_image((rel_x, rel_z))
+            size_px = (max(1, int(obj["l"] / scale * image_size / 2)),
+                       max(1, int(obj["w"] / scale * image_size / 2)))
+            angle_deg = -obj["angle"]
+            box_points = cv2.boxPoints(((center[0], center[1]), size_px, angle_deg))
+            box_points = np.intp(box_points)
+            cv2.drawContours(image, [box_points], 0, (0, 255, 0), robot_width_px)
+            cv2.fillPoly(image, [box_points], (0, 255, 0))
+        
+        # Compute walkable area
+        floor_mask = image[:, :, 0] == 255
+        obj_mask = image[:, :, 1] == 255
+        walkable = floor_mask & ~obj_mask
+        blocked = floor_mask & obj_mask
+        outside = ~floor_mask
+        
+        # Connected components on walkable area
+        walkable_u8 = (walkable * 255).astype(np.uint8)
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(walkable_u8, connectivity=8)
+        
+        # Compute stats
+        total_floor_px = floor_mask.sum()
+        walkable_px = walkable.sum()
+        walkable_pct = 100.0 * walkable_px / max(total_floor_px, 1)
+        
+        # Build colored visualization
+        vis = np.ones((image_size, image_size, 3), dtype=np.float32) * 0.92  # light gray bg
+        
+        # Floor area (light gray)
+        vis[floor_mask] = [0.85, 0.85, 0.85]
+        
+        # Walkable regions (green, different shades for components)
+        component_colors = [
+            [0.4, 0.85, 0.4],  # green
+            [0.4, 0.7, 0.85],  # blue-ish
+            [0.85, 0.85, 0.4], # yellow-ish
+            [0.7, 0.4, 0.85],  # purple
+        ]
+        for label_id in range(1, num_labels):
+            mask = labels == label_id
+            color = component_colors[(label_id - 1) % len(component_colors)]
+            vis[mask] = color
+        
+        # Blocked areas (salmon/red)
+        vis[blocked] = [1.0, 0.5, 0.4]
+        
+        # Agent-width erosion zone (show as darker pink border)
+        original_floor = np.zeros((image_size, image_size), dtype=np.uint8)
+        cv2.fillPoly(original_floor, [floor_img_pts], 255)
+        erosion_zone = (original_floor == 255) & ~floor_mask
+        vis[erosion_zone] = [0.9, 0.3, 0.3]  # dark red for erosion border
+        
+        # Plot using matplotlib (in centered coordinate frame)
+        extent = [-scale, scale, -scale, scale]
+        ax.imshow(vis, extent=extent, origin='lower', aspect='equal')
+        
+        # Overlay object outlines (centered)
+        for obj in furnitures:
+            if obj["y"] > robot_hight_real:
+                continue
+            obj_corners_centered = obj["corners"] - np.array([floor_cx, floor_cz])
+            poly = patches.Polygon(obj_corners_centered, closed=True, facecolor='none',
+                                   edgecolor='black', linewidth=1.2, linestyle='-')
+            ax.add_patch(poly)
+        
+        # Floor boundary (centered)
+        floor_poly = patches.Polygon(floor_corners_centered, closed=True, facecolor='none',
+                                      edgecolor='black', linewidth=2.0, linestyle='--')
+        ax.add_patch(floor_poly)
+        
+        # Draw agent size indicator at center
+        agent_circle = patches.Circle((0, 0), agent_size / 2, fill=False,
+                                       edgecolor='navy', linewidth=2, linestyle=':', zorder=10)
+        ax.add_patch(agent_circle)
+        ax.plot(0, 0, 'x', color='navy', markersize=8, markeredgewidth=2, zorder=10)
+        
+        ax.set_title(f"Walkability: {title}\n"
+                     f"Walkable: {walkable_pct:.1f}% | Components: {num_labels - 1}",
+                     fontsize=11)
+        ax.set_xlim(-scale - 0.2, scale + 0.2)
+        ax.set_ylim(-scale - 0.2, scale + 0.2)
+        ax.set_aspect('equal')
+        ax.axis('off')
+    
     plt.tight_layout()
     ext = os.path.splitext(out_path)[1].strip('.')
     fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0, format=ext)
@@ -280,6 +405,7 @@ def main():
     parser.add_argument("--old_mesh_dir", required=True)
     parser.add_argument("--out_dir", required=True)
     parser.add_argument("--ext", default=".png", help="Output file extension (e.g. .png, .svg, .pdf)")
+    parser.add_argument("--robot_width_real", type=float, default=0.35, help="Agent width in meters for walkability computation")
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -298,7 +424,7 @@ def main():
     visualize_collision_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_collision_loss{args.ext}"))
     
     print(f"Generating Walkable Loss Visualization...")
-    visualize_walkable_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_walkable_loss{args.ext}"))
+    visualize_walkable_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_walkable_loss{args.ext}"), robot_width_real=args.robot_width_real)
     
     print(f"Done! Check the {args.out_dir} directory.")
 
