@@ -68,7 +68,7 @@ layout_branch:
         room_outer:
           weight: 10.0
         walkable:
-          weight: 1.0
+          weight: 10.0
           robot_width_real: 0.35
           robot_hight_real: 1.5
 
