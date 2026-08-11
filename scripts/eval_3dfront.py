@@ -119,7 +119,9 @@ def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
     if 'collision_stats' in data_dict and data_dict['collision_stats'] is not None:
         stats_summary = data_dict['collision_stats']
         if 'step_stats' in stats_summary and len(stats_summary['step_stats']) > 0:
-            last_step = stats_summary['step_stats'][-1]
+            applied_steps = [s for s in stats_summary['step_stats'] if s.get('applied')]
+            last_step = applied_steps[-1] if len(applied_steps) > 0 else stats_summary['step_stats'][-1]
+            
             col_loss = last_step.get('collision_loss', 0.0)
             room_loss = last_step.get('room_outer_loss', 0.0)
             walk_loss = last_step.get('walkable_loss', 0.0)
