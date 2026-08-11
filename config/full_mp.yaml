@@ -69,9 +69,10 @@ layout_branch:
           weight: 10.0
         walkable:
           weight: 1.0
-          type: "pathfinding" # Options: "pathfinding" or "center_penalty"
+          type: "pathfinding" # Options: "pathfinding", "center_penalty", or "edge_gaussian"
           robot_width_real: 0.5
           robot_hight_real: 1.5
+          # sigma_scale: 1.5  # Only used by edge_gaussian: controls Gaussian spread relative to object size
 
 shape_branch:
     model: sdfusion-txt2shape_mp

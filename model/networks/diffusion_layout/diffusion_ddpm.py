@@ -14,7 +14,7 @@ from einops import rearrange, reduce
 from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_sincos2arctan
 from .loss import axis_aligned_bbox_overlaps_3d
 from .oriented_iou_loss import cal_iou_3d
-from .physical_guidance import compute_room_outer_loss, compute_walkable_loss
+from .physical_guidance import compute_room_outer_loss, compute_walkable_loss, compute_edge_gaussian_walkable_loss
 #from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
 
@@ -544,14 +544,25 @@ class GaussianDiffusion:
         room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
         
         walkable_type = str(cfg_get(walkable_cfg, 'type', 'pathfinding')).lower()
-        effective_floor_plan = None if walkable_type == 'center_penalty' else floor_plan
-        walkable_loss = compute_walkable_loss(
-            denorm_boxes, 
-            effective_floor_plan, 
-            objectness=objectness, 
-            robot_width_real=robot_width_real, 
-            robot_hight_real=robot_hight_real
-        )
+        if walkable_type == 'edge_gaussian':
+            sigma_scale = float(cfg_get(walkable_cfg, 'sigma_scale', 1.5))
+            walkable_loss = compute_edge_gaussian_walkable_loss(
+                denorm_boxes,
+                floor_plan,
+                objectness=objectness,
+                robot_width_real=robot_width_real,
+                robot_hight_real=robot_hight_real,
+                sigma_scale=sigma_scale
+            )
+        else:
+            effective_floor_plan = None if walkable_type == 'center_penalty' else floor_plan
+            walkable_loss = compute_walkable_loss(
+                denorm_boxes, 
+                effective_floor_plan, 
+                objectness=objectness, 
+                robot_width_real=robot_width_real, 
+                robot_hight_real=robot_hight_real
+            )
         
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0
