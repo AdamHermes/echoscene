@@ -51,8 +51,8 @@ layout_branch:
       train_stats_file: null
     inference_guidance:
       enabled: true
-      interval: 2
-      start_ratio: 0.9
+      interval: 1
+      start_ratio: 0.4
       grad_clip: 10.1
       clip_to_bounds: true
       constraints:
