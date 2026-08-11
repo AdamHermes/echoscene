@@ -542,7 +542,16 @@ class GaussianDiffusion:
             
         # Pass the full denorm_boxes, scene_ids, and objectness to dynamically find the floor
         room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
-        walkable_loss = compute_walkable_loss(denorm_boxes, floor_plan, objectness=objectness, robot_width_real=robot_width_real, robot_hight_real=robot_hight_real)
+        
+        walkable_type = str(cfg_get(walkable_cfg, 'type', 'pathfinding')).lower()
+        effective_floor_plan = None if walkable_type == 'center_penalty' else floor_plan
+        walkable_loss = compute_walkable_loss(
+            denorm_boxes, 
+            effective_floor_plan, 
+            objectness=objectness, 
+            robot_width_real=robot_width_real, 
+            robot_hight_real=robot_hight_real
+        )
         
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0
