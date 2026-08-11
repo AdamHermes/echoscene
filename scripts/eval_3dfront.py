@@ -123,7 +123,14 @@ def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
             col_loss = last_step.get('collision_loss', 0.0)
             room_loss = last_step.get('room_outer_loss', 0.0)
             walk_loss = last_step.get('walkable_loss', 0.0)
-            msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f}"
+            c1_loss = last_step.get('walkable_c1_heatmap', 0.0)
+            c2_loss = last_step.get('walkable_c2_repulsion', 0.0)
+            
+            if c1_loss > 0 or c2_loss > 0:
+                msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f} (C1 Heatmap: {c1_loss:.4f}, C2 Repulsion: {c2_loss:.4f})"
+            else:
+                msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f}"
+                
             print(msg)
             loss_log_path = os.path.join(store_path, 'guidance_losses.txt')
             os.makedirs(store_path, exist_ok=True)

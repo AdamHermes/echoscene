@@ -544,11 +544,13 @@ class GaussianDiffusion:
         room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
         
         walkable_type = str(cfg_get(walkable_cfg, 'type', 'pathfinding')).lower()
+        c1_loss = 0.0
+        c2_loss = 0.0
         if walkable_type == 'edge_gaussian':
             sigma_scale = float(cfg_get(walkable_cfg, 'sigma_scale', 0.5))
             heatmap_weight = float(cfg_get(walkable_cfg, 'heatmap_weight', 1.0))
             repulsion_weight = float(cfg_get(walkable_cfg, 'repulsion_weight', 1.0))
-            walkable_loss = compute_edge_gaussian_walkable_loss(
+            walkable_loss, comp_dict = compute_edge_gaussian_walkable_loss(
                 denorm_boxes,
                 floor_plan,
                 objectness=objectness,
@@ -556,8 +558,12 @@ class GaussianDiffusion:
                 robot_hight_real=robot_hight_real,
                 sigma_scale=sigma_scale,
                 heatmap_weight=heatmap_weight,
-                repulsion_weight=repulsion_weight
+                repulsion_weight=repulsion_weight,
+                return_components=True,
+                verbose=False
             )
+            c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
+            c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
         else:
             effective_floor_plan = None if walkable_type == 'center_penalty' else floor_plan
             walkable_loss = compute_walkable_loss(
@@ -606,6 +612,8 @@ class GaussianDiffusion:
             'collision_loss': float(collision_loss.detach().item()) if collision_loss is not None else 0.0,
             'room_outer_loss': float(room_outer_loss.detach().item()) if isinstance(room_outer_loss, torch.Tensor) else float(room_outer_loss),
             'walkable_loss': float(walkable_loss.detach().item()) if isinstance(walkable_loss, torch.Tensor) else float(walkable_loss),
+            'walkable_c1_heatmap': c1_loss,
+            'walkable_c2_repulsion': c2_loss,
             'variance_scale_mean': float(model_variance.mean().detach().item()),
             'variance_scale_max': float(model_variance.max().detach().item()),
             'grad_norm_mean': float(grad_norm.mean().detach().item()),
