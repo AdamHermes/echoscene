@@ -52,7 +52,7 @@ layout_branch:
     inference_guidance:
       enabled: true
       interval: 1
-      start_ratio: 0.8
+      start_ratio: 0.9
       grad_clip: 10.1
       clip_to_bounds: true
       constraints:
@@ -69,8 +69,8 @@ layout_branch:
           weight: 10.0
         walkable:
           weight: 1.0
-          type: "center_penalty" # Options: "pathfinding" or "center_penalty"
-          robot_width_real: 0.35
+          type: "pathfinding" # Options: "pathfinding" or "center_penalty"
+          robot_width_real: 0.5
           robot_hight_real: 1.5
 
 shape_branch:
