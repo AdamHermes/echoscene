@@ -70,7 +70,7 @@ layout_branch:
           weight: 10.0
         walkable:
           weight: 1.0
-          type: "pathfinding" # Options: "pathfinding", "center_penalty", or "edge_gaussian"
+          type: "center_penalty" # Options: "pathfinding", "center_penalty", or "edge_gaussian"
           robot_width_real: 0.5
           robot_hight_real: 1.5
 
