@@ -1,0 +1,32 @@
+Generation Mode
+['SecondBedroom-6482']
+1000it [01:27, 11.37it/s]
+inference mode.. no gt sdf
+Data shape for DDIM sampling is (8, 3, 16, 16, 16), eta 0.0
+Running DDIM Sampling with 100 timesteps
+DDIM Sampler: 100% 100/100 [02:28<00:00,  1.48s/it]
+Scene SecondBedroom-6482 - Final Step Collision Loss: 0.0141, Room Outer Loss: 0.0000, Walkable Loss: 0.7221
+  [OBB resolve] converged at iteration 5
+
+============================================================
+SCENE: SecondBedroom-6482  |  8 objects
+============================================================
+Obj                       l      h      w        x       y       z    angle
+----------------------------------------------------------------------
+bed                   1.741  0.940  1.860   -1.041   0.008  -0.057    -0.38°
+chair                 0.630  0.870  0.634   -1.638  -0.003   1.532   138.54°
+nightstand            0.686  0.731  0.408   -1.480  -0.001  -1.211     0.02°
+table                 0.806  0.663  0.411   -0.980  -0.002   1.567    89.77°
+wardrobe              1.088  2.095  0.464    0.504   0.001  -0.944   -90.42°
+lamp                  0.517  0.432  0.378   -0.685   2.552   0.487    -0.22°
+floor                 3.598  0.003  4.567   -0.290  -0.012   0.763    -0.43°
+_scene_               0.069  0.000  0.021   -5.671  -0.005  -5.714   -57.31°
+
+  Pairwise overlap check (axis-aligned bbox):
+  !! OVERLAP: bed <-> floor  depth=[1.741, 0.003, 1.860]
+  !! OVERLAP: chair <-> table  depth=[0.059, 0.663, 0.411]
+  !! OVERLAP: chair <-> floor  depth=[0.630, 0.003, 0.634]
+  !! OVERLAP: nightstand <-> floor  depth=[0.686, 0.003, 0.408]
+  !! OVERLAP: table <-> floor  depth=[0.806, 0.003, 0.411]
+  !! OVERLAP: wardrobe <-> floor  depth=[1.088, 0.003, 0.464]
+============================================================
