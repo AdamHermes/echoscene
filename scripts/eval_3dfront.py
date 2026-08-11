@@ -126,7 +126,7 @@ def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
             c1_loss = last_step.get('walkable_c1_heatmap', 0.0)
             c2_loss = last_step.get('walkable_c2_repulsion', 0.0)
             
-            if c1_loss > 0 or c2_loss > 0:
+            if 'walkable_c1_heatmap' in last_step:
                 msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f} (C1 Heatmap: {c1_loss:.4f}, C2 Repulsion: {c2_loss:.4f})"
             else:
                 msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f}"
