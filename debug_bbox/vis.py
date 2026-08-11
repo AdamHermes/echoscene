@@ -61,6 +61,27 @@ def get_obb_corners(x, z, l, w, angle_deg):
         rotated.append([x + rx, z + rz])
     return np.array(rotated)
 
+def wrap_filename(text, width=60):
+    """Wraps a filename that may contain underscores, hyphens or dots without spaces."""
+    if len(text) <= width:
+        return text
+    parts = re.split(r'([_\-\.\s])', text)
+    lines = []
+    current_line = ""
+    for part in parts:
+        if len(current_line) + len(part) > width:
+            if current_line:
+                lines.append(current_line)
+                current_line = part
+            else:
+                for i in range(0, len(part), width):
+                    lines.append(part[i:i+width])
+        else:
+            current_line += part
+    if current_line:
+        lines.append(current_line)
+    return "\n".join(lines)
+
 class SceneVisualizer:
     def __init__(self):
         # Scan for all txt files in the current folder
@@ -148,9 +169,10 @@ class SceneVisualizer:
         self.ax.grid(True, linestyle=':', alpha=0.5)
         
         # Header text info
-        title = f"File [{self.current_idx + 1}/{len(self.files)}]: {file_path}\n"
+        wrapped_file_path = wrap_filename(file_path, width=60)
+        title = f"File [{self.current_idx + 1}/{len(self.files)}]: {wrapped_file_path}\n"
         title += "Use ← or → arrow keys to switch logs"
-        self.ax.set_title(title, fontsize=12, weight='bold', pad=10)
+        self.ax.set_title(title, fontsize=12, weight='bold', pad=10, wrap=True)
         
         # Legend
         aabb_label = 'Naive Unrotated AABB (GPT Mode)' if self.show_gpt_collision else 'Correct AABB Boundary'

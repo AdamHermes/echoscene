@@ -1,12 +1,3 @@
-Generation Mode
-['SecondBedroom-6482']
-1000it [01:27, 11.44it/s]
-inference mode.. no gt sdf
-Data shape for DDIM sampling is (8, 3, 16, 16, 16), eta 0.0
-Running DDIM Sampling with 100 timesteps
-DDIM Sampler: 100% 100/100 [02:27<00:00,  1.47s/it]
-Scene SecondBedroom-6482 - Final Step Collision Loss: 0.0243, Room Outer Loss: 0.0000, Walkable Loss: 0.7899
-  [OBB resolve] converged at iteration 11
 
 ============================================================
 SCENE: SecondBedroom-6482  |  8 objects

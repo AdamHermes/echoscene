@@ -68,7 +68,7 @@ layout_branch:
         room_outer:
           weight: 10.0
         walkable:
-          weight: 10.0
+          weight: 1.0
           type: "center_penalty" # Options: "pathfinding" or "center_penalty"
           robot_width_real: 0.35
           robot_hight_real: 1.5
