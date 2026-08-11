@@ -1,3 +1,29 @@
+1.11.0+cu113
+loading CLIP
+Checking for missing clip feats. This can be slow the first time.
+100% 370/370 [00:27<00:00, 13.26it/s]
+Working with z of shape (1, 3, 16, 16, 16) = 12288 dimensions.
+[*] VQVAE: weight successfully load from: ./checkpoint/vqvae_threedfront_best.pth
+[*] setting ddim_steps=100
+[*] create image directory:
+/content/echoscene/full_mp/diff_crossattn/images...
+[*] shape branch has successfully been restored from: ../released_full_model/checkpoint/model2050.pth
+[*] GCN and layout branch has successfully been restored from: ../released_full_model/checkpoint/model2050.pth
+Evaluating 1 sample(s)
+
+Editing Mode - Additions
+
+Editing Mode - Relationship changes
+
+Generation Mode
+['SecondBedroom-6482']
+1000it [01:22, 12.11it/s]
+inference mode.. no gt sdf
+Data shape for DDIM sampling is (8, 3, 16, 16, 16), eta 0.0
+Running DDIM Sampling with 100 timesteps
+DDIM Sampler: 100% 100/100 [02:35<00:00,  1.55s/it]
+Scene SecondBedroom-6482 - Final Step Collision Loss: 0.0044, Room Outer Loss: 0.0000, Walkable Loss: 3.0986 (C1 Heatmap: 0.7254, C2 Repulsion: 3.5975)
+  [OBB resolve] converged at iteration 6
 
 ============================================================
 SCENE: SecondBedroom-6482  |  8 objects
@@ -22,3 +48,12 @@ _scene_               0.069  0.000  0.021   -5.671  -0.005  -5.713   -57.31°
   !! OVERLAP: table <-> floor  depth=[0.727, -0.002, 0.296]
   !! OVERLAP: wardrobe <-> floor  depth=[1.177, -0.002, 0.521]
 ============================================================
+
+rendering ['bed', 'chair', 'nightstand', 'table', 'wardrobe', 'lamp', 'floor', '_scene_']
+/usr/local/miniconda3/envs/echoscene/lib/python3.8/site-packages/numpy/core/fromnumeric.py:3464: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/usr/local/miniconda3/envs/echoscene/lib/python3.8/site-packages/numpy/core/_methods.py:192: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+acc & L/R: 1.00 & F/B: 1.00 & Bi/Sm: 1.00 & Ta/Sh: 0.83 & Stand: 1.00 & Close: 1.00 & Symm: nan. Total: &0.98
+means of mean: nan
+PhyScene input saved to: ../released_full_model/vis/2050/physcene_collision_input.json
