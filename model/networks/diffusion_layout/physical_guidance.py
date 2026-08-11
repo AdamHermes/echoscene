@@ -324,213 +324,136 @@ def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.
 
     return loss_walkable
 
-def compute_edge_gaussian_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.35, robot_hight_real=1.5, sigma_scale=1.5):
+def compute_edge_gaussian_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.35, robot_hight_real=1.5, sigma_scale=0.5, return_components=False, verbose=True):
     """
-    Edge-Gaussian Walkability Loss (third option) with two components:
+    Exact OBB Edge-Gaussian Walkability Guidance Loss (Option 3).
     
-    Component 1 - Floor Heatmap:
-      Each object radiates a Gaussian heatmap from its EDGES onto the floor:
-        - Inside the object boundary: loss is constant (plateau at 1.0)
-        - Outside: loss = exp(-dist_from_edge^2 / (2 * sigma^2))
-        - sigma is proportional to the object's average size * sigma_scale
-      The total is the mean heatmap intensity over the walkable floor area.
-      This penalizes floor space being "consumed" by nearby object influence zones.
+    For each ground-level furniture object with OBB parameters (l, h, w, x, y, z, angle):
+      1. Transform query coordinates (x, z) into the object's local rotated frame (x', z'):
+           x' =  (x - x_c) * cos(angle) + (z - z_c) * sin(angle)
+           z' = -(x - x_c) * sin(angle) + (z - z_c) * cos(angle)
+      2. Compute exact orthogonal distance from query point to the 4 box edges:
+           d_x = max(|x'| - l/2, 0)
+           d_z = max(|z'| - w/2, 0)
+           d_edge = sqrt(d_x^2 + d_z^2)
+      3. Compute Edge Gaussian field radiating from object boundaries:
+           G(x, z) = exp(-d_edge^2 / (2 * sigma^2))
+         where sigma = (l + w) / 2.0 * sigma_scale. Inside the box (d_edge = 0), G(x, z) = 1.0.
     
-    Component 2 - Per-Object Gaussian Repulsion (inspired by center_penalty):
-      Instead of a single room-center Gaussian pushing all objects outward,
-      EACH furniture object emits its own size-proportional Gaussian field.
-      This field is evaluated at every OTHER furniture object's position.
-      Objects whose Gaussian zones overlap get penalized, pushing them apart.
-      Non-furniture objects (floor, _scene_, ceiling-mounted lamps) are excluded
-      via height filtering (y > robot_height) and objectness masking.
-    
-    Args:
-        bbox: [B, N, 7] or [N, 7] tensor of (l, h, w, x, y, z, angle)
-        floor_plan: tuple (vertices, faces) or list of tuples, or None
-        objectness: mask for real objects vs padding
-        robot_width_real: agent width in meters (used for floor erosion)
-        robot_hight_real: agent height in meters (used to filter tall objects like lamps)
-        sigma_scale: multiplier on average object size to control Gaussian spread
+    Component 1 - Floor Edge Heatmap:
+      Evaluates the sum of per-object edge Gaussians across a PyTorch floor grid,
+      penalizing floor area covered by object edge influence zones.
+      
+    Component 2 - Pairwise OBB Edge Repulsion:
+      Evaluates object j's center in object i's exact OBB edge-Gaussian field G_i(x_j, z_j).
+      Directly penalizes furniture pairs whose OBB edge zones overlap.
     """
     if len(bbox.shape) == 2:
         bbox = bbox.unsqueeze(0)
         if objectness is not None and len(objectness.shape) == 1:
             objectness = objectness.unsqueeze(0)
+            
+    B, N, _ = bbox.shape
+    device = bbox.device
+    dtype = bbox.dtype
     
-    # ================================================================
-    # Component 2: Per-Object Gaussian Repulsion (differentiable)
-    # Each ground-level furniture object emits a Gaussian from its edges.
-    # The loss is the sum of Gaussian values that each object receives
-    # from every other furniture object's field.
-    # ================================================================
-    
-    # Build a mask for ground-level furniture objects only
-    # This excludes: floor, _scene_ (via objectness), and lamps/ceiling objects (via height)
+    # Filter for ground-level furniture objects (exclude lamps/ceilings & padded objects)
     if objectness is not None:
-        furniture_mask = objectness.to(dtype=torch.bool, device=bbox.device)  # [B, N]
+        furniture_mask = objectness.to(dtype=torch.bool, device=device)
+        if furniture_mask.dim() > 2:
+            furniture_mask = furniture_mask[:, :, 0]
     else:
-        furniture_mask = torch.ones(bbox.shape[:2], dtype=torch.bool, device=bbox.device)
-    
-    # Additionally filter by height: exclude objects mounted above robot height (e.g. lamps)
-    height_mask = bbox[:, :, 4] < robot_hight_real  # y-center < robot height
+        furniture_mask = torch.ones((B, N), dtype=torch.bool, device=device)
+        
+    height_mask = bbox[:, :, 4] < robot_hight_real
     furniture_mask = furniture_mask & height_mask
     
-    repulsion_loss = torch.tensor(0.0, device=bbox.device, dtype=bbox.dtype)
+    total_loss = torch.tensor(0.0, device=device, dtype=dtype)
+    total_repulsion = torch.tensor(0.0, device=device, dtype=dtype)
+    total_heatmap = torch.tensor(0.0, device=device, dtype=dtype)
     
-    for b in range(bbox.shape[0]):
+    for b in range(B):
         furn_idx = torch.where(furniture_mask[b])[0]
-        if len(furn_idx) < 2:
+        if len(furn_idx) == 0:
             continue
             
-        furn_boxes = bbox[b, furn_idx]  # [M, 7]
+        furn_boxes = bbox[b, furn_idx]  # [M, 7] (l, h, w, x, y, z, angle)
+        M = furn_boxes.shape[0]
         
-        centers_x = furn_boxes[:, 3]  # [M]
-        centers_z = furn_boxes[:, 5]  # [M]
-        sizes_l = furn_boxes[:, 0]    # [M] length
-        sizes_w = furn_boxes[:, 2]    # [M] width
-        avg_size = (sizes_l + sizes_w) / 2.0  # [M]
+        lengths = furn_boxes[:, 0]  # [M]
+        widths  = furn_boxes[:, 2]  # [M]
+        cx      = furn_boxes[:, 3]  # [M]
+        cz      = furn_boxes[:, 5]  # [M]
+        angles  = furn_boxes[:, 6]  # [M] rad
         
-        # Pairwise center distances in XZ plane
-        dx = centers_x.unsqueeze(1) - centers_x.unsqueeze(0)  # [M, M]
-        dz = centers_z.unsqueeze(1) - centers_z.unsqueeze(0)  # [M, M]
-        center_dist = torch.sqrt(dx**2 + dz**2 + 1e-8)        # [M, M]
+        half_l = lengths / 2.0
+        half_w = widths / 2.0
+        sigmas = (lengths + widths) / 2.0 * sigma_scale  # [M]
         
-        # Edge-to-edge distance: subtract half-extents of both objects
-        half_i = avg_size.unsqueeze(1) / 2.0  # [M, 1]
-        half_j = avg_size.unsqueeze(0) / 2.0  # [1, M]
-        edge_dist = torch.relu(center_dist - half_i - half_j)  # [M, M]
-        
-        # Each object's Gaussian sigma is proportional to its own size
-        sigma_i = avg_size.unsqueeze(1) * sigma_scale  # [M, 1]
-        sigma_j = avg_size.unsqueeze(0) * sigma_scale  # [1, M]
-        
-        # The penalty object j receives from object i's Gaussian field:
-        # Use object i's sigma (the emitter's Gaussian spread)
-        penalty_from_i = torch.exp(-edge_dist**2 / (2.0 * sigma_i**2 + 1e-8))  # [M, M]
-        
-        # Also compute penalty object i receives from object j's field
-        penalty_from_j = torch.exp(-edge_dist**2 / (2.0 * sigma_j**2 + 1e-8))  # [M, M]
-        
-        # Symmetric: each pair contributes the average of both directions
-        pairwise_penalty = (penalty_from_i + penalty_from_j) / 2.0  # [M, M]
-        
-        # Zero out self-pairs
-        diag_mask = 1.0 - torch.eye(len(furn_idx), device=bbox.device, dtype=bbox.dtype)
-        pairwise_penalty = pairwise_penalty * diag_mask
-        
-        # Sum upper triangle (avoid double counting)
-        repulsion_loss = repulsion_loss + pairwise_penalty.sum() / 2.0
-    
-    # ================================================================
-    # Component 1: Edge-Gaussian Floor Heatmap (non-differentiable rasterization)
-    # Each object radiates a Gaussian from its edges onto the floor grid.
-    # The loss is the mean heatmap value on the walkable floor area.
-    # ================================================================
-    
-    heatmap_loss = 0.0
-    
-    if floor_plan is not None:
-        image_size = 256
-        
-        for i in range(len(bbox)):
-            bbox_cur = bbox[i:i+1, :, :]
-            if objectness is not None:
-                obj_mask = objectness[i]
-                if obj_mask.dim() > 1:
-                    obj_mask = obj_mask[:, 0]
-                bbox_cur = bbox_cur[:, obj_mask.bool(), :]
+        # -------------------------------------------------------------
+        # Component 2: Pairwise OBB Edge Repulsion (differentiable)
+        # -------------------------------------------------------------
+        if M >= 2:
+            dx = cx.unsqueeze(0) - cx.unsqueeze(1)  # [M, M] (j - i)
+            dz = cz.unsqueeze(0) - cz.unsqueeze(1)  # [M, M]
             
-            if isinstance(floor_plan, list) and len(floor_plan) > i:
-                fp = floor_plan[i]
-            else:
-                fp = floor_plan
-                
-            if fp is None or len(fp) != 2:
-                continue
-                
-            vertices, faces = fp
+            cos_a = torch.cos(angles).unsqueeze(1)  # [M, 1] (angle of box i)
+            sin_a = torch.sin(angles).unsqueeze(1)  # [M, 1]
             
-            if isinstance(vertices, torch.Tensor):
-                vertices = vertices.cpu().numpy()
-            if isinstance(faces, torch.Tensor):
-                faces = faces.cpu().numpy()
-                
-            floor_centroid = np.mean(vertices, axis=0)
-            vertices_centered = vertices - floor_centroid
-            vertices_2d = vertices_centered[:, 0::2]
-            scale = np.abs(vertices_2d).max() + 0.2
+            x_local =  dx * cos_a + dz * sin_a       # [M, M]
+            z_local = -dx * sin_a + dz * cos_a       # [M, M]
             
-            # Filter to ground-level objects only
-            bbox_floor = bbox_cur[0, bbox_cur[0, :, 4] < robot_hight_real]
+            dist_x = torch.relu(torch.abs(x_local) - half_l.unsqueeze(1))  # [M, M]
+            dist_z = torch.relu(torch.abs(z_local) - half_w.unsqueeze(1))  # [M, M]
+            edge_dist = torch.sqrt(dist_x**2 + dist_z**2 + 1e-8)          # [M, M]
             
-            if len(bbox_floor) == 0:
-                continue
+            avg_size_j = (lengths + widths) / 2.0  # [M]
+            edge_to_edge_dist = torch.relu(edge_dist - (avg_size_j.unsqueeze(0) / 2.0))
             
-            robot_width_px = max(1, int(robot_width_real / scale * image_size / 2))
+            sigma_i = sigmas.unsqueeze(1)  # [M, 1]
+            pairwise_g = torch.exp(-edge_to_edge_dist**2 / (2.0 * sigma_i**2 + 1e-8))
+            
+            mask_diag = 1.0 - torch.eye(M, device=device, dtype=dtype)
+            repulsion_loss = (pairwise_g * mask_diag).sum() / 2.0
+            total_repulsion = total_repulsion + repulsion_loss
+            total_loss = total_loss + repulsion_loss
+            
+        # -------------------------------------------------------------
+        # Component 1: Floor Grid Edge Heatmap
+        # -------------------------------------------------------------
+        grid_res = 64
+        gx = torch.linspace(-3.0, 3.0, grid_res, device=device, dtype=dtype)
+        gz = torch.linspace(-3.0, 3.0, grid_res, device=device, dtype=dtype)
+        grid_x, grid_z = torch.meshgrid(gx, gz, indexing='ij')  # [GR, GR]
+        
+        rel_x = grid_x.unsqueeze(-1) - cx.view(1, 1, M)
+        rel_z = grid_z.unsqueeze(-1) - cz.view(1, 1, M)
+        
+        cos_arr = torch.cos(angles).view(1, 1, M)
+        sin_arr = torch.sin(angles).view(1, 1, M)
+        
+        local_x =  rel_x * cos_arr + rel_z * sin_arr  # [GR, GR, M]
+        local_z = -rel_x * sin_arr + rel_z * cos_arr  # [GR, GR, M]
+        
+        d_x = torch.relu(torch.abs(local_x) - half_l.view(1, 1, M))
+        d_z = torch.relu(torch.abs(local_z) - half_w.view(1, 1, M))
+        d_edge_grid = torch.sqrt(d_x**2 + d_z**2 + 1e-8)
+        
+        sigmas_grid = sigmas.view(1, 1, M)
+        grid_gaussians = torch.exp(-d_edge_grid**2 / (2.0 * sigmas_grid**2 + 1e-8))  # [GR, GR, M]
+        
+        heatmap_sum = grid_gaussians.sum(dim=-1)  # [GR, GR]
+        heatmap_loss = heatmap_sum.mean()
+        
+        total_heatmap = total_heatmap + heatmap_loss
+        total_loss = total_loss + heatmap_loss
 
-            def map_to_image(point):
-                x, y = point
-                return int(x / scale * image_size / 2) + image_size // 2, int(y / scale * image_size / 2) + image_size // 2
-            
-            # Render the floor polygon and erode by agent width
-            floor_image = np.zeros((image_size, image_size), dtype=np.uint8)
-            for face in faces:
-                face_verts = vertices_2d[face]
-                pts = np.array([map_to_image(v) for v in face_verts], np.int32).reshape(-1, 1, 2)
-                cv2.fillPoly(floor_image, [pts], 255)
-            
-            kernel = np.ones((robot_width_px, robot_width_px), dtype=np.uint8)
-            floor_eroded = cv2.erode(floor_image, kernel, iterations=1)
-            floor_mask = floor_eroded == 255
-            
-            floor_pixel_count = float(floor_mask.sum())
-            if floor_pixel_count < 1:
-                continue
-            
-            # Build the combined edge-gaussian heatmap
-            combined_heatmap = np.zeros((image_size, image_size), dtype=np.float32)
-            
-            for box in bbox_floor:
-                box_np = box.cpu().detach().numpy()
-                rel_x = box_np[3] - floor_centroid[0]
-                rel_z = box_np[5] - floor_centroid[2]
-                center_px = map_to_image((rel_x, rel_z))
-                
-                obj_l = box_np[0]
-                obj_w = box_np[2]
-                size_px = (max(1, int(obj_l / scale * image_size / 2)),
-                           max(1, int(obj_w / scale * image_size / 2)))
-                angle_deg = -box_np[-1] / np.pi * 180
-                
-                # Draw the object OBB
-                box_points = cv2.boxPoints(((center_px[0], center_px[1]), size_px, angle_deg))
-                box_points = np.intp(box_points)
-                
-                # Object + agent-width expansion zone
-                obj_expanded_img = np.zeros((image_size, image_size), dtype=np.uint8)
-                cv2.drawContours(obj_expanded_img, [box_points], 0, 255, robot_width_px)
-                cv2.fillPoly(obj_expanded_img, [box_points], 255)
-                
-                # Distance from each pixel to nearest edge of the expanded object
-                inverted = 255 - obj_expanded_img
-                dist_from_edge = cv2.distanceTransform(inverted, distanceType=cv2.DIST_L2, maskSize=5)
-                
-                # Sigma proportional to object size
-                avg_size_meters = (obj_l + obj_w) / 2.0
-                sigma_px = max(1.0, avg_size_meters / scale * image_size / 2 * sigma_scale)
-                
-                # Gaussian falloff from edges
-                gaussian_field = np.exp(-dist_from_edge**2 / (2.0 * sigma_px**2))
-                
-                # Inside the object (and expansion): plateau at 1.0
-                gaussian_field[obj_expanded_img == 255] = 1.0
-                
-                combined_heatmap = combined_heatmap + gaussian_field
-            
-            # Evaluate only on walkable floor area
-            walkable_heatmap = combined_heatmap * floor_mask
-            heatmap_loss = heatmap_loss + walkable_heatmap.sum() / floor_pixel_count
-    
-    # Combine both components
-    return repulsion_loss + heatmap_loss
+    if verbose:
+        print(f"[Edge-Gaussian Walkable Loss] Component 1 (Floor Heatmap): {total_heatmap.item():.4f} | Component 2 (Pairwise Repulsion): {total_repulsion.item():.4f} | Total: {total_loss.item():.4f}")
+
+    if return_components:
+        return total_loss, {"c1_floor_heatmap": total_heatmap, "c2_pairwise_repulsion": total_repulsion}
+    return total_loss
+
+
 

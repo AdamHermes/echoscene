@@ -398,6 +398,153 @@ def visualize_walkable_loss(objects, bounds, out_path, robot_width_real=0.35, ro
     plt.close(fig)
 
 
+def visualize_center_penalty_loss(objects, bounds, out_path):
+    """Visualize Option 2: Center Penalty Walkability Loss."""
+    fig, ax = plt.subplots(figsize=(8, 8))
+    setup_plot(ax, "Center Penalty Walkable Loss\n(Radial Gaussian penalty centered at room origin)", bounds)
+    plot_base_objects(ax, objects, fade_floor=False)
+    
+    floor_obj = next((o for o in objects if o["name"] == "floor"), None)
+    furnitures = [o for o in objects if o["name"] != "floor"]
+    
+    # Overlay room center Gaussian heatmap
+    grid_x = np.linspace(bounds[0] - 0.5, bounds[1] + 0.5, 200)
+    grid_z = np.linspace(bounds[2] - 0.5, bounds[3] + 0.5, 200)
+    GXX, GZZ = np.meshgrid(grid_x, grid_z)
+    dist_sq = GXX**2 + GZZ**2
+    sigma = 0.5
+    center_heat = np.exp(-dist_sq / sigma)
+    
+    extent = [bounds[0] - 0.5, bounds[1] + 0.5, bounds[2] - 0.5, bounds[3] + 0.5]
+    heatmap_img = ax.imshow(center_heat, extent=extent, origin='lower', aspect='equal', cmap='magma', alpha=0.6, zorder=5)
+    
+    # Draw center marker and object centers
+    ax.plot(0, 0, 'w*', markersize=14, markeredgecolor='black', zorder=15, label="Room Center (0,0)")
+    for obj in furnitures:
+        ax.plot(obj["x"], obj["z"], 'ro', markersize=6, zorder=12)
+        ax.plot([0, obj["x"]], [0, obj["z"]], 'r--', alpha=0.5, linewidth=1.0, zorder=11)
+        
+    fig.colorbar(heatmap_img, ax=ax, fraction=0.046, pad=0.04, label="Center Penalty Density")
+    plt.tight_layout()
+    ext = os.path.splitext(out_path)[1].strip('.')
+    fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0, format=ext)
+    plt.close(fig)
+
+def visualize_edge_gaussian_loss(objects, bounds, out_path, robot_width_real=0.35, robot_hight_real=1.5, sigma_scale=0.5):
+    """Visualize Option 3: Exact OBB Edge-Gaussian Walkability Loss (Component 1 & Component 2)."""
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+    
+    floor_obj = next((o for o in objects if o["name"] == "floor"), None)
+    furnitures = [o for o in objects if o["name"] != "floor" and o["y"] < robot_hight_real]
+    
+    # Grid coordinates
+    res = 300
+    gx = np.linspace(bounds[0] - 0.5, bounds[1] + 0.5, res)
+    gz = np.linspace(bounds[2] - 0.5, bounds[3] + 0.5, res)
+    GXX, GZZ = np.meshgrid(gx, gz)
+    
+    # -------------------------------------------------------------
+    # Subplot 1: Component 1 - Floor Grid OBB Edge-Gaussian Heatmap
+    # -------------------------------------------------------------
+    ax1 = axes[0]
+    setup_plot(ax1, "Edge-Gaussian Component 1: Floor OBB Heatmap\n(Gaussians radiate directly from rotated rectangular edges)", bounds)
+    plot_base_objects(ax1, objects, fade_floor=False)
+    
+    combined_heatmap = np.zeros_like(GXX)
+    
+    for obj in furnitures:
+        cx, cz = obj["x"], obj["z"]
+        l, w = obj["l"], obj["w"]
+        angle_rad = np.deg2rad(obj["angle"])
+        
+        rel_x = GXX - cx
+        rel_z = GZZ - cz
+        
+        # Transform to object's local rotated coordinate frame
+        cos_a = np.cos(angle_rad)
+        sin_a = np.sin(angle_rad)
+        local_x =  rel_x * cos_a + rel_z * sin_a
+        local_z = -rel_x * sin_a + rel_z * cos_a
+        
+        # Exact orthogonal distance to 4 box edges
+        dx = np.maximum(np.abs(local_x) - l / 2.0, 0.0)
+        dz = np.maximum(np.abs(local_z) - w / 2.0, 0.0)
+        d_edge = np.sqrt(dx**2 + dz**2)
+        
+        sigma = (l + w) / 2.0 * sigma_scale
+        g_field = np.exp(-d_edge**2 / (2.0 * sigma**2))
+        combined_heatmap += g_field
+
+    extent = [bounds[0] - 0.5, bounds[1] + 0.5, bounds[2] - 0.5, bounds[3] + 0.5]
+    hm1 = ax1.imshow(combined_heatmap, extent=extent, origin='lower', aspect='equal', cmap='plasma', alpha=0.6, zorder=5)
+    fig.colorbar(hm1, ax=ax1, fraction=0.046, pad=0.04, label="Edge Gaussian Density")
+
+    # -------------------------------------------------------------
+    # Subplot 2: Component 2 - Individual Filled 2D Edge-Gaussian Heatmaps
+    # -------------------------------------------------------------
+    ax2 = axes[1]
+    setup_plot(ax2, "Edge-Gaussian Component 2: Individual 2D Object Heatmaps & Repulsion\n(Every object emits a filled 2D Edge-Gaussian heatmap radiating from its rotated edges)", bounds)
+    plot_base_objects(ax2, objects, fade_floor=False)
+    
+    # Plot filled 2D Edge-Gaussian heatmaps for EVERY furniture object
+    for i, obj in enumerate(furnitures):
+        cx, cz = obj["x"], obj["z"]
+        l, w = obj["l"], obj["w"]
+        angle_rad = np.deg2rad(obj["angle"])
+        
+        rel_x = GXX - cx
+        rel_z = GZZ - cz
+        
+        cos_a = np.cos(angle_rad)
+        sin_a = np.sin(angle_rad)
+        local_x =  rel_x * cos_a + rel_z * sin_a
+        local_z = -rel_x * sin_a + rel_z * cos_a
+        
+        dx = np.maximum(np.abs(local_x) - l / 2.0, 0.0)
+        dz = np.maximum(np.abs(local_z) - w / 2.0, 0.0)
+        d_edge = np.sqrt(dx**2 + dz**2)
+        
+        sigma = (l + w) / 2.0 * sigma_scale
+        g_single = np.exp(-d_edge**2 / (2.0 * sigma**2))
+        
+        # Render filled 2D heatmap radiating from object i's 4 edges
+        levels = np.linspace(0.15, 1.0, 15)
+        ax2.contourf(GXX, GZZ, g_single, levels=levels, cmap='magma', alpha=0.25, zorder=6)
+
+    # Draw pairwise repulsion vectors and penalty scores between overlapping heatmaps
+    for i in range(len(furnitures)):
+        obj_i = furnitures[i]
+        sigma_i = (obj_i["l"] + obj_i["w"]) / 2.0 * sigma_scale
+        
+        for j in range(i + 1, len(furnitures)):
+            obj_j = furnitures[j]
+            
+            dx_ij = obj_j["x"] - obj_i["x"]
+            dz_ij = obj_j["z"] - obj_i["z"]
+            angle_i = np.deg2rad(obj_i["angle"])
+            
+            loc_x =  dx_ij * np.cos(angle_i) + dz_ij * np.sin(angle_i)
+            loc_z = -dx_ij * np.sin(angle_i) + dz_ij * np.cos(angle_i)
+            
+            dist_x = max(abs(loc_x) - obj_i["l"]/2.0, 0.0)
+            dist_z = max(abs(loc_z) - obj_i["w"]/2.0, 0.0)
+            d_edge_i = np.sqrt(dist_x**2 + dist_z**2)
+            
+            avg_size_j = (obj_j["l"] + obj_j["w"]) / 2.0
+            edge_to_edge = max(0.0, d_edge_i - avg_size_j / 2.0)
+            
+            penalty = np.exp(-edge_to_edge**2 / (2.0 * sigma_i**2))
+            
+            if penalty > 0.02:
+                ax2.plot([obj_i["x"], obj_j["x"]], [obj_i["z"], obj_j["z"]], color='cyan', linewidth=1.5 + penalty*3.5, alpha=min(0.95, penalty + 0.2), linestyle='-', zorder=12)
+                ax2.text((obj_i["x"] + obj_j["x"])/2, (obj_i["z"] + obj_j["z"])/2, f"{penalty:.2f}", color='navy', fontsize=9, fontweight='bold', bbox=dict(boxstyle="round,pad=0.2", fc="cyan", ec="blue", lw=1, alpha=0.9), zorder=15)
+
+    plt.tight_layout()
+    ext = os.path.splitext(out_path)[1].strip('.')
+    fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0, format=ext)
+    plt.close(fig)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scene_id", required=True)
@@ -423,10 +570,17 @@ def main():
     print(f"Generating Collision Loss Visualization...")
     visualize_collision_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_collision_loss{args.ext}"))
     
-    print(f"Generating Walkable Loss Visualization...")
-    visualize_walkable_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_walkable_loss{args.ext}"), robot_width_real=args.robot_width_real)
+    print(f"Generating Walkable Loss Visualization (Option 1: Pathfinding)...")
+    visualize_walkable_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_walkable_loss_pathfinding{args.ext}"), robot_width_real=args.robot_width_real)
+    
+    print(f"Generating Walkable Loss Visualization (Option 2: Center Penalty)...")
+    visualize_center_penalty_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_walkable_loss_center_penalty{args.ext}"))
+    
+    print(f"Generating Walkable Loss Visualization (Option 3: Edge-Gaussian Component 1 & 2)...")
+    visualize_edge_gaussian_loss(objects, bounds, os.path.join(args.out_dir, f"{args.scene_id}_walkable_loss_edge_gaussian{args.ext}"), robot_width_real=args.robot_width_real)
     
     print(f"Done! Check the {args.out_dir} directory.")
 
 if __name__ == "__main__":
     main()
+
