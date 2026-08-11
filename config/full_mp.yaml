@@ -52,7 +52,7 @@ layout_branch:
     inference_guidance:
       enabled: true
       interval: 1
-      start_ratio: 0.8
+      start_ratio: 0.9
       grad_clip: 10.1
       clip_to_bounds: true
       constraints:
@@ -68,13 +68,13 @@ layout_branch:
         room_outer:
           weight: 10.0
         walkable:
-          weight: 1.0
+          weight: 0.1
           type: "edge_gaussian" # Options: "pathfinding", "center_penalty", or "edge_gaussian"
           robot_width_real: 0.5
           robot_hight_real: 1.5
           sigma_scale: 0.5
-          heatmap_weight: 1.0     # Weight for Component 1 (Floor Edge Heatmap)
-          repulsion_weight: 1.0   # Weight for Component 2 (Pairwise Furniture Repulsion)
+          heatmap_weight: 0.8    # Weight for Component 1 (Floor Edge Heatmap)
+          repulsion_weight: 0.7   # Weight for Component 2 (Pairwise Furniture Repulsion)
 
 shape_branch:
     model: sdfusion-txt2shape_mp
