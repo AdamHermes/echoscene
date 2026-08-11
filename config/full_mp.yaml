@@ -52,7 +52,7 @@ layout_branch:
     inference_guidance:
       enabled: true
       interval: 1
-      start_ratio: 0.2
+      start_ratio: 0.8
       grad_clip: 10.1
       clip_to_bounds: true
       constraints:
