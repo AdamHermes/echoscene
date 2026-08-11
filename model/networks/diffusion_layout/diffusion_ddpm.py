@@ -513,9 +513,9 @@ class GaussianDiffusion:
         collision_cfg = self._collision_guidance_cfg()
         
         # Get individual weights from config (falling back to original defaults)
-        constraints_cfg = self.inference_guidance.get('constraints', {}) if self.inference_guidance is not None else {}
-        room_outer_cfg = constraints_cfg.get('room_outer', {}) if isinstance(constraints_cfg, dict) else {}
-        walkable_cfg = constraints_cfg.get('walkable', {}) if isinstance(constraints_cfg, dict) else {}
+        constraints_cfg = cfg_get(self.inference_guidance, 'constraints', {})
+        room_outer_cfg = cfg_get(constraints_cfg, 'room_outer', {})
+        walkable_cfg = cfg_get(constraints_cfg, 'walkable', {})
         
         collision_weight = float(cfg_get(collision_cfg, 'weight', 10.0)) if collision_cfg is not None else 10.0
         room_outer_weight = float(cfg_get(room_outer_cfg, 'weight', 10.0))
