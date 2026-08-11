@@ -324,7 +324,12 @@ def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.
 
     return loss_walkable
 
-def compute_edge_gaussian_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.35, robot_hight_real=1.5, sigma_scale=0.5, return_components=False, verbose=True):
+def compute_edge_gaussian_walkable_loss(
+    bbox, floor_plan, objectness=None, 
+    robot_width_real=0.35, robot_hight_real=1.5, 
+    sigma_scale=0.5, heatmap_weight=1.0, repulsion_weight=1.0, 
+    return_components=False, verbose=True
+):
     """
     Exact OBB Edge-Gaussian Walkability Guidance Loss (Option 3).
     
@@ -340,11 +345,11 @@ def compute_edge_gaussian_walkable_loss(bbox, floor_plan, objectness=None, robot
            G(x, z) = exp(-d_edge^2 / (2 * sigma^2))
          where sigma = (l + w) / 2.0 * sigma_scale. Inside the box (d_edge = 0), G(x, z) = 1.0.
     
-    Component 1 - Floor Edge Heatmap:
+    Component 1 - Floor Edge Heatmap (weighted by heatmap_weight):
       Evaluates the sum of per-object edge Gaussians across a PyTorch floor grid,
       penalizing floor area covered by object edge influence zones.
       
-    Component 2 - Pairwise OBB Edge Repulsion:
+    Component 2 - Pairwise OBB Edge Repulsion (weighted by repulsion_weight):
       Evaluates object j's center in object i's exact OBB edge-Gaussian field G_i(x_j, z_j).
       Directly penalizes furniture pairs whose OBB edge zones overlap.
     """
@@ -368,7 +373,6 @@ def compute_edge_gaussian_walkable_loss(bbox, floor_plan, objectness=None, robot
     height_mask = bbox[:, :, 4] < robot_hight_real
     furniture_mask = furniture_mask & height_mask
     
-    total_loss = torch.tensor(0.0, device=device, dtype=dtype)
     total_repulsion = torch.tensor(0.0, device=device, dtype=dtype)
     total_heatmap = torch.tensor(0.0, device=device, dtype=dtype)
     
@@ -416,7 +420,6 @@ def compute_edge_gaussian_walkable_loss(bbox, floor_plan, objectness=None, robot
             mask_diag = 1.0 - torch.eye(M, device=device, dtype=dtype)
             repulsion_loss = (pairwise_g * mask_diag).sum() / 2.0
             total_repulsion = total_repulsion + repulsion_loss
-            total_loss = total_loss + repulsion_loss
             
         # -------------------------------------------------------------
         # Component 1: Floor Grid Edge Heatmap
@@ -446,14 +449,16 @@ def compute_edge_gaussian_walkable_loss(bbox, floor_plan, objectness=None, robot
         heatmap_loss = heatmap_sum.mean()
         
         total_heatmap = total_heatmap + heatmap_loss
-        total_loss = total_loss + heatmap_loss
+
+    total_loss = total_heatmap * heatmap_weight + total_repulsion * repulsion_weight
 
     if verbose:
-        print(f"[Edge-Gaussian Walkable Loss] Component 1 (Floor Heatmap): {total_heatmap.item():.4f} | Component 2 (Pairwise Repulsion): {total_repulsion.item():.4f} | Total: {total_loss.item():.4f}")
+        print(f"[Edge-Gaussian Walkable Loss] Component 1 (Floor Heatmap, w={heatmap_weight}): {total_heatmap.item():.4f} | Component 2 (Pairwise Repulsion, w={repulsion_weight}): {total_repulsion.item():.4f} | Total Weighted Walkable: {total_loss.item():.4f}")
 
     if return_components:
         return total_loss, {"c1_floor_heatmap": total_heatmap, "c2_pairwise_repulsion": total_repulsion}
     return total_loss
+
 
 
 

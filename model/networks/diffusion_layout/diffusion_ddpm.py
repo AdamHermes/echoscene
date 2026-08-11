@@ -545,14 +545,18 @@ class GaussianDiffusion:
         
         walkable_type = str(cfg_get(walkable_cfg, 'type', 'pathfinding')).lower()
         if walkable_type == 'edge_gaussian':
-            sigma_scale = float(cfg_get(walkable_cfg, 'sigma_scale', 1.5))
+            sigma_scale = float(cfg_get(walkable_cfg, 'sigma_scale', 0.5))
+            heatmap_weight = float(cfg_get(walkable_cfg, 'heatmap_weight', 1.0))
+            repulsion_weight = float(cfg_get(walkable_cfg, 'repulsion_weight', 1.0))
             walkable_loss = compute_edge_gaussian_walkable_loss(
                 denorm_boxes,
                 floor_plan,
                 objectness=objectness,
                 robot_width_real=robot_width_real,
                 robot_hight_real=robot_hight_real,
-                sigma_scale=sigma_scale
+                sigma_scale=sigma_scale,
+                heatmap_weight=heatmap_weight,
+                repulsion_weight=repulsion_weight
             )
         else:
             effective_floor_plan = None if walkable_type == 'center_penalty' else floor_plan

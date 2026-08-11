@@ -73,7 +73,8 @@ layout_branch:
           robot_width_real: 0.5
           robot_hight_real: 1.5
           sigma_scale: 0.5
-          # sigma_scale: 1.5  # Only used by edge_gaussian: controls Gaussian spread relative to object size
+          heatmap_weight: 1.0     # Weight for Component 1 (Floor Edge Heatmap)
+          repulsion_weight: 1.0   # Weight for Component 2 (Pairwise Furniture Repulsion)
 
 shape_branch:
     model: sdfusion-txt2shape_mp
