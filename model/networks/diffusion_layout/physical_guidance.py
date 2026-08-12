@@ -181,25 +181,30 @@ def calc_loss_on_path(image, shortest_path, robot_width, robot_width_real, robot
         
     return loss_walkable
 
-def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.35, robot_hight_real=1.5):
+def compute_center_penalty_loss(bbox, objectness=None, sigma=0.5):
     """
-    Computes Reachability Guidance by verifying an agent can traverse the room.
+    Computes Center Penalty Walkable Loss (Radial Gaussian penalty centered at room origin).
+    """
+    if len(bbox.shape) == 2:
+        bbox = bbox.unsqueeze(0)
+    centers_obj = bbox[:, :, 3:6]
+    dist_sq = centers_obj[:, :, 0]**2 + centers_obj[:, :, 2]**2
+    walk_penalty = torch.exp(-dist_sq / sigma).sum()
+    return walk_penalty
+
+def compute_pathfinding_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.35, robot_hight_real=1.5):
+    """
+    Computes Reachability Guidance by verifying an agent can traverse the room (Dijkstra pathfinding).
     """
     if floor_plan is None:
-        if len(bbox.shape) == 2:
-            bbox = bbox.unsqueeze(0)
-        centers_obj = bbox[:, :, 3:6]
-        dist_sq = centers_obj[:, :, 0]**2 + centers_obj[:, :, 2]**2
-        sigma = 0.5
-        walk_penalty = torch.exp(-dist_sq / sigma).sum()
-        return walk_penalty
+        return torch.tensor(0.0, device=bbox.device, dtype=bbox.dtype)
 
     if len(bbox.shape) == 2:
         bbox = bbox.unsqueeze(0)
         if objectness is not None and len(objectness.shape) == 1:
             objectness = objectness.unsqueeze(0)
         
-    loss_walkable = 0.0
+    loss_walkable = torch.tensor(0.0, device=bbox.device, dtype=bbox.dtype)
     for i in range(len(bbox)):
         bbox_cur = bbox[i:i+1, :, :]
         if objectness is not None:
@@ -323,6 +328,9 @@ def compute_walkable_loss(bbox, floor_plan, objectness=None, robot_width_real=0.
                     )
 
     return loss_walkable
+
+# Backward compatibility alias
+compute_walkable_loss = compute_pathfinding_walkable_loss
 
 def compute_edge_gaussian_walkable_loss(
     bbox, floor_plan, objectness=None, 

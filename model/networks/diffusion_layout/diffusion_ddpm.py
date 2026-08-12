@@ -14,7 +14,13 @@ from einops import rearrange, reduce
 from helpers.util import preprocess_angle2sincos,descale_box_params,postprocess_sincos2arctan
 from .loss import axis_aligned_bbox_overlaps_3d
 from .oriented_iou_loss import cal_iou_3d
-from .physical_guidance import compute_room_outer_loss, compute_walkable_loss, compute_edge_gaussian_walkable_loss
+from .physical_guidance import (
+    compute_room_outer_loss, 
+    compute_walkable_loss, 
+    compute_center_penalty_loss, 
+    compute_pathfinding_walkable_loss, 
+    compute_edge_gaussian_walkable_loss
+)
 #from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
 
@@ -543,36 +549,82 @@ class GaussianDiffusion:
         # Pass the full denorm_boxes, scene_ids, and objectness to dynamically find the floor
         room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
         
-        walkable_type = str(cfg_get(walkable_cfg, 'type', 'pathfinding')).lower()
+        components_cfg = cfg_get(walkable_cfg, 'components', None) if walkable_cfg else None
+        
+        walkable_loss = 0.0
+        c_center_loss = 0.0
+        c_path_loss = 0.0
         c1_loss = 0.0
         c2_loss = 0.0
-        if walkable_type == 'edge_gaussian':
-            sigma_scale = float(cfg_get(walkable_cfg, 'sigma_scale', 0.5))
-            heatmap_weight = float(cfg_get(walkable_cfg, 'heatmap_weight', 1.0))
-            repulsion_weight = float(cfg_get(walkable_cfg, 'repulsion_weight', 1.0))
-            walkable_loss, comp_dict = compute_edge_gaussian_walkable_loss(
-                denorm_boxes,
-                floor_plan,
-                objectness=objectness,
-                robot_width_real=robot_width_real,
-                robot_hight_real=robot_hight_real,
-                sigma_scale=sigma_scale,
-                heatmap_weight=heatmap_weight,
-                repulsion_weight=repulsion_weight,
-                return_components=True,
-                verbose=False
-            )
-            c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
-            c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+
+        if components_cfg is not None:
+            # --- MODULAR MULTI-COMPONENT WALKABLE LOSS SYSTEM ---
+            # 1. Center Penalty Sub-Component
+            cp_cfg = cfg_get(components_cfg, 'center_penalty', None)
+            if cp_cfg and bool(cfg_get(cp_cfg, 'enabled', False)):
+                cp_w = float(cfg_get(cp_cfg, 'weight', 1.0))
+                sigma = float(cfg_get(cp_cfg, 'sigma', 0.5))
+                cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness, sigma=sigma)
+                c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
+                walkable_loss = walkable_loss + cp_val * cp_w
+
+            # 2. Pathfinding Sub-Component
+            pf_cfg = cfg_get(components_cfg, 'pathfinding', None)
+            if pf_cfg and bool(cfg_get(pf_cfg, 'enabled', False)):
+                pf_w = float(cfg_get(pf_cfg, 'weight', 1.0))
+                rw = float(cfg_get(pf_cfg, 'robot_width_real', 0.5))
+                rh = float(cfg_get(pf_cfg, 'robot_hight_real', 1.5))
+                pf_val = compute_pathfinding_walkable_loss(
+                    denorm_boxes, floor_plan, objectness=objectness,
+                    robot_width_real=rw, robot_hight_real=rh
+                )
+                c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
+                walkable_loss = walkable_loss + pf_val * pf_w
+
+            # 3. Edge-Gaussian Sub-Component
+            eg_cfg = cfg_get(components_cfg, 'edge_gaussian', None)
+            if eg_cfg and bool(cfg_get(eg_cfg, 'enabled', False)):
+                eg_w = float(cfg_get(eg_cfg, 'weight', 1.0))
+                rw = float(cfg_get(eg_cfg, 'robot_width_real', 0.35))
+                rh = float(cfg_get(eg_cfg, 'robot_hight_real', 1.5))
+                sigma_scale = float(cfg_get(eg_cfg, 'sigma_scale', 0.5))
+                hm_w = float(cfg_get(eg_cfg, 'heatmap_weight', 0.8))
+                rep_w = float(cfg_get(eg_cfg, 'repulsion_weight', 0.2))
+                eg_val, comp_dict = compute_edge_gaussian_walkable_loss(
+                    denorm_boxes, floor_plan, objectness=objectness,
+                    robot_width_real=rw, robot_hight_real=rh,
+                    sigma_scale=sigma_scale, heatmap_weight=hm_w, repulsion_weight=rep_w,
+                    return_components=True, verbose=False
+                )
+                c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
+                c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+                walkable_loss = walkable_loss + eg_val * eg_w
         else:
-            effective_floor_plan = None if walkable_type == 'center_penalty' else floor_plan
-            walkable_loss = compute_walkable_loss(
-                denorm_boxes, 
-                effective_floor_plan, 
-                objectness=objectness, 
-                robot_width_real=robot_width_real, 
-                robot_hight_real=robot_hight_real
-            )
+            # --- LEGACY SINGLE TYPE FALLBACK ---
+            walkable_type = str(cfg_get(walkable_cfg, 'type', 'pathfinding')).lower() if walkable_cfg else 'pathfinding'
+            if walkable_type == 'edge_gaussian':
+                sigma_scale = float(cfg_get(walkable_cfg, 'sigma_scale', 0.5))
+                heatmap_weight = float(cfg_get(walkable_cfg, 'heatmap_weight', 0.8))
+                repulsion_weight = float(cfg_get(walkable_cfg, 'repulsion_weight', 0.2))
+                walkable_loss, comp_dict = compute_edge_gaussian_walkable_loss(
+                    denorm_boxes, floor_plan, objectness=objectness,
+                    robot_width_real=robot_width_real, robot_hight_real=robot_hight_real,
+                    sigma_scale=sigma_scale, heatmap_weight=heatmap_weight, repulsion_weight=repulsion_weight,
+                    return_components=True, verbose=False
+                )
+                c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
+                c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+            elif walkable_type == 'center_penalty':
+                cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness)
+                c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
+                walkable_loss = cp_val
+            else:
+                pf_val = compute_pathfinding_walkable_loss(
+                    denorm_boxes, floor_plan, objectness=objectness,
+                    robot_width_real=robot_width_real, robot_hight_real=robot_hight_real
+                )
+                c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
+                walkable_loss = pf_val
         
         # [MODIFIED] Handle the case where collision_loss is None
         total_guidance_loss = 0.0
@@ -612,6 +664,8 @@ class GaussianDiffusion:
             'collision_loss': float(collision_loss.detach().item()) if collision_loss is not None else 0.0,
             'room_outer_loss': float(room_outer_loss.detach().item()) if isinstance(room_outer_loss, torch.Tensor) else float(room_outer_loss),
             'walkable_loss': float(walkable_loss.detach().item()) if isinstance(walkable_loss, torch.Tensor) else float(walkable_loss),
+            'walkable_center_penalty': c_center_loss,
+            'walkable_pathfinding': c_path_loss,
             'walkable_c1_heatmap': c1_loss,
             'walkable_c2_repulsion': c2_loss,
             'variance_scale_mean': float(model_variance.mean().detach().item()),

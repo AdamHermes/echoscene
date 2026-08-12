@@ -82,10 +82,14 @@ def wrap_filename(text, width=60):
         lines.append(current_line)
     return "\n".join(lines)
 
+def natural_sort_key(s):
+    """Sorts strings using natural numerical ordering (matching VS Code / File Explorer order)."""
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
+
 class SceneVisualizer:
     def __init__(self):
-        # Scan for all txt files in the current folder
-        self.files = sorted(glob.glob("*.txt"))
+        # Scan for all txt files in the current folder using natural sort
+        self.files = sorted(glob.glob("*.txt"), key=natural_sort_key)
         if not self.files:
             print("No .txt log files found in the current directory!")
             exit(1)

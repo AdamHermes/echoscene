@@ -125,10 +125,23 @@ def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
             col_loss = last_step.get('collision_loss', 0.0)
             room_loss = last_step.get('room_outer_loss', 0.0)
             walk_loss = last_step.get('walkable_loss', 0.0)
+            cp_loss = last_step.get('walkable_center_penalty', 0.0)
+            pf_loss = last_step.get('walkable_pathfinding', 0.0)
             c1_loss = last_step.get('walkable_c1_heatmap', 0.0)
             c2_loss = last_step.get('walkable_c2_repulsion', 0.0)
             
-            msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f} (C1 Heatmap: {c1_loss:.4f}, C2 Repulsion: {c2_loss:.4f})"
+            comp_parts = []
+            if cp_loss > 0:
+                comp_parts.append(f"Center Penalty: {cp_loss:.4f}")
+            if pf_loss > 0:
+                comp_parts.append(f"Pathfinding: {pf_loss:.4f}")
+            if c1_loss > 0:
+                comp_parts.append(f"C1 Heatmap: {c1_loss:.4f}")
+            if c2_loss > 0:
+                comp_parts.append(f"C2 Repulsion: {c2_loss:.4f}")
+                
+            comp_str = f" ({', '.join(comp_parts)})" if comp_parts else ""
+            msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f}{comp_str}"
                 
             print(msg)
             loss_log_path = os.path.join(store_path, 'guidance_losses.txt')
