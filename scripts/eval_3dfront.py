@@ -307,15 +307,17 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
     file_path_for_output = os.path.join(modelArgs['store_path'], f'{testdataset.eval_type}_accuracy_analysis.txt')
     with open(file_path_for_output, 'w') as file:
         for dic, typ in [(accuracy, "changed nodes"), (accuracy_unchanged, 'unchanged nodes')]:
-            lr_mean = np.mean([np.mean(dic[keys[0]]), np.mean(dic[keys[1]])])
-            fb_mean = np.mean([np.mean(dic[keys[2]]), np.mean(dic[keys[3]])])
-            bism_mean = np.mean([np.mean(dic[keys[4]]), np.mean(dic[keys[5]])])
-            tash_mean = np.mean([np.mean(dic[keys[6]]), np.mean(dic[keys[7]])])
-            stand_mean = np.mean(dic[keys[8]])
-            close_mean = np.mean(dic[keys[9]])
-            symm_mean = np.mean(dic[keys[10]])
-            total_mean = np.mean(dic[keys[11]])
-            means_of_mean = np.mean([lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean])
+            def _safe_m(k):
+                return np.mean(dic[k]) if len(dic[k]) > 0 else np.nan
+            lr_mean = np.nanmean([_safe_m(keys[0]), _safe_m(keys[1])])
+            fb_mean = np.nanmean([_safe_m(keys[2]), _safe_m(keys[3])])
+            bism_mean = np.nanmean([_safe_m(keys[4]), _safe_m(keys[5])])
+            tash_mean = np.nanmean([_safe_m(keys[6]), _safe_m(keys[7])])
+            stand_mean = _safe_m(keys[8])
+            close_mean = _safe_m(keys[9])
+            symm_mean = _safe_m(keys[10])
+            total_mean = _safe_m(keys[11])
+            means_of_mean = np.nanmean([lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean])
             print('{} & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}'.format(typ, lr_mean,
                                         fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean, total_mean))
             print('means of mean: {:.2f}'.format(means_of_mean))
@@ -501,15 +503,17 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
     file_path_for_output = os.path.join(modelArgs['store_path'], f'{test_dataset.eval_type}_accuracy_analysis.txt')
     with open(file_path_for_output, 'w') as file:
         for dic, typ in [(accuracy, "acc")]:
-            lr_mean = np.mean([np.mean(dic[keys[0]]), np.mean(dic[keys[1]])])
-            fb_mean = np.mean([np.mean(dic[keys[2]]), np.mean(dic[keys[3]])])
-            bism_mean = np.mean([np.mean(dic[keys[4]]), np.mean(dic[keys[5]])])
-            tash_mean = np.mean([np.mean(dic[keys[6]]), np.mean(dic[keys[7]])])
-            stand_mean = np.mean(dic[keys[8]])
-            close_mean = np.mean(dic[keys[9]])
-            symm_mean = np.mean(dic[keys[10]])
-            total_mean = np.mean(dic[keys[11]])
-            means_of_mean = np.mean([lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean])
+            def _safe_m(k):
+                return np.mean(dic[k]) if len(dic[k]) > 0 else np.nan
+            lr_mean = np.nanmean([_safe_m(keys[0]), _safe_m(keys[1])])
+            fb_mean = np.nanmean([_safe_m(keys[2]), _safe_m(keys[3])])
+            bism_mean = np.nanmean([_safe_m(keys[4]), _safe_m(keys[5])])
+            tash_mean = np.nanmean([_safe_m(keys[6]), _safe_m(keys[7])])
+            stand_mean = _safe_m(keys[8])
+            close_mean = _safe_m(keys[9])
+            symm_mean = _safe_m(keys[10])
+            total_mean = _safe_m(keys[11])
+            means_of_mean = np.nanmean([lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean])
             print(
                 '{} & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}'.format(
                     typ, lr_mean,
