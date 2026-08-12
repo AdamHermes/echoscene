@@ -1,14 +1,4 @@
 
-Generation Mode
-['SecondBedroom-6482']
-1000it [01:31, 10.90it/s]
-inference mode.. no gt sdf
-Data shape for DDIM sampling is (8, 3, 16, 16, 16), eta 0.0
-Running DDIM Sampling with 100 timesteps
-DDIM Sampler: 100% 100/100 [02:26<00:00,  1.47s/it]
-Scene SecondBedroom-6482 - Final Step Collision Loss: 0.0190, Room Outer Loss: 0.0405, Walkable Loss: 0.8630 (Center Penalty: 0.7387, C1 Heatmap: 0.6722, C2 Repulsion: 3.5285)
-  [OBB resolve] converged at iteration 6
-
 ============================================================
 SCENE: SecondBedroom-6482  |  8 objects
 ============================================================
@@ -31,12 +21,3 @@ _scene_               0.069  0.000  0.021   -5.671  -0.005  -5.714   -57.31°
   !! OVERLAP: table <-> floor  depth=[0.797, 0.003, 0.413]
   !! OVERLAP: wardrobe <-> floor  depth=[1.032, 0.003, 0.493]
 ============================================================
-
-rendering ['bed', 'chair', 'nightstand', 'table', 'wardrobe', 'lamp', 'floor', '_scene_']
-/usr/local/miniconda3/envs/echoscene/lib/python3.8/site-packages/numpy/core/fromnumeric.py:3464: RuntimeWarning: Mean of empty slice.
-  return _methods._mean(a, axis=axis, dtype=dtype,
-/usr/local/miniconda3/envs/echoscene/lib/python3.8/site-packages/numpy/core/_methods.py:192: RuntimeWarning: invalid value encountered in scalar divide
-  ret = ret.dtype.type(ret / rcount)
-acc & L/R: 1.00 & F/B: 1.00 & Bi/Sm: 1.00 & Ta/Sh: 0.83 & Stand: 1.00 & Close: 1.00 & Symm: nan. Total: &0.98
-means of mean: nan
-PhyScene input saved to: ../released_full_model/vis/2050/physcene_collision_input.json
