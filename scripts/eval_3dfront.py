@@ -303,19 +303,36 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         accuracy = validate_constrains_changes(dec_triples, boxes_pred_den, angles_pred, keep, model.vocab, accuracy)
         accuracy_unchanged = validate_constrains(dec_triples, boxes_pred_den, angles_pred, keep, model.vocab, accuracy_unchanged)
 
-    keys = list(accuracy.keys())
     file_path_for_output = os.path.join(modelArgs['store_path'], f'{testdataset.eval_type}_accuracy_analysis.txt')
     with open(file_path_for_output, 'w') as file:
         for dic, typ in [(accuracy, "changed nodes"), (accuracy_unchanged, 'unchanged nodes')]:
-            lr_mean = np.mean([np.mean(dic[keys[0]]), np.mean(dic[keys[1]])])
-            fb_mean = np.mean([np.mean(dic[keys[2]]), np.mean(dic[keys[3]])])
-            bism_mean = np.mean([np.mean(dic[keys[4]]), np.mean(dic[keys[5]])])
-            tash_mean = np.mean([np.mean(dic[keys[6]]), np.mean(dic[keys[7]])])
-            stand_mean = np.mean(dic[keys[8]])
-            close_mean = np.mean(dic[keys[9]])
-            symm_mean = np.mean(dic[keys[10]])
-            total_mean = np.mean(dic[keys[11]])
-            means_of_mean = np.mean([lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean])
+            def safe_list_mean(lst):
+                return float(np.mean(lst)) if lst and len(lst) > 0 else None
+
+            def safe_combine_means(m1, m2):
+                valid = [m for m in [m1, m2] if m is not None]
+                return float(np.mean(valid)) if valid else 0.0
+
+            lr_mean = safe_combine_means(safe_list_mean(dic.get('left')), safe_list_mean(dic.get('right')))
+            fb_mean = safe_combine_means(safe_list_mean(dic.get('front')), safe_list_mean(dic.get('behind')))
+            bism_mean = safe_combine_means(safe_list_mean(dic.get('bigger')), safe_list_mean(dic.get('smaller')))
+            tash_mean = safe_combine_means(safe_list_mean(dic.get('taller')), safe_list_mean(dic.get('shorter')))
+
+            stand_m = safe_list_mean(dic.get('standing on'))
+            stand_mean = stand_m if stand_m is not None else 0.0
+
+            close_m = safe_list_mean(dic.get('close by'))
+            close_mean = close_m if close_m is not None else 0.0
+
+            symm_m = safe_list_mean(dic.get('symmetrical to'))
+            symm_mean = symm_m if symm_m is not None else 0.0
+
+            total_m = safe_list_mean(dic.get('total'))
+            total_mean = total_m if total_m is not None else 0.0
+
+            valid_cat_means = [m for m in [lr_mean, fb_mean, bism_mean, tash_mean, stand_m, close_m, symm_m] if m is not None]
+            means_of_mean = float(np.mean(valid_cat_means)) if len(valid_cat_means) > 0 else 0.0
+
             print('{} & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}'.format(typ, lr_mean,
                                         fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean, total_mean))
             print('means of mean: {:.2f}'.format(means_of_mean))
@@ -496,20 +513,36 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         all_pred_angles.append(angles_pred.cpu().detach())
         accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_pred, None, model.vocab, accuracy)
 
-    keys = list(accuracy.keys())
-
     file_path_for_output = os.path.join(modelArgs['store_path'], f'{test_dataset.eval_type}_accuracy_analysis.txt')
     with open(file_path_for_output, 'w') as file:
         for dic, typ in [(accuracy, "acc")]:
-            lr_mean = np.mean([np.mean(dic[keys[0]]), np.mean(dic[keys[1]])])
-            fb_mean = np.mean([np.mean(dic[keys[2]]), np.mean(dic[keys[3]])])
-            bism_mean = np.mean([np.mean(dic[keys[4]]), np.mean(dic[keys[5]])])
-            tash_mean = np.mean([np.mean(dic[keys[6]]), np.mean(dic[keys[7]])])
-            stand_mean = np.mean(dic[keys[8]])
-            close_mean = np.mean(dic[keys[9]])
-            symm_mean = np.mean(dic[keys[10]])
-            total_mean = np.mean(dic[keys[11]])
-            means_of_mean = np.mean([lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean])
+            def safe_list_mean(lst):
+                return float(np.mean(lst)) if lst and len(lst) > 0 else None
+
+            def safe_combine_means(m1, m2):
+                valid = [m for m in [m1, m2] if m is not None]
+                return float(np.mean(valid)) if valid else 0.0
+
+            lr_mean = safe_combine_means(safe_list_mean(dic.get('left')), safe_list_mean(dic.get('right')))
+            fb_mean = safe_combine_means(safe_list_mean(dic.get('front')), safe_list_mean(dic.get('behind')))
+            bism_mean = safe_combine_means(safe_list_mean(dic.get('bigger')), safe_list_mean(dic.get('smaller')))
+            tash_mean = safe_combine_means(safe_list_mean(dic.get('taller')), safe_list_mean(dic.get('shorter')))
+
+            stand_m = safe_list_mean(dic.get('standing on'))
+            stand_mean = stand_m if stand_m is not None else 0.0
+
+            close_m = safe_list_mean(dic.get('close by'))
+            close_mean = close_m if close_m is not None else 0.0
+
+            symm_m = safe_list_mean(dic.get('symmetrical to'))
+            symm_mean = symm_m if symm_m is not None else 0.0
+
+            total_m = safe_list_mean(dic.get('total'))
+            total_mean = total_m if total_m is not None else 0.0
+
+            valid_cat_means = [m for m in [lr_mean, fb_mean, bism_mean, tash_mean, stand_m, close_m, symm_m] if m is not None]
+            means_of_mean = float(np.mean(valid_cat_means)) if len(valid_cat_means) > 0 else 0.0
+
             print(
                 '{} & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}'.format(
                     typ, lr_mean,

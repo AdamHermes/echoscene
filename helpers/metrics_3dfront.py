@@ -3,8 +3,10 @@
 import numpy as np
 import torch
 from scipy.spatial import ConvexHull
-# from helpers.util import denormalize_box_params
-from helpers.util import fit_shapes_to_box
+try:
+    from helpers.util import fit_shapes_to_box
+except Exception:
+    fit_shapes_to_box = None
 from cmath import rect, phase
 
 def close_dis(corners1,corners2):
@@ -70,7 +72,9 @@ def validate_constrains(triples, pred_boxes, pred_angles, keep, vocab, accuracy,
             else:
                 continue
 
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "left":
+        p_name = vocab["pred_idx_to_name"][p.item()].strip().lower()
+
+        if p_name == "left":
             # z
             if box_s[5] - box_o[5] > -0.05 or (strict and box3d_iou(box_s, box_o, param6=param6, with_translation=True)[0] > overlap_threshold):
                 accuracy['left'].append(0)
@@ -78,78 +82,71 @@ def validate_constrains(triples, pred_boxes, pred_angles, keep, vocab, accuracy,
             else:
                 accuracy['left'].append(1)
                 accuracy['total'].append(1)
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "right":
+        elif p_name == "right":
             if box_s[5] - box_o[5] < 0.05 or (strict and box3d_iou(box_s, box_o, param6=param6, with_translation=True)[0] > overlap_threshold):
                 accuracy['right'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['right'].append(1)
                 accuracy['total'].append(1)
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "front":
+        elif p_name == "front":
             if box_s[3] - box_o[3] < -0.05 or (strict and box3d_iou(box_s, box_o, param6=param6, with_translation=True)[0] > overlap_threshold):
                 accuracy['front'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['front'].append(1)
                 accuracy['total'].append(1)
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "behind":
+        elif p_name == "behind":
             if box_s[3] - box_o[3] > 0.05 or (strict and box3d_iou(box_s, box_o, param6=param6, with_translation=True)[0] > overlap_threshold):
                 accuracy['behind'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['behind'].append(1)
                 accuracy['total'].append(1)
-        # bigger than
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "bigger than":
+        elif p_name in ["bigger than", "bigger"]:
             sub_volume = box_s[0] * box_s[1] * box_s[2]
             obj_volume = box_o[0] * box_o[1] * box_o[2]
-            if (sub_volume - obj_volume) / sub_volume < 0.15:
+            if (sub_volume - obj_volume) / max(sub_volume, 1e-5) < 0.15:
                 accuracy['bigger'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['bigger'].append(1)
                 accuracy['total'].append(1)
-        # smaller than
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "smaller than":
+        elif p_name in ["smaller than", "smaller"]:
             sub_volume = box_s[0] * box_s[1] * box_s[2]
             obj_volume = box_o[0] * box_o[1] * box_o[2]
-            if (sub_volume - obj_volume) / sub_volume > -0.15:
+            if (sub_volume - obj_volume) / max(sub_volume, 1e-5) > -0.15:
                 accuracy['smaller'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['smaller'].append(1)
                 accuracy['total'].append(1)
-        # higher than
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "taller than":
-            absheight_s = box_s[4]+box_s[1]
-            absheight_o = box_o[4]+box_o[1]
-            if (absheight_s - absheight_o) / absheight_s < 0.1:
+        elif p_name in ["taller than", "taller"]:
+            absheight_s = box_s[4] + box_s[1]
+            absheight_o = box_o[4] + box_o[1]
+            if (absheight_s - absheight_o) / max(absheight_s, 1e-5) < 0.1:
                 accuracy['taller'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['taller'].append(1)
                 accuracy['total'].append(1)
-        # lower than
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "shorter than":
+        elif p_name in ["shorter than", "shorter"]:
             absheight_s = box_s[4] + box_s[1]
             absheight_o = box_o[4] + box_o[1]
-            if (absheight_s - absheight_o) / absheight_s > -0.1:
+            if (absheight_s - absheight_o) / max(absheight_s, 1e-5) > -0.1:
                 accuracy['shorter'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['shorter'].append(1)
                 accuracy['total'].append(1)
-
-        # standing on
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "standing on":
+        elif p_name in ["standing on", "above"]:
             if np.abs(box_s[4] - box_o[4]) < 0.04:
                 accuracy['standing on'].append(1)
                 accuracy['total'].append(1)
             else:
                 accuracy['standing on'].append(0)
                 accuracy['total'].append(0)
-        # close by
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "close by":
+        elif p_name == "close by":
             corners_s = corners_from_box(box_s, param6, with_translation=True)
             corners_o = corners_from_box(box_o, param6, with_translation=True)
             c_dist1 = close_dis(corners_s, corners_o)
@@ -159,9 +156,7 @@ def validate_constrains(triples, pred_boxes, pred_angles, keep, vocab, accuracy,
             else:
                 accuracy['close by'].append(1)
                 accuracy['total'].append(1)
-
-        # symmetrical to
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "symmetrical to":
+        elif p_name == "symmetrical to":
             sub_center_in_scene_flip_x = [-box_s[3], box_s[5]]
             sub_center_in_scene_flip_z = [box_s[3], -box_s[5]]
             sub_center_in_scene_flip_xz = [-box_s[3], -box_s[5]]
@@ -193,7 +188,9 @@ def validate_constrains_changes(triples, pred_boxes, pred_angles, keep, vocab, a
             else:
                 continue
 
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "left":
+        p_name = vocab["pred_idx_to_name"][p.item()].strip().lower()
+
+        if p_name == "left":
             # z
             if box_s[5] - box_o[5] > -0.05 or (
                     strict and box3d_iou(box_s, box_o, with_translation=True)[0] > overlap_threshold):
@@ -202,7 +199,7 @@ def validate_constrains_changes(triples, pred_boxes, pred_angles, keep, vocab, a
             else:
                 accuracy['left'].append(1)
                 accuracy['total'].append(1)
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "right":
+        elif p_name == "right":
             if box_s[5] - box_o[5] < 0.05 or (
                     strict and box3d_iou(box_s, box_o, with_translation=True)[0] > overlap_threshold):
                 accuracy['right'].append(0)
@@ -210,7 +207,7 @@ def validate_constrains_changes(triples, pred_boxes, pred_angles, keep, vocab, a
             else:
                 accuracy['right'].append(1)
                 accuracy['total'].append(1)
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "front":
+        elif p_name == "front":
             if box_s[3] - box_o[3] < -0.05 or (
                     strict and box3d_iou(box_s, box_o, with_translation=True)[0] > overlap_threshold):
                 accuracy['front'].append(0)
@@ -218,7 +215,7 @@ def validate_constrains_changes(triples, pred_boxes, pred_angles, keep, vocab, a
             else:
                 accuracy['front'].append(1)
                 accuracy['total'].append(1)
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "behind":
+        elif p_name == "behind":
             if box_s[3] - box_o[3] > 0.05 or (
                     strict and box3d_iou(box_s, box_o, with_translation=True)[0] > overlap_threshold):
                 accuracy['behind'].append(0)
@@ -226,57 +223,50 @@ def validate_constrains_changes(triples, pred_boxes, pred_angles, keep, vocab, a
             else:
                 accuracy['behind'].append(1)
                 accuracy['total'].append(1)
-        # bigger than
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "bigger than":
+        elif p_name in ["bigger than", "bigger"]:
             sub_volume = box_s[0] * box_s[1] * box_s[2]
             obj_volume = box_o[0] * box_o[1] * box_o[2]
-            if (sub_volume - obj_volume) / sub_volume < 0.15:
+            if (sub_volume - obj_volume) / max(sub_volume, 1e-5) < 0.15:
                 accuracy['bigger'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['bigger'].append(1)
                 accuracy['total'].append(1)
-        # smaller than
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "smaller than":
+        elif p_name in ["smaller than", "smaller"]:
             sub_volume = box_s[0] * box_s[1] * box_s[2]
             obj_volume = box_o[0] * box_o[1] * box_o[2]
-            if (sub_volume - obj_volume) / sub_volume > -0.15:
+            if (sub_volume - obj_volume) / max(sub_volume, 1e-5) > -0.15:
                 accuracy['smaller'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['smaller'].append(1)
                 accuracy['total'].append(1)
-        # higher than
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "taller than":
+        elif p_name in ["taller than", "taller"]:
             absheight_s = box_s[4] + box_s[1]
             absheight_o = box_o[4] + box_o[1]
-            if (absheight_s - absheight_o) / absheight_s < 0.1:
+            if (absheight_s - absheight_o) / max(absheight_s, 1e-5) < 0.1:
                 accuracy['taller'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['taller'].append(1)
                 accuracy['total'].append(1)
-        # lower than
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "shorter than":
+        elif p_name in ["shorter than", "shorter"]:
             absheight_s = box_s[4] + box_s[1]
             absheight_o = box_o[4] + box_o[1]
-            if (absheight_s - absheight_o) / absheight_s > -0.1:
+            if (absheight_s - absheight_o) / max(absheight_s, 1e-5) > -0.1:
                 accuracy['shorter'].append(0)
                 accuracy['total'].append(0)
             else:
                 accuracy['shorter'].append(1)
                 accuracy['total'].append(1)
-
-        # standing on
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "standing on":
+        elif p_name in ["standing on", "above"]:
             if np.abs(box_s[4] - box_o[4]) < 0.04:
                 accuracy['standing on'].append(1)
                 accuracy['total'].append(1)
             else:
                 accuracy['standing on'].append(0)
                 accuracy['total'].append(0)
-        # close by
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "close by":
+        elif p_name == "close by":
             corners_s = corners_from_box(box_s, with_translation=True)
             corners_o = corners_from_box(box_o, with_translation=True)
             c_dist1 = close_dis(corners_s, corners_o)
@@ -286,16 +276,14 @@ def validate_constrains_changes(triples, pred_boxes, pred_angles, keep, vocab, a
             else:
                 accuracy['close by'].append(1)
                 accuracy['total'].append(1)
-
-        # symmetrical to
-        if vocab["pred_idx_to_name"][p.item()][:-1] == "symmetrical to":
+        elif p_name == "symmetrical to":
             sub_center_in_scene_flip_x = [-box_s[3], box_s[5]]
             sub_center_in_scene_flip_z = [box_s[3], -box_s[5]]
             sub_center_in_scene_flip_xz = [-box_s[3], -box_s[5]]
             obj_center_in_scene = [box_o[3], box_o[5]]
             if cal_l2_distance(sub_center_in_scene_flip_xz, obj_center_in_scene) < 0.45 or \
-                    cal_l2_distance(sub_center_in_scene_flip_x, obj_center_in_scene) < 0.45 or \
-                    cal_l2_distance(sub_center_in_scene_flip_z, obj_center_in_scene) < 0.45:
+                cal_l2_distance(sub_center_in_scene_flip_x, obj_center_in_scene) < 0.45 or \
+                cal_l2_distance(sub_center_in_scene_flip_z, obj_center_in_scene) < 0.45:
                 accuracy['symmetrical to'].append(1)
                 accuracy['total'].append(1)
             else:
