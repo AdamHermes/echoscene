@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from shapely.geometry import Polygon, MultiPolygon, Point
 from shapely.ops import unary_union
+from scipy.spatial import ConvexHull
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -54,6 +55,217 @@ def get_obb_polygon(x, z, l, w, angle_deg):
         rotated.append((x + rx, z + rz))
     return Polygon(rotated)
 
+# =========================================================================
+# OFFICIAL 3D-FRONT RELATIONAL EVALUATION FUNCTIONS (from helpers/metrics_3dfront.py)
+# =========================================================================
+def close_dis(corners1, corners2):
+    dist = -2 * np.matmul(corners1, corners2.transpose())
+    dist += np.sum(corners1 ** 2, axis=-1)[:, None]
+    dist += np.sum(corners2 ** 2, axis=-1)[None, :]
+    dist = np.sqrt(dist)
+    return np.min(dist)
+
+def cal_l2_distance(point_1, point_2):
+    return np.sqrt((point_2[0] - point_1[0])**2 + (point_2[1] - point_1[1])**2)
+
+def poly_area(x, y):
+    return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+
+def box3d_vol(corners):
+    a = np.sqrt(np.sum((corners[0,:] - corners[1,:])**2))
+    b = np.sqrt(np.sum((corners[1,:] - corners[2,:])**2))
+    c = np.sqrt(np.sum((corners[0,:] - corners[4,:])**2))
+    return a*b*c
+
+def polygon_clip(subjectPolygon, clipPolygon):
+    def inside(p):
+        return (cp2[0]-cp1[0])*(p[1]-cp1[1]) > (cp2[1]-cp1[1])*(p[0]-cp1[0])
+    def computeIntersection():
+        dc = [ cp1[0] - cp2[0], cp1[1] - cp2[1] ]
+        dp = [ s[0] - e[0], s[1] - e[1] ]
+        n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
+        n2 = s[0] * e[1] - s[1] * e[0]
+        n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
+        return [(n1*dp[0] - n2*dc[0]) * n3, (n1*dp[1] - n2*dc[1]) * n3]
+    outputList = subjectPolygon
+    cp1 = clipPolygon[-1]
+    for clipVertex in clipPolygon:
+        cp2 = clipVertex
+        inputList = outputList
+        outputList = []
+        s = inputList[-1]
+        for subjectVertex in inputList:
+            e = subjectVertex
+            if inside(e):
+                if not inside(s): outputList.append(computeIntersection())
+                outputList.append(e)
+            elif inside(s):
+                outputList.append(computeIntersection())
+            s = e
+        cp1 = cp2
+        if len(outputList) == 0: return None
+    return outputList
+
+def convex_hull_intersection(p1, p2):
+    inter_p = polygon_clip(p1, p2)
+    if inter_p is not None:
+        hull_inter = ConvexHull(inter_p)
+        return inter_p, hull_inter.volume
+    else:
+        return None, 0.0
+
+def corners_from_box(box, param6=True, with_translation=False):
+    if param6: l, h, w, px, py, pz = box
+    else: l, h, w, px, py, pz, _ = box
+    (tx, ty, tz) = (px, py, pz) if with_translation else (0,0,0)
+    x_corners = [w/2,w/2,-w/2,-w/2,w/2,w/2,-w/2,-w/2]
+    y_corners = [h,h,h,h,0,0,0,0]
+    z_corners = [l/2,-l/2,-l/2,l/2,l/2,-l/2,-l/2,l/2]
+    corners_3d = np.dot(np.eye(3), np.vstack([x_corners,y_corners,z_corners]))
+    corners_3d[0,:] += tx
+    corners_3d[1,:] += ty
+    corners_3d[2,:] += tz
+    return np.transpose(corners_3d)
+
+def box3d_iou(box1, box2, param6=True, with_translation=False):
+    corners1 = corners_from_box(box1, param6, with_translation)
+    corners2 = corners_from_box(box2, param6, with_translation)
+    rect1 = [(corners1[i,2], corners1[i,0]) for i in range(0,4)]
+    rect2 = [(corners2[i,2], corners2[i,0]) for i in range(0,4)]
+    area1 = poly_area(np.array(rect1)[:,0], np.array(rect1)[:,1])
+    area2 = poly_area(np.array(rect2)[:,0], np.array(rect2)[:,1])
+    inter, inter_area = convex_hull_intersection(rect1, rect2)
+    iou_2d = inter_area/(area1+area2-inter_area)
+    ymax = min(corners1[0,1], corners2[0,1])
+    ymin = max(corners1[4,1], corners2[4,1])
+    inter_vol = inter_area * max(0.0, ymax-ymin)
+    vol1 = box3d_vol(corners1)
+    vol2 = box3d_vol(corners2)
+    volmin = min(vol1, vol2)
+    iou = inter_vol / volmin
+    return iou, iou_2d
+
+def check_file_relations(objects, target_scene, strict=True, overlap_threshold=0.3):
+    """Evaluates individual GT spatial relationships using official 3D-FRONT criteria."""
+    if not target_scene or target_scene not in REL_DATA_ALL or not objects:
+        return []
+        
+    scan_rel = REL_DATA_ALL[target_scene]
+    rel_objects = scan_rel['objects']
+    relationships = scan_rel['relationships']
+    
+    furn_objs = [o for o in objects if o['name'] not in ['_scene_']]
+    pred_boxes = np.array([[o['l'], o['h'], o['w'], o['x'], o['y'], o['z']] for o in furn_objs])
+    param6 = True
+    
+    keys_sorted = list(rel_objects.keys())
+    results = []
+    
+    for rel in relationships:
+        src, dest, rel_idx, rel_type = rel
+        src_str, dest_str = str(src), str(dest)
+        
+        if src_str not in keys_sorted or dest_str not in keys_sorted:
+            continue
+            
+        s_i = keys_sorted.index(src_str)
+        d_i = keys_sorted.index(dest_str)
+        
+        if s_i >= len(furn_objs) or d_i >= len(furn_objs):
+            continue
+            
+        obj_s = furn_objs[s_i]
+        obj_d = furn_objs[d_i]
+        
+        if obj_s['name'] == 'floor' or obj_d['name'] == 'floor':
+            continue
+            
+        box_s = pred_boxes[s_i]
+        box_o = pred_boxes[d_i]
+        
+        passed = False
+        val_str = ''
+        
+        if rel_type == 'left':
+            diff = box_s[5] - box_o[5]
+            iou_val = box3d_iou(box_s, box_o, param6=param6, with_translation=True)[0]
+            passed = not (diff > -0.05 or (strict and iou_val > overlap_threshold))
+            val_str = f'dz={diff:+.3f}m, iou={iou_val:.2f}'
+        elif rel_type == 'right':
+            diff = box_s[5] - box_o[5]
+            iou_val = box3d_iou(box_s, box_o, param6=param6, with_translation=True)[0]
+            passed = not (diff < 0.05 or (strict and iou_val > overlap_threshold))
+            val_str = f'dz={diff:+.3f}m, iou={iou_val:.2f}'
+        elif rel_type == 'front':
+            diff = box_s[3] - box_o[3]
+            iou_val = box3d_iou(box_s, box_o, param6=param6, with_translation=True)[0]
+            passed = not (diff < -0.05 or (strict and iou_val > overlap_threshold))
+            val_str = f'dx={diff:+.3f}m, iou={iou_val:.2f}'
+        elif rel_type == 'behind':
+            diff = box_s[3] - box_o[3]
+            iou_val = box3d_iou(box_s, box_o, param6=param6, with_translation=True)[0]
+            passed = not (diff > 0.05 or (strict and iou_val > overlap_threshold))
+            val_str = f'dx={diff:+.3f}m, iou={iou_val:.2f}'
+        elif rel_type == 'bigger than':
+            vol_s = box_s[0] * box_s[1] * box_s[2]
+            vol_o = box_o[0] * box_o[1] * box_o[2]
+            ratio = (vol_s - vol_o) / vol_s
+            passed = not (ratio < 0.15)
+            val_str = f'ratio={ratio:+.2f} (vol_s={vol_s:.2f}m³ vs vol_o={vol_o:.2f}m³)'
+        elif rel_type == 'smaller than':
+            vol_s = box_s[0] * box_s[1] * box_s[2]
+            vol_o = box_o[0] * box_o[1] * box_o[2]
+            ratio = (vol_s - vol_o) / vol_s
+            passed = not (ratio > -0.15)
+            val_str = f'ratio={ratio:+.2f} (vol_s={vol_s:.2f}m³ vs vol_o={vol_o:.2f}m³)'
+        elif rel_type == 'taller than':
+            absheight_s = box_s[4] + box_s[1]
+            absheight_o = box_o[4] + box_o[1]
+            ratio = (absheight_s - absheight_o) / absheight_s
+            passed = not (ratio < 0.1)
+            val_str = f'height_diff={absheight_s-absheight_o:+.2f}m'
+        elif rel_type == 'shorter than':
+            absheight_s = box_s[4] + box_s[1]
+            absheight_o = box_o[4] + box_o[1]
+            ratio = (absheight_s - absheight_o) / absheight_s
+            passed = not (ratio > -0.1)
+            val_str = f'height_diff={absheight_s-absheight_o:+.2f}m'
+        elif rel_type in ['above', 'standing on']:
+            diff = abs(box_s[4] - box_o[4])
+            passed = diff < 0.04
+            val_str = f'dy={diff:.3f}m'
+        elif rel_type == 'close by':
+            corners_s = corners_from_box(box_s, param6, with_translation=True)
+            corners_o = corners_from_box(box_o, param6, with_translation=True)
+            c_dist1 = close_dis(corners_s, corners_o)
+            passed = c_dist1 <= 0.45
+            val_str = f'3d_dist={c_dist1:.3f}m'
+        elif rel_type == 'symmetrical to':
+            s_flip_xz = [-box_s[3], -box_s[5]]
+            s_flip_x = [-box_s[3], box_s[5]]
+            s_flip_z = [box_s[3], -box_s[5]]
+            o_center = [box_o[3], box_o[5]]
+            d1 = cal_l2_distance(s_flip_xz, o_center)
+            d2 = cal_l2_distance(s_flip_x, o_center)
+            d3 = cal_l2_distance(s_flip_z, o_center)
+            min_d = min(d1, d2, d3)
+            passed = min_d < 0.45
+            val_str = f'symm_dist={min_d:.3f}m'
+        else:
+            passed = True
+            val_str = 'ok'
+            
+        results.append({
+            'src_name': obj_s['name'],
+            'src_id': src_str,
+            'dest_name': obj_d['name'],
+            'dest_id': dest_str,
+            'relation': rel_type,
+            'passed': passed,
+            'detail': val_str
+        })
+    return results
+
 def parse_log_file(file_path):
     """Parses raw object bounding box details, pairwise overlaps, and explicit relational metrics from a log file."""
     objects = []
@@ -69,7 +281,6 @@ def parse_log_file(file_path):
         
     content = "".join(lines)
     
-    # 1. Look for explicit evaluation lines: acc & ... Total: &0.98 or Total: 0.98
     acc_m = re.search(r'acc &.*Total:\s*&?\s*([\d\.]+)', content)
     if acc_m:
         val = float(acc_m.group(1))
@@ -109,88 +320,6 @@ def parse_log_file(file_path):
                 except ValueError:
                     continue
     return objects, raw_overlaps, rel_acc_log, means_of_mean_log
-
-def check_file_relations(objects, target_scene):
-    """Evaluates individual GT spatial relationships for an object layout."""
-    if not target_scene or target_scene not in REL_DATA_ALL:
-        return []
-        
-    scan_rel = REL_DATA_ALL[target_scene]
-    rel_objects = scan_rel['objects']
-    relationships = scan_rel['relationships']
-    
-    furn_objs = [o for o in objects if o['name'] not in ['_scene_']]
-    parsed_by_idx = {}
-    keys_sorted = list(rel_objects.keys())
-    for idx, key in enumerate(keys_sorted):
-        if idx < len(furn_objs):
-            parsed_by_idx[str(key)] = furn_objs[idx]
-            
-    results = []
-    for rel in relationships:
-        src, dest, rel_idx, rel_type = rel
-        src_str, dest_str = str(src), str(dest)
-        
-        if src_str not in parsed_by_idx or dest_str not in parsed_by_idx:
-            continue
-            
-        obj_s = parsed_by_idx[src_str]
-        obj_d = parsed_by_idx[dest_str]
-        
-        if obj_s['name'] == 'floor' or obj_d['name'] == 'floor':
-            continue
-            
-        passed = False
-        val_str = ''
-        
-        if rel_type == 'left':
-            diff = obj_s['z'] - obj_d['z']
-            passed = diff < 0.05
-            val_str = f'dz={diff:+.3f}m'
-        elif rel_type == 'right':
-            diff = obj_s['z'] - obj_d['z']
-            passed = diff > -0.05
-            val_str = f'dz={diff:+.3f}m'
-        elif rel_type == 'front':
-            diff = obj_s['x'] - obj_d['x']
-            passed = diff > -0.05
-            val_str = f'dx={diff:+.3f}m'
-        elif rel_type == 'behind':
-            diff = obj_s['x'] - obj_d['x']
-            passed = diff < 0.05
-            val_str = f'dx={diff:+.3f}m'
-        elif rel_type in ['above', 'standing on']:
-            diff = obj_s['y'] - obj_d['y']
-            passed = diff >= -0.1
-            val_str = f'dy={diff:+.3f}m'
-        elif rel_type == 'close by':
-            dist = math.sqrt((obj_s['x']-obj_d['x'])**2 + (obj_s['z']-obj_d['z'])**2)
-            passed = dist < 2.5
-            val_str = f'dist={dist:.3f}m'
-        elif rel_type == 'bigger than':
-            vol_s = obj_s['l'] * obj_s['h'] * obj_s['w']
-            vol_d = obj_d['l'] * obj_d['h'] * obj_d['w']
-            passed = vol_s >= vol_d * 0.8
-            val_str = f'vol_s={vol_s:.2f}m³ vs vol_d={vol_d:.2f}m³'
-        elif rel_type == 'smaller than':
-            vol_s = obj_s['l'] * obj_s['h'] * obj_s['w']
-            vol_d = obj_d['l'] * obj_d['h'] * obj_d['w']
-            passed = vol_s <= vol_d * 1.2
-            val_str = f'vol_s={vol_s:.2f}m³ vs vol_d={vol_d:.2f}m³'
-        else:
-            passed = True
-            val_str = 'ok'
-            
-        results.append({
-            'src_name': obj_s['name'],
-            'src_id': src_str,
-            'dest_name': obj_d['name'],
-            'dest_id': dest_str,
-            'relation': rel_type,
-            'passed': passed,
-            'detail': val_str
-        })
-    return results
 
 def analyze_scene(objects, raw_overlaps, rel_acc_val, rel_details):
     """Computes layout quality metrics (collisions, OBB overlap area, out-of-bounds, walkability, relational acc)."""
@@ -471,16 +600,16 @@ def build_excel_report(ranked_data, output_excel):
         else:
             cell_score.fill = PatternFill(start_color="F8CBAD", end_color="F8CBAD", fill_type="solid")
             
-        # Relational Accuracy (%) Column
-        rel_acc_val = m["relational_acc"]
-        cell_rel = ws1.cell(row=row_num, column=5, value=rel_acc_val)
+        # Relational Accuracy (%) Column - PASS FRACTION TO EXCEL SO IT FORMATS ACCURATELY AS 93.0%, NOT 9300.0%!
+        rel_acc_fraction = m["relational_acc"] / 100.0
+        cell_rel = ws1.cell(row=row_num, column=5, value=rel_acc_fraction)
         cell_rel.alignment = Alignment(horizontal="center", vertical="center")
         cell_rel.font = Font(name="Segoe UI", size=11, bold=True)
-        cell_rel.number_format = '0.0"%"'
+        cell_rel.number_format = '0.0%'
         
-        if rel_acc_val >= 90.0:
+        if m["relational_acc"] >= 90.0:
             cell_rel.fill = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
-        elif rel_acc_val >= 75.0:
+        elif m["relational_acc"] >= 75.0:
             cell_rel.fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
         else:
             cell_rel.fill = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
@@ -563,9 +692,9 @@ def build_excel_report(ranked_data, output_excel):
         rel_details = item["metrics"]["rel_details"]
         
         if not rel_details:
-            c_rank = ws2.cell(row=curr_row2, column=1, value=f"#{idx}")
-            c_file = ws2.cell(row=curr_row2, column=2, value=fname)
-            c_note = ws2.cell(row=curr_row2, column=3, value="No explicit GT relationships evaluated")
+            ws2.cell(row=curr_row2, column=1, value=f"#{idx}")
+            ws2.cell(row=curr_row2, column=2, value=fname)
+            ws2.cell(row=curr_row2, column=3, value="No explicit GT relationships evaluated")
             for c in range(1, 8):
                 ws2.cell(row=curr_row2, column=c).border = border_thin
             curr_row2 += 1
