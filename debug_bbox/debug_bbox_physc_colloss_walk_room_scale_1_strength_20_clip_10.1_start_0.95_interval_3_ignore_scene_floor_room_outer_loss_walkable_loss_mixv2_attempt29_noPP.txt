@@ -1,0 +1,58 @@
+1.11.0+cu113
+loading CLIP
+Checking for missing clip feats. This can be slow the first time.
+100% 370/370 [00:24<00:00, 14.90it/s]
+Working with z of shape (1, 3, 16, 16, 16) = 12288 dimensions.
+[*] VQVAE: weight successfully load from: ./checkpoint/vqvae_threedfront_best.pth
+[*] setting ddim_steps=100
+[*] create image directory:
+/content/echoscene/full_mp/diff_crossattn/images...
+[*] shape branch has successfully been restored from: ../released_full_model/checkpoint/model2050.pth
+[*] GCN and layout branch has successfully been restored from: ../released_full_model/checkpoint/model2050.pth
+Evaluating 1 sample(s)
+
+Editing Mode - Additions
+
+Editing Mode - Relationship changes
+
+Generation Mode
+['SecondBedroom-6482']
+1000it [01:16, 13.09it/s]
+inference mode.. no gt sdf
+Data shape for DDIM sampling is (8, 3, 16, 16, 16), eta 0.0
+Running DDIM Sampling with 100 timesteps
+DDIM Sampler: 100% 100/100 [02:17<00:00,  1.38s/it]
+Scene SecondBedroom-6482 - Final Step Collision Loss: 0.0770, Room Outer Loss: 0.0845, Walkable Loss: 1.6874 (Center Penalty: 2.0142, C1 Heatmap: 0.7989, C2 Repulsion: 3.6071)
+
+============================================================
+SCENE: SecondBedroom-6482  |  8 objects
+============================================================
+Obj                       l      h      w        x       y       z    angle
+----------------------------------------------------------------------
+bed                   1.901  0.955  2.282   -0.565   0.002  -0.795     0.00°
+chair                 0.761  0.869  0.743   -1.484   0.000   1.440   137.37°
+nightstand            0.667  0.747  0.544   -1.389   0.001  -1.260    -0.00°
+table                 0.753  0.652  0.436   -1.066  -0.003   1.629    89.78°
+wardrobe              1.199  2.197  0.537    1.079   0.001  -0.624   -90.17°
+lamp                  0.598  0.381  0.386   -0.274   2.568   0.143    -0.06°
+floor                 3.511 -0.002  4.491   -0.024   0.001   0.056    -0.01°
+_scene_               0.069  0.000  0.021   -5.671  -0.005  -5.714   -57.31°
+
+  Pairwise overlap check (axis-aligned bbox):
+  !! OVERLAP: bed <-> nightstand  depth=[0.461, 0.747, 0.544]
+  !! OVERLAP: bed <-> floor  depth=[1.901, -0.002, 2.282]
+  !! OVERLAP: chair <-> table  depth=[0.340, 0.652, 0.401]
+  !! OVERLAP: chair <-> floor  depth=[0.677, -0.002, 0.743]
+  !! OVERLAP: nightstand <-> floor  depth=[0.667, -0.002, 0.544]
+  !! OVERLAP: table <-> floor  depth=[0.753, -0.002, 0.436]
+  !! OVERLAP: wardrobe <-> floor  depth=[1.199, -0.002, 0.537]
+============================================================
+
+rendering ['bed', 'chair', 'nightstand', 'table', 'wardrobe', 'lamp', 'floor', '_scene_']
+/usr/local/miniconda3/envs/echoscene/lib/python3.8/site-packages/numpy/core/fromnumeric.py:3464: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/usr/local/miniconda3/envs/echoscene/lib/python3.8/site-packages/numpy/core/_methods.py:192: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+acc & L/R: 1.00 & F/B: 1.00 & Bi/Sm: 1.00 & Ta/Sh: 0.83 & Stand: 1.00 & Close: 1.00 & Symm: nan. Total: &0.98
+means of mean: nan
+PhyScene input saved to: ../released_full_model/vis/2050/physcene_collision_input.json
