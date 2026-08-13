@@ -19,7 +19,8 @@ from .physical_guidance import (
     compute_walkable_loss, 
     compute_center_penalty_loss, 
     compute_pathfinding_walkable_loss, 
-    compute_edge_gaussian_walkable_loss
+    compute_edge_gaussian_walkable_loss,
+    compute_relational_guidance_loss
 )
 #from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
@@ -507,7 +508,7 @@ class GaussianDiffusion:
         }
         return loss, stats
 
-    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids, floor_plan=None, room_outer_box=None, objectness=None):
+    def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids, triples=None, floor_plan=None, room_outer_box=None, objectness=None):
         step_stats = {
             'timestep': int(timestep),
             'applied': False,
@@ -522,6 +523,7 @@ class GaussianDiffusion:
         constraints_cfg = cfg_get(self.inference_guidance, 'constraints', {})
         room_outer_cfg = cfg_get(constraints_cfg, 'room_outer', {})
         walkable_cfg = cfg_get(constraints_cfg, 'walkable', {})
+        relational_cfg = cfg_get(constraints_cfg, 'relational', {})
         
         collision_weight = float(cfg_get(collision_cfg, 'weight', 10.0)) if collision_cfg is not None else 10.0
         room_outer_weight = float(cfg_get(room_outer_cfg, 'weight', 10.0))
@@ -549,6 +551,22 @@ class GaussianDiffusion:
         # Pass the full denorm_boxes, scene_ids, and objectness to dynamically find the floor
         room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
         
+        # Directional & Support Relational Guidance Loss
+        relational_loss = 0.0
+        rel_raw_val = 0.0
+        if relational_cfg and bool(cfg_get(relational_cfg, 'enabled', False)):
+            rel_w = float(cfg_get(relational_cfg, 'weight', 10.0))
+            margin = float(cfg_get(relational_cfg, 'margin', 0.05))
+            close_th = float(cfg_get(relational_cfg, 'close_threshold', 0.45))
+            stand_th = float(cfg_get(relational_cfg, 'stand_threshold', 0.04))
+            rel_val = compute_relational_guidance_loss(
+                denorm_boxes, triples, 
+                predicate_names=None, objectness=objectness, 
+                margin=margin, close_threshold=close_th, stand_threshold=stand_th
+            )
+            rel_raw_val = float(rel_val.detach().item()) if isinstance(rel_val, torch.Tensor) else float(rel_val)
+            relational_loss = rel_val * rel_w
+
         components_cfg = cfg_get(walkable_cfg, 'components', None) if walkable_cfg else None
         
         walkable_loss = 0.0
@@ -631,7 +649,7 @@ class GaussianDiffusion:
         if collision_loss is not None:
             total_guidance_loss = total_guidance_loss + collision_loss * collision_weight
             
-        total_guidance_loss = total_guidance_loss + room_outer_loss * room_outer_weight + walkable_loss * walkable_weight
+        total_guidance_loss = total_guidance_loss + room_outer_loss * room_outer_weight + walkable_loss * walkable_weight + relational_loss
 
         # Ensure that if all losses were effectively 0 or None, we don't try to compute grads if not required
         if isinstance(total_guidance_loss, float) and total_guidance_loss == 0.0:
@@ -664,6 +682,7 @@ class GaussianDiffusion:
             'collision_loss': float(collision_loss.detach().item()) if collision_loss is not None else 0.0,
             'room_outer_loss': float(room_outer_loss.detach().item()) if isinstance(room_outer_loss, torch.Tensor) else float(room_outer_loss),
             'walkable_loss': float(walkable_loss.detach().item()) if isinstance(walkable_loss, torch.Tensor) else float(walkable_loss),
+            'relational_loss': rel_raw_val,
             'walkable_center_penalty': c_center_loss,
             'walkable_pathfinding': c_path_loss,
             'walkable_c1_heatmap': c1_loss,
@@ -769,6 +788,7 @@ class GaussianDiffusion:
                     model_variance=model_variance,
                     timestep=int(t[0].item()),
                     scene_ids=scene_ids,
+                    triples=triples,
                     floor_plan=floor_plan,
                     room_outer_box=room_outer_box,
                     objectness=objectness

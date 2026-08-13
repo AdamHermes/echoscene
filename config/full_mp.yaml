@@ -93,6 +93,12 @@ layout_branch:
               sigma_scale: 0.5
               heatmap_weight: 0.8    # Component 1 (Floor Edge Heatmap)
               repulsion_weight: 0.2   # Component 2 (Pairwise Furniture Repulsion)
+        relational:
+          enabled: true
+          weight: 10.0
+          margin: 0.05
+          close_threshold: 0.45
+          stand_threshold: 0.04
 
 shape_branch:
     model: sdfusion-txt2shape_mp
