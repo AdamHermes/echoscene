@@ -95,7 +95,7 @@ layout_branch:
               repulsion_weight: 0.2   # Component 2 (Pairwise Furniture Repulsion)
         relational:
           enabled: true
-          weight: 1.0
+          weight: 0.5
           margin: 0.05
           close_threshold: 0.45
           stand_threshold: 0.04
