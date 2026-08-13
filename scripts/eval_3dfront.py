@@ -42,7 +42,26 @@ parser.add_argument('--save_3d', default=True, type=bool_flag, help='Save .obj a
 parser.add_argument('--default_exp', default='../released_full_model', help='default exp load arguments')
 parser.add_argument('--debug', default=False, type=bool_flag, help='Print debug bbox info')
 parser.add_argument('--resolve_collisions', default=False, type=bool_flag, help='Apply OBB post-process collision resolution after box prediction')
+# Shortcut flags: auto-set start_idx=<room_start> and max_samples=20
+# Indices derived from test_rooms_list (1) (1).txt:
+#   Bedroom     -> 0
+#   LivingRoom  -> 162
+#   DiningRoom  -> 245
+parser.add_argument('--bedroom',    default=False, type=bool_flag, help='Eval first 20 bedroom scenes  (start_idx=0,   max_samples=20)')
+parser.add_argument('--livingroom', default=False, type=bool_flag, help='Eval first 20 livingroom scenes (start_idx=162, max_samples=20)')
+parser.add_argument('--diningroom', default=False, type=bool_flag, help='Eval first 20 diningroom scenes (start_idx=245, max_samples=20)')
 args = parser.parse_args()
+
+# Apply room-shortcut overrides (mutually exclusive; last one wins if multiple set)
+if args.bedroom:
+    args.start_idx  = 0
+    args.max_samples = 20
+elif args.livingroom:
+    args.start_idx  = 162
+    args.max_samples = 20
+elif args.diningroom:
+    args.start_idx  = 245
+    args.max_samples = 20
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
 
