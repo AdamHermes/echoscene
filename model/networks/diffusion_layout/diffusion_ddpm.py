@@ -712,6 +712,11 @@ class GaussianDiffusion:
             summary['avg_guided_scene_iou'] = float(np.mean([stat['avg_scene_iou'] for stat in applied_stats]))
             summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
             summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
+            summary['avg_guided_room_outer_loss'] = float(np.mean([stat.get('room_outer_loss', 0.0) for stat in applied_stats]))
+            summary['avg_guided_walkable_loss'] = float(np.mean([stat.get('walkable_loss', 0.0) for stat in applied_stats]))
+            summary['avg_guided_center_penalty'] = float(np.mean([stat.get('walkable_center_penalty', 0.0) for stat in applied_stats]))
+            summary['avg_guided_c1_heatmap'] = float(np.mean([stat.get('walkable_c1_heatmap', 0.0) for stat in applied_stats]))
+            summary['avg_guided_c2_repulsion'] = float(np.mean([stat.get('walkable_c2_repulsion', 0.0) for stat in applied_stats]))
             summary['avg_guided_relational_loss'] = float(np.mean([stat.get('relational_loss', 0.0) for stat in applied_stats]))
             summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
             summary['avg_guided_variance_scale'] = float(np.mean([stat.get('variance_scale_mean', 0.0) for stat in applied_stats]))
@@ -719,6 +724,11 @@ class GaussianDiffusion:
             summary['avg_guided_scene_iou'] = 0.0
             summary['avg_guided_scene_penetration'] = 0.0
             summary['avg_guided_collision_loss'] = 0.0
+            summary['avg_guided_room_outer_loss'] = 0.0
+            summary['avg_guided_walkable_loss'] = 0.0
+            summary['avg_guided_center_penalty'] = 0.0
+            summary['avg_guided_c1_heatmap'] = 0.0
+            summary['avg_guided_c2_repulsion'] = 0.0
             summary['avg_guided_relational_loss'] = 0.0
             summary['avg_guided_grad_norm'] = 0.0
             summary['avg_guided_variance_scale'] = 0.0
@@ -872,7 +882,7 @@ class GaussianDiffusion:
         self.latest_sampling_stats = self._summarize_guidance_stats(step_stats, x_t, scene_ids, objectness=objectness)
         if self._guidance_enabled() and self.latest_sampling_stats.get('applied_steps', 0) > 0:
             s = self.latest_sampling_stats
-            print(f"[Inference Guidance Summary] Applied Steps: {s['applied_steps']}/{s['scheduled_steps']} | Collision Loss: {s['avg_guided_collision_loss']:.4f} | Relational Loss: {s['avg_guided_relational_loss']:.4f}")
+            print(f"[Inference Guidance Summary] Applied Steps: {s['applied_steps']}/{s['scheduled_steps']} | Collision Loss: {s['avg_guided_collision_loss']:.4f} | Room Outer Loss: {s['avg_guided_room_outer_loss']:.4f} | Walkable Loss: {s['avg_guided_walkable_loss']:.4f} (Center Penalty: {s['avg_guided_center_penalty']:.4f}, C1 Heatmap: {s['avg_guided_c1_heatmap']:.4f}, C2 Repulsion: {s['avg_guided_c2_repulsion']:.4f}) | Relational Loss: {s['avg_guided_relational_loss']:.4f}")
         return x_t
 
     def p_sample_loop_trajectory(self, denoise_fn, shape, device, freq, condition, condition_cross,
