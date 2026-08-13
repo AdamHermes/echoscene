@@ -1,0 +1,140 @@
+FID real : 100%|███████████████████████████████████████████| 10/10 [00:25<00:00,  2.60s/it]
+Found 314 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|███████████████████████████████████████████| 10/10 [00:25<00:00,  2.53s/it]
+iter: 0, fid :47.399261
+iter: 0, fid avg: 47.399261
+iter: 0, fid std: 0.000000
+compute FID between two folders
+Found 314 images in the folder ../fid_kid_tmp/real
+FID real : 100%|███████████████████████████████████████████| 10/10 [00:02<00:00,  3.39it/s]
+Found 314 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|███████████████████████████████████████████| 10/10 [00:02<00:00,  3.48it/s]
+iter: 0, fid-clip :5.933991
+compute KID between two folders
+Found 314 images in the folder ../fid_kid_tmp/real
+KID real : 100%|███████████████████████████████████████████| 10/10 [00:27<00:00,  2.73s/it]
+Found 314 images in the folder ../fid_kid_tmp/fake
+KID fake : 100%|███████████████████████████████████████████| 10/10 [00:26<00:00,  2.66s/it]
+iter: 0, kid: 0.010214
+iter: 0, kid avg: 0.010214
+iter: 0, kid std: 0.000000
+
+
+Bedroom
+FID real : 100%|█████████████████████████████████████████████| 6/6 [00:25<00:00,  4.26s/it]
+Found 162 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████████| 6/6 [00:25<00:00,  4.25s/it]
+iter: 0, fid :58.497787
+iter: 0, fid avg: 58.497787
+iter: 0, fid std: 0.000000
+compute FID between two folders
+Found 162 images in the folder ../fid_kid_tmp/real
+FID real : 100%|█████████████████████████████████████████████| 6/6 [00:02<00:00,  2.54it/s]
+Found 162 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████████| 6/6 [00:03<00:00,  1.63it/s]
+iter: 0, fid-clip :7.286525
+compute KID between two folders
+Found 162 images in the folder ../fid_kid_tmp/real
+KID real : 100%|█████████████████████████████████████████████| 6/6 [00:24<00:00,  4.08s/it]
+Found 162 images in the folder ../fid_kid_tmp/fake
+KID fake : 100%|█████████████████████████████████████████████| 6/6 [00:26<00:00,  4.41s/it]
+iter: 0, kid: 0.014835
+iter: 0, kid avg: 0.014835
+iter: 0, kid std: 0.000000
+
+LivingRoom
+FID real : 100%|█████████████████████████████████████████████| 3/3 [00:24<00:00,  8.16s/it]
+Found 83 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████████| 3/3 [00:23<00:00,  7.96s/it]
+iter: 0, fid :80.924362
+iter: 0, fid avg: 80.924362
+iter: 0, fid std: 0.000000
+compute FID between two folders
+Found 83 images in the folder ../fid_kid_tmp/real
+FID real : 100%|█████████████████████████████████████████████| 3/3 [00:01<00:00,  1.69it/s]
+Found 83 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████████| 3/3 [00:02<00:00,  1.33it/s]
+iter: 0, fid-clip :9.029234
+compute KID between two folders
+Found 83 images in the folder ../fid_kid_tmp/real
+KID real : 100%|█████████████████████████████████████████████| 3/3 [00:24<00:00,  8.11s/it]
+Found 83 images in the folder ../fid_kid_tmp/fake
+KID fake : 100%|█████████████████████████████████████████████| 3/3 [00:24<00:00,  8.07s/it]
+iter: 0, kid: 0.015005
+iter: 0, kid avg: 0.015005
+iter: 0, kid std: 0.000000
+
+DiningRoom
+FID real : 100%|█████████████████████████████████████████████| 4/4 [00:22<00:00,  5.68s/it]
+Found 100 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████████| 4/4 [00:24<00:00,  6.04s/it]
+iter: 0, fid :68.055348
+iter: 0, fid avg: 68.055348
+iter: 0, fid std: 0.000000
+compute FID between two folders
+Found 100 images in the folder ../fid_kid_tmp/real
+FID real : 100%|█████████████████████████████████████████████| 4/4 [00:01<00:00,  2.11it/s]
+Found 100 images in the folder ../fid_kid_tmp/fake
+FID fake : 100%|█████████████████████████████████████████████| 4/4 [00:01<00:00,  2.20it/s]
+iter: 0, fid-clip :9.105419
+compute KID between two folders
+Found 100 images in the folder ../fid_kid_tmp/real
+KID real : 100%|█████████████████████████████████████████████| 4/4 [00:24<00:00,  6.18s/it]
+Found 100 images in the folder ../fid_kid_tmp/fake
+KID fake : 100%|█████████████████████████████████████████████| 4/4 [00:23<00:00,  5.80s/it]
+iter: 0, kid: 0.012376
+iter: 0, kid avg: 0.012376
+iter: 0, kid std: 0.000000
+
+overlap object:  0.23214285714285715 cnt  156 / 672
+overlap scene rate:  0.55
+ColObj: 0.23214285714285715
+ColScene: 0.55
+overlap object:  0.2409448818897638 cnt  612 / 2540
+overlap scene rate:  0.49595687331536387
+ColObj: 0.2409448818897638
+ColScene: 0.49595687331536387
+
+
+[all] overlap object: 0.2409 cnt 612/2540
+[all] overlap scene rate: 0.4960
+[all] ColObj: 0.2409
+[all] ColScene: 0.4960
+[bedroom] overlap object: 0.1810 cnt 152/840
+[bedroom] overlap scene rate: 0.3804
+[bedroom] ColObj: 0.1810
+[bedroom] ColScene: 0.3804
+[livingroom] overlap object: 0.3136 cnt 281/896
+[livingroom] overlap scene rate: 0.7108
+[livingroom] ColObj: 0.3136
+[livingroom] ColScene: 0.7108
+[diningroom] overlap object: 0.2850 cnt 269/944
+[diningroom] overlap scene rate: 0.7500
+[diningroom] ColObj: 0.2850
+[diningroom] ColScene: 0.7500
+[library] overlap object: 0.1124 cnt 29/258
+[library] overlap scene rate: 0.2321
+[library] ColObj: 0.1124
+[library] ColScene: 0.2321
+
+
+[all] overlap object: 0.2409 cnt 612/2540
+[all] overlap scene rate: 0.4960
+[all] ColObj: 0.2409
+[all] ColScene: 0.4960
+[bedroom] overlap object: 0.1810 cnt 152/840
+[bedroom] overlap scene rate: 0.3804
+[bedroom] ColObj: 0.1810
+[bedroom] ColScene: 0.3804
+[livingroom] overlap object: 0.3136 cnt 281/896
+[livingroom] overlap scene rate: 0.7108
+[livingroom] ColObj: 0.3136
+[livingroom] ColScene: 0.7108
+[diningroom] overlap object: 0.2850 cnt 269/944
+[diningroom] overlap scene rate: 0.7500
+[diningroom] ColObj: 0.2850
+[diningroom] ColScene: 0.7500
+[library] overlap object: 0.1124 cnt 29/258
+[library] overlap scene rate: 0.2321
+[library] ColObj: 0.1124
+[library] ColScene: 0.2321
