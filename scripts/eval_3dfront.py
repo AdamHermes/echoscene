@@ -41,6 +41,7 @@ parser.add_argument('--start_idx', type=int, default=0, help='Start evaluation f
 parser.add_argument('--save_3d', default=True, type=bool_flag, help='Save .obj and .glb files')
 parser.add_argument('--default_exp', default='../released_full_model', help='default exp load arguments')
 parser.add_argument('--debug', default=False, type=bool_flag, help='Print debug bbox info')
+parser.add_argument('--resolve_collisions', default=False, type=bool_flag, help='Apply OBB post-process collision resolution after box prediction')
 args = parser.parse_args()
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
@@ -390,21 +391,22 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             else:
                 angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
                 boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
-                # exclude floor and _scene_
-                classes_sorted = sorted(list(set(vocab['object_idx_to_name'])))
+                if args.resolve_collisions:
+                    # exclude floor and _scene_
+                    classes_sorted = sorted(list(set(vocab['object_idx_to_name'])))
 
-                mask = []
-                for idx in dec_objs.detach().cpu().numpy():
-                    name = classes_sorted[idx].strip('\n')
-                    mask.append(name not in ['floor', '_scene_'])
+                    mask = []
+                    for idx in dec_objs.detach().cpu().numpy():
+                        name = classes_sorted[idx].strip('\n')
+                        mask.append(name not in ['floor', '_scene_'])
 
-                mask = torch.tensor(mask, device=boxes_pred_den.device)
+                    mask = torch.tensor(mask, device=boxes_pred_den.device)
 
-                boxes_pred_den = resolve_bbox_collisions_obb(
-                    boxes_pred_den,
-                    angles_pred,          # ← the yaw angles in degrees, already computed above
-                    objectness_mask=mask
-                )
+                    boxes_pred_den = resolve_bbox_collisions_obb(
+                        boxes_pred_den,
+                        angles_pred,          # ← the yaw angles in degrees, already computed above
+                        objectness_mask=mask
+                    )
 
         if args.debug:
             # ── BBOX DEBUG PRINT ──────────────────────────────────────────────

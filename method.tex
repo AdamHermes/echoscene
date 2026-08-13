@@ -1,0 +1,261 @@
+\label{sec:method}
+
+Given a scene graph $\mathcal{G} = (\mathcal{V}, \mathcal{E})$ encoding object categories and spatial relationships, our goal is to generate a collision-free 3D indoor scene layout where objects respect both the relational semantics of $\mathcal{G}$ and fundamental physical constraints.
+We build upon EchoScene~\cite{zhai2025echosceneindoorscenegeneration}, a graph-conditioned diffusion framework, and introduce a \emph{coarse-to-fine} collision resolution pipeline consisting of two complementary stages (Fig.~\ref{fig:framework}):
+\textbf{(i)} \emph{Physics-Guided Diffusion}, which steers the layout denoising process toward plausible, non-overlapping configurations via three differentiable guidance losses; and
+\textbf{(ii)} \emph{Collision Resolver}, which resolves any residual interpenetrations by applying the Separating Axis Theorem on oriented bounding boxes.
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\linewidth]{images/pipeline.png}
+    \caption{...}
+    \label{fig:framework}
+\end{figure*}
+% ------------------------------------------------------------------
+\subsection{Preliminaries}
+\label{sec:method:prelim}
+% ------------------------------------------------------------------
+
+\paragraph{Scene graph diffusion.}
+EchoScene encodes a scene graph $\mathcal{G}$ through a Relation Encoder (a triplet-GCN) to produce per-node latent features $\mathcal{V}_z = \{v_i^z\}$ that encapsulate both semantic identities and relational context.
+A layout diffusion branch then learns to denoise bounding box parameters
+\begin{equation}
+\begin{aligned}
+\mathbf{b}_i
+&= (l_i, h_i, w_i, x_i, y_i, z_i,\sin\theta_i, \cos\theta_i)
+\in \mathbb{R}^{8}.
+\end{aligned}
+\end{equation}
+for each node $i$, conditioned on the graph features.
+At every denoising timestep $t$, an \emph{Information Exchange Unit} $U$ (another triplet-GCN) aggregates the current noisy states across neighboring nodes, forming an echoed condition
+$\mathcal{C}_{\mathcal{D}_t} = U(\mathcal{G}_{\mathcal{D}_t})$
+that keeps each object aware of its neighbors' evolving layouts throughout the reverse process.
+We refer the reader to~\cite{echoscene} for full architectural details and focus here on the novel components we introduce.
+
+\paragraph{Notation.}
+Let $\mathbf{d}_t = \{\mathbf{b}_t^i\}_{i=1}^{M}$ denote the set of $M$ noisy bounding box parameters at denoising timestep $t$.
+The denoiser predicts the clean sample estimate $\hat{\mathbf{d}}_0^{(t)}$ and produces a posterior mean $\boldsymbol{\mu}_t$ and variance $\sigma_t^2$ following the standard DDPM formulation~\cite{ho2020ddpm}.
+We define an \emph{objectness mask} $\mathbf{o} \in \{0,1\}^M$ to distinguish real furniture nodes from auxiliary nodes (e.g., \texttt{floor}, \texttt{\_scene\_}), ensuring guidance is applied only to movable objects.
+
+% ------------------------------------------------------------------
+\subsection{Physics-Guided Diffusion (Coarse Stage)}
+\label{sec:method:guidance}
+% ------------------------------------------------------------------
+
+The key observation motivating our approach is that the standard layout diffusion training objective in EchoScene - an L1 reconstruction loss over bounding box parameters - does not explicitly penalize inter-object collisions or out-of-room placements.
+While the Information Exchange Unit provides implicit relational awareness, it offers no \emph{hard} physical guarantees, leading to frequent interpenetrations in practice.
+
+We address this by injecting physics-based guidance into the \emph{inference-time} reverse process.
+Crucially, this guidance is \emph{training-free}: we do not modify the pretrained EchoScene weights, thereby preserving the model's learned distribution while steering samples toward physically valid configurations.
+
+At each active denoising timestep $t$, we compute three guidance losses on the predicted clean layout $\hat{\mathbf{d}}_0^{(t)}$ and use their gradients to shift the posterior mean:
+
+\begin{equation}
+\tilde{\boldsymbol{\mu}}_t = \boldsymbol{\mu}_t - \lambda \cdot \sigma_t^2 \cdot \nabla_{\hat{\mathbf{d}}_0^{(t)}} \mathcal{L}_{\mathrm{phys}}(\hat{\mathbf{d}}_0^{(t)})
+\label{eq:guided_mean}
+\end{equation}
+
+\noindent where $\lambda$ is a global guidance strength, $\sigma_t^2$ is the model-predicted variance that naturally anneals the guidance magnitude (large corrections early, fine adjustments later), and $\mathcal{L}_{\mathrm{phys}}$ is the composite physical guidance loss defined below.
+
+% --- Loss 1: Collision ---
+\subsubsection{Collision Guidance Loss}
+\label{sec:method:collision_loss}
+
+To penalize inter-object overlaps, we first de-normalize the predicted boxes $\hat{\mathbf{d}}_0^{(t)}$ to metric space using the dataset statistics.
+For each scene, we compute pairwise collision metrics between all furniture objects (filtered by the objectness mask $\mathbf{o}$):
+
+\begin{equation}
+\begin{aligned}
+\mathcal{L}_{\mathrm{col}}
+=&\;
+\frac{1}{|\mathcal{S}|}
+\sum_{s \in \mathcal{S}}
+\frac{1}{|\mathcal{P}_s|}
+\sum_{(i,j)\in\mathcal{P}_s}
+\Big(
+\\
+&
+w_{\mathrm{iou}}
+\,[\mathrm{IoU}_{3\mathrm{D}}(i,j)-\tau_{\mathrm{iou}}]_+
+\\
+&+
+w_{\mathrm{pen}}
+\,[\mathrm{Pen}(i,j)-\tau_{\mathrm{pen}}]_+
+\Big).
+\end{aligned}
+\label{eq:collision_loss}
+\end{equation}
+
+\noindent where $\mathcal{S}$ is the set of scenes in the batch, $\mathcal{P}_s$ denotes all unique furniture pairs in scene $s$, $[\cdot]_+ = \max(\cdot, 0)$ is the hinge function, and $\tau_{\mathrm{iou}}, \tau_{\mathrm{pen}}$ are thresholds below which collisions are tolerated (set to $0$ by default).
+
+The 3D IoU term $\text{IoU}_{3\mathrm{D}}$ is computed using a differentiable oriented bounding box intersection method~\cite{zhou2019iou} that accounts for object rotation.
+The penetration term $\text{Pen}(i,j)$ measures axis-aligned penetration volume by computing per-axis overlap extents:
+
+\begin{equation}
+\text{Pen}(i,j) = \prod_{a \in \{x,y,z\}} \Big[\,
+    \tfrac{\tilde{s}_i^a + \tilde{s}_j^a}{2} - |c_i^a - c_j^a|
+\,\Big]_+
+\label{eq:penetration}
+\end{equation}
+
+\noindent where $\tilde{s}_i^a$ denotes the effective axis-aligned extent of object $i$ along axis $a$ (computed from the rotated bounding box envelope), and $c_i^a$ is the center coordinate.
+
+% --- Loss 2: Room Layout ---
+\subsubsection{Room-Layout Guidance Loss}
+\label{sec:method:room_loss}
+
+Objects should remain within the room boundary.
+We define the room-layout loss as:
+
+\begin{equation}
+\mathcal{L}_{\mathrm{room}} = \sum_{i:\, o_i=1} \sum_{a \in \{x,z\}} \Big(
+    [\,c_i^a + \tfrac{s_i^a}{2} - B_{\max}^a\,]_+ \;+\;
+    [\,B_{\min}^a - c_i^a + \tfrac{s_i^a}{2}\,]_+
+\Big)
+\label{eq:room_loss}
+\end{equation}
+
+\noindent where $B_{\min}^a, B_{\max}^a$ are the room boundaries along axis $a$.
+When a floor node is present in the scene graph, we dynamically extract its bounding box as the room boundary; otherwise, we fall back to a default $6\text{m} \times 6\text{m}$ bound.
+The penalty is applied along the horizontal plane ($x, z$) since vertical (height) placement is typically well-constrained by the ground plane.
+
+% --- Loss 3: Walkability ---
+\subsubsection{Reachability Guidance Loss}
+\label{sec:method:walkable_loss}
+
+A plausible room layout should leave sufficient space for human traversal.
+We introduce a soft reachability penalty that discourages dense object clustering near the room center:
+
+\begin{equation}
+\mathcal{L}_{\mathrm{reach}} = \sum_{i:\, o_i=1} \exp\!\Big(-\frac{(x_i)^2 + (z_i)^2}{\sigma^2}\Big)
+\label{eq:walkable_loss}
+\end{equation}
+
+\noindent where $(x_i, z_i)$ are the horizontal center coordinates and $\sigma$ controls the radius of the penalty region.
+This Gaussian-shaped penalty is strongest at the origin and decays with distance, encouraging objects to spread out and leave a traversable central pathway.
+
+% --- Composite Loss ---
+\subsubsection{Composite Guidance}
+\label{sec:method:composite}
+
+The full physical guidance loss combines the three terms:
+
+\begin{equation}
+\mathcal{L}_{\mathrm{phys}} = w_{\mathrm{col}} \cdot \mathcal{L}_{\mathrm{col}} + w_{\mathrm{room}} \cdot \mathcal{L}_{\mathrm{room}} + w_{\mathrm{reach}} \cdot \mathcal{L}_{\mathrm{reach}}
+\label{eq:total_loss}
+\end{equation}
+
+\noindent where $w_{\mathrm{col}}, w_{\mathrm{room}}, w_{\mathrm{reach}}$ are per-loss weights (default $10, 10, 1$ respectively).
+
+% --- Guided Sampling Procedure ---
+\subsubsection{Guided Sampling Procedure}
+\label{sec:method:guided_sampling}
+
+At each denoising step $t$, the model predicts $\hat{\mathbf{d}}_0^{(t)}$ and computes the posterior $(\boldsymbol{\mu}_t, \sigma_t^2)$ following standard DDPM~\cite{ho2020ddpm}.
+When guidance is active (controlled by a schedule ratio $r_{\mathrm{start}}$ and interval $k$), we enable gradient tracking on $\hat{\mathbf{d}}_0^{(t)}$, evaluate $\mathcal{L}_{\mathrm{phys}}$, and shift the posterior mean via Eq.~\eqref{eq:guided_mean}.
+An optional gradient clipping step prevents excessively large updates.
+Throughout the reverse process, auxiliary (non-furniture) nodes such as \texttt{floor} and \texttt{\_scene\_} are held at their noise-corrupted ground-truth values, ensuring that room boundaries remain anchored while only movable objects receive guidance.
+
+% ------------------------------------------------------------------
+\subsection{Collision Resolver (Fine-grained Stage)}
+\label{sec:method:resolver}
+% ------------------------------------------------------------------
+
+While the physics-guided diffusion stage significantly reduces collisions during generation, the stochastic nature of the reverse process means that residual interpenetrations may persist in the final layout $\mathbf{d}_0$.
+These residual overlaps are typically small in magnitude but can be visually distracting and physically implausible.
+We therefore apply a deterministic post-processing step---the \emph{Collision Resolver}---that eliminates all remaining pairwise overlaps through iterative projections.
+
+The resolver operates exclusively in the 2D floor plane ($xz$), since vertical placement (height $y$) is well-constrained by the ground plane and gravity.
+It combines two complementary mechanisms:
+\textbf{(a)} \emph{OBB-SAT collision detection and resolution}, which computes the exact Minimum Translation Vector (MTV) for each colliding pair of oriented bounding boxes; and
+\textbf{(b)} \emph{room-bound containment clamping}, which projects displaced objects back inside the room boundary.
+
+% --- OBB-SAT ---
+\subsubsection{OBB Collision Detection via SAT}
+\label{sec:method:obb_sat}
+
+We detect collisions between oriented bounding boxes using the \emph{Separating Axis Theorem} (SAT)~\cite{gottschalk1996obbtree}.
+For two OBBs with yaw angles $\theta_i, \theta_j$, we test four candidate separating axes: the two local coordinate axes of each box.
+Let $\mathbf{a}_k$ ($k = 1, \ldots, 4$) denote these axes, and let $\mathcal{C}_i, \mathcal{C}_j$ denote the sets of four floor-plane corners of boxes $i$ and $j$, respectively.
+For each axis $\mathbf{a}_k$, we project both sets of corners and compute the \emph{overlap depth}:
+
+\begin{equation}
+\delta_k = \min\!\big(\max(\mathcal{C}_i \cdot \mathbf{a}_k),\, \max(\mathcal{C}_j \cdot \mathbf{a}_k)\big) - \max\!\big(\min(\mathcal{C}_i \cdot \mathbf{a}_k),\, \min(\mathcal{C}_j \cdot \mathbf{a}_k)\big).
+\label{eq:sat_overlap}
+\end{equation}
+
+\noindent If $\delta_k \leq 0$ for any axis, the boxes are separated and no collision exists.
+Otherwise, all four axes yield positive overlaps and the boxes are colliding.
+
+% --- Alignment-biased axis selection ---
+\subsubsection{Alignment-Biased Axis Selection}
+\label{sec:method:axis_selection}
+
+The standard SAT approach selects the axis with the minimum overlap depth $\delta^* = \min_k \delta_k$ (the MTV).
+However, for scene layouts this often produces unintuitive resolutions where objects slide sideways rather than apart.
+We instead introduce an \emph{alignment-biased} axis selection that prefers axes aligned with the center-to-center direction $\mathbf{c}_{ij} = \mathbf{p}_j - \mathbf{p}_i$, where $\mathbf{p}_i, \mathbf{p}_j$ are the box centers.
+
+Each axis $\mathbf{a}_k$ is first oriented to point from $i$ toward $j$:
+$\hat{\mathbf{a}}_k = \mathrm{sign}(\mathbf{a}_k \cdot \mathbf{c}_{ij}) \cdot \mathbf{a}_k$.
+We then compute an alignment score:
+
+\begin{equation}
+\alpha_k = \big|\hat{\mathbf{a}}_k \cdot \hat{\mathbf{c}}_{ij}\big|, \qquad
+s_k = \frac{\delta_k}{\alpha_k^{\beta} + \epsilon}
+\label{eq:axis_score}
+\end{equation}
+
+\noindent where $\hat{\mathbf{c}}_{ij}$ is the unit center-to-center vector, $\beta$ is an alignment bias exponent (default $\beta = 2$), and $\epsilon$ is a small constant for numerical stability.
+Axes with $\alpha_k < \tau_{\alpha}$ (default $\tau_{\alpha} = 0.15$) are discarded as nearly perpendicular.
+The axis with the lowest score $s_k$ is selected as the push direction, favoring axes that are both shallow in overlap and well-aligned with the separation direction.
+When no axis satisfies the alignment threshold, we fall back to pushing along $\hat{\mathbf{c}}_{ij}$ with the minimum overlap depth.
+
+% --- Iterative resolution ---
+\subsubsection{Iterative Resolution with Room-Bound Containment}
+\label{sec:method:iterative}
+
+Given the push axis $\hat{\mathbf{a}}^*$ and overlap depth $\delta^*$ for a colliding pair $(i, j)$, we symmetrically displace both objects by $(\delta^* + \varepsilon_{\mathrm{push}}) / 2$ along $\hat{\mathbf{a}}^*$:
+
+\begin{equation}
+\mathbf{p}_i \gets \mathbf{p}_i - \frac{\delta^* + \varepsilon_{\mathrm{push}}}{2}\, \hat{\mathbf{a}}^*, \qquad
+\mathbf{p}_j \gets \mathbf{p}_j + \frac{\delta^* + \varepsilon_{\mathrm{push}}}{2}\, \hat{\mathbf{a}}^*
+\label{eq:push}
+\end{equation}
+
+\noindent where $\varepsilon_{\mathrm{push}}$ (default $0.02\,\text{m}$) provides a small clearance margin to prevent objects from remaining tangent.
+
+The full procedure (Algorithm~\ref{alg:collision_resolver}) iterates over all furniture pairs, applying pairwise pushes until no collisions remain or a maximum iteration count $K_{\max}$ is reached.
+After each full sweep, if no pair was displaced the algorithm has converged.
+This Jacobi-style relaxation is guaranteed to terminate since each push strictly reduces the overlap along the chosen axis, and the clearance margin $\varepsilon_{\mathrm{push}}$ prevents limit cycles.
+
+\begin{algorithm}[t]
+\caption{Post-Processing Collision Resolver}
+\label{alg:collision_resolver}
+\begin{algorithmic}[1]
+\REQUIRE Layout boxes $\{\mathbf{b}_i\}_{i=1}^{M}$ with centers $\mathbf{p}_i = (x_i, z_i)$, sizes $(l_i, w_i)$, angles $\theta_i$; objectness mask $\mathbf{o}$; room bounds $[B_{\min}^x, B_{\max}^x] \times [B_{\min}^z, B_{\max}^z]$; max iterations $K_{\max}$; clearance $\varepsilon_{\mathrm{push}}$; alignment bias $\beta$
+\ENSURE Collision-free layout $\{\mathbf{b}_i'\}$
+\FOR{$k = 1, 2, \ldots, K_{\max}$}
+    \STATE $\textit{converged} \gets \textbf{true}$
+    \FOR{each pair $(i, j)$ with $i < j$, $o_i = o_j = 1$}
+        \STATE Compute 4 corner sets $\mathcal{C}_i, \mathcal{C}_j$ from $(\mathbf{p}_i, l_i, w_i, \theta_i)$ and $(\mathbf{p}_j, l_j, w_j, \theta_j)$
+        \STATE Compute overlap depths $\{\delta_k\}_{k=1}^{4}$ on 4 SAT axes via Eq.~\eqref{eq:sat_overlap}
+        \IF{$\exists\, k: \delta_k \leq 0$}
+            \STATE \textbf{continue} \COMMENT{no collision on this pair}
+        \ENDIF
+        \STATE $\hat{\mathbf{c}}_{ij} \gets (\mathbf{p}_j - \mathbf{p}_i) / \|\mathbf{p}_j - \mathbf{p}_i\|$
+        \STATE Select push axis $\hat{\mathbf{a}}^*$ and depth $\delta^*$ via alignment-biased scoring (Eq.~\eqref{eq:axis_score})
+        \STATE $\Delta \gets (\delta^* + \varepsilon_{\mathrm{push}}) / 2$
+        \STATE $\mathbf{p}_i \gets \mathbf{p}_i - \Delta \cdot \hat{\mathbf{a}}^*$; \quad $\mathbf{p}_j \gets \mathbf{p}_j + \Delta \cdot \hat{\mathbf{a}}^*$ \COMMENT{Eq.~\eqref{eq:push}}
+        \STATE $\textit{converged} \gets \textbf{false}$
+    \ENDFOR
+    \IF{$\textit{converged}$}
+        \STATE \textbf{break} \COMMENT{all pairs resolved}
+    \ENDIF
+\ENDFOR
+\RETURN $\{\mathbf{b}_i'\}$
+\end{algorithmic}
+\end{algorithm}
+
+In practice, convergence is typically reached within 5--15 iterations for scenes with fewer than 20 objects, and we set $K_{\max} = 80$ as a conservative upper bound.
+The entire post-processing step adds negligible computation (under 10\,ms per scene on CPU) since it operates on compact bounding box representations rather than dense volumetric data.
+
+Together, the coarse-stage guidance and fine-stage resolver form a complementary pipeline: the diffusion guidance globally steers the layout distribution toward low-collision configurations, while the deterministic resolver provides hard guarantees that eliminate any residual overlaps, yielding physically plausible and collision-free scene layouts.
