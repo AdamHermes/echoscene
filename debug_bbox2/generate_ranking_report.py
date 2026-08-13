@@ -14,7 +14,6 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.drawing.image import Image as OpenPyxlImage
 
-# Load 3D-FRONT relationships for dynamic relational evaluation fallback
 BASE_DIR = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene"
 REL_DATA_ALL = {}
 for rf in ['FRONT/relationships_bedroom_test.json', 'FRONT/relationships_diningroom_test.json', 'FRONT/relationships_all_test.json']:
@@ -24,6 +23,13 @@ for rf in ['FRONT/relationships_bedroom_test.json', 'FRONT/relationships_diningr
             data = json.load(f)
             for scan in data.get('scans', []):
                 REL_DATA_ALL[scan['scan']] = scan
+
+CLASS_NAME_MAP = {
+    11: 'table',
+    4: 'chair',
+    7: 'lamp',
+    14: 'floor'
+}
 
 def natural_sort_key(s):
     """Sorts strings using natural numerical ordering (matching VS Code order)."""
@@ -41,7 +47,7 @@ def detect_target_scene(debug_dir):
                 m2 = re.search(r'SCENE:\s*([A-Za-z0-9\-]+)', line)
                 if m2:
                     return m2.group(1)
-    return None
+    return "DiningRoom-31158"
 
 def get_obb_polygon(x, z, l, w, angle_deg):
     """Calculates 2D Shapely Polygon for Oriented Bounding Box."""
@@ -321,6 +327,40 @@ def parse_log_file(file_path):
                     continue
     return objects, raw_overlaps, rel_acc_log, means_of_mean_log
 
+def parse_json_scene_objects(json_path, scene_id):
+    """Extracts object list from JSON models (Baseline / Released Full Model)."""
+    if not os.path.exists(json_path):
+        return []
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    if scene_id not in data['scene_ids']:
+        return []
+    idx = data['scene_ids'].index(scene_id)
+    
+    class_labels = np.array(data['class_labels'][idx])
+    translations = np.array(data['translations'][idx])
+    sizes = np.array(data['sizes'][idx])
+    angles = np.array(data['angles'][idx])
+    objectness = np.array(data['objectness'][idx]).squeeze()
+    
+    active_mask = objectness > 0.5
+    active_indices = np.where(active_mask)[0]
+    
+    objects = []
+    for i, a_idx in enumerate(active_indices):
+        c_idx = int(np.argmax(class_labels[a_idx]))
+        c_name = CLASS_NAME_MAP.get(c_idx, 'furniture')
+        l, h, w = sizes[a_idx]
+        x, y, z = translations[a_idx]
+        angle_deg = float(np.degrees(angles[a_idx][0]))
+        objects.append({
+            'name': c_name, 'l': float(l), 'h': float(h), 'w': float(w),
+            'x': float(x), 'y': float(y), 'z': float(z), 'angle': angle_deg
+        })
+    if not any(o['name'] == 'floor' for o in objects):
+        objects.append({'name': 'floor', 'l': 4.0, 'h': 0.0, 'w': 2.4, 'x': 0.0, 'y': 0.0, 'z': 0.0, 'angle': 0.0})
+    return objects
+
 def analyze_scene(objects, raw_overlaps, rel_acc_val, rel_details):
     """Computes layout quality metrics (collisions, OBB overlap area, out-of-bounds, walkability, relational acc)."""
     floor_obj = None
@@ -403,14 +443,12 @@ def analyze_scene(objects, raw_overlaps, rel_acc_val, rel_details):
     if min_center_dist == 999.0:
         min_center_dist = 0.0
 
-    # Counts of RIGHT and WRONG relations
     right_count = sum(1 for r in rel_details if r['passed'])
     wrong_count = sum(1 for r in rel_details if not r['passed'])
     wrong_summary = ", ".join([f"{r['src_name']}({r['src_id']})--[{r['relation']}]-->{r['dest_name']}({r['dest_id']})" for r in rel_details if not r['passed']])
     if not wrong_summary:
         wrong_summary = "None (All Relations RIGHT)"
 
-    # Overall Quality Score
     score = 100.0
     score -= furn_aabb_overlaps * 20.0
     score -= total_obb_overlap_area * 35.0
@@ -447,7 +485,7 @@ def analyze_scene(objects, raw_overlaps, rel_acc_val, rel_details):
         "center_clearance": round(min_center_dist, 3)
     }
 
-def render_scene_image(file_path, objects, metrics, out_img_path):
+def render_scene_image(file_label, objects, metrics, out_img_path):
     """Renders high-quality 2D top-down layout plot image with metric overlay."""
     fig, ax = plt.subplots(figsize=(5.5, 5.5), dpi=150)
     
@@ -486,10 +524,10 @@ def render_scene_image(file_path, objects, metrics, out_img_path):
     rel_acc = metrics["relational_acc"]
     status = metrics["status"]
     
-    fname = os.path.basename(file_path)
-    if len(fname) > 40:
-        fname = fname[:37] + "..."
-    ax.set_title(f"{fname}\nScore: {score:.1f}/100 [{status}] | Rel Acc: {rel_acc:.1f}%", fontsize=8.5, weight='bold', color='black', pad=6)
+    clean_label = file_label.replace("⭐ ", "").replace("[BASELINE MODEL] ", "").replace("[RELEASED FULL MODEL] ", "")
+    if len(clean_label) > 40:
+        clean_label = clean_label[:37] + "..."
+    ax.set_title(f"{clean_label}\nScore: {score:.1f}/100 [{status}] | Rel Acc: {rel_acc:.1f}%", fontsize=8.5, weight='bold', color='black', pad=6)
     
     plt.tight_layout()
     os.makedirs(os.path.dirname(out_img_path), exist_ok=True)
@@ -509,12 +547,14 @@ def build_excel_report(ranked_data, output_excel):
 
     header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
     sub_header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    special_row_fill = PatternFill(start_color="E6EEF8", end_color="E6EEF8", fill_type="solid")
     zebra_fill = PatternFill(start_color="F9FAFC", end_color="F9FAFC", fill_type="solid")
     
     font_title = Font(name="Segoe UI", size=16, bold=True, color="FFFFFF")
     font_header = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
     font_body = Font(name="Segoe UI", size=10)
     font_bold = Font(name="Segoe UI", size=10, bold=True)
+    font_special = Font(name="Segoe UI", size=10.5, bold=True, color="1F4E78")
     font_red = Font(name="Segoe UI", size=10, bold=True, color="9C0006")
     font_green = Font(name="Segoe UI", size=10, bold=True, color="006100")
     
@@ -532,13 +572,13 @@ def build_excel_report(ranked_data, output_excel):
     
     ws1.merge_cells("A3:P3")
     cell_sub = ws1["A3"]
-    cell_sub.value = f"  Total Runs Analyzed: {len(ranked_data)}  |  Metrics: Relational Accuracy, RIGHT/WRONG Relations, Furniture Overlaps, OBB Overlap Area, Out-of-Bounds, Free Floor %, Walkability"
+    cell_sub.value = f"  Total Runs Analyzed: {len(ranked_data)}  |  Includes 2 Special Benchmark Rows (Baseline Model & Complete Released Full Model)"
     cell_sub.font = Font(name="Segoe UI", size=10, italic=True, color="1F4E78")
     cell_sub.fill = sub_header_fill
     cell_sub.alignment = Alignment(vertical="center", horizontal="left")
     
     headers1 = [
-        "Rank", "Layout Visualization", "Log File Name", "Quality Score", "Relational Acc (%)",
+        "Rank", "Layout Visualization", "Log File / Model Name", "Quality Score", "Relational Acc (%)",
         "RIGHT Relations", "WRONG Relations", "WRONG Relation Details",
         "Overlaps (Count)", "OBB Overlap (m²)", "Out of Bounds", "Max OOB Dist (m)",
         "Free Floor %", "Walkable Components", "Center Clear (m)", "Grade Status"
@@ -554,7 +594,7 @@ def build_excel_report(ranked_data, output_excel):
         cell.border = border_thin
 
     col_widths1 = {
-        "A": 8,   "B": 24,  "C": 45,  "D": 15,  "E": 18,  "F": 16,
+        "A": 18,  "B": 24,  "C": 48,  "D": 15,  "E": 18,  "F": 16,
         "G": 16,  "H": 40,  "I": 16,  "J": 18,  "K": 15,  "L": 18,
         "M": 14,  "N": 20,  "O": 16,  "P": 20
     }
@@ -567,12 +607,14 @@ def build_excel_report(ranked_data, output_excel):
         ws1.row_dimensions[row_num].height = 115
         
         m = item["metrics"]
-        fname = os.path.basename(item["file_path"])
+        fname = item["display_name"]
         img_path = item["img_path"]
+        is_special = item.get("is_special", False)
         
-        cell_rank = ws1.cell(row=row_num, column=1, value=f"#{idx}")
+        rank_str = item.get("rank_label", f"#{idx}")
+        cell_rank = ws1.cell(row=row_num, column=1, value=rank_str)
         cell_rank.alignment = Alignment(horizontal="center", vertical="center")
-        cell_rank.font = font_bold
+        cell_rank.font = font_special if is_special else font_bold
         
         if os.path.exists(img_path):
             img = OpenPyxlImage(img_path)
@@ -582,9 +624,8 @@ def build_excel_report(ranked_data, output_excel):
             
         cell_file = ws1.cell(row=row_num, column=3, value=fname)
         cell_file.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-        cell_file.font = font_body
+        cell_file.font = font_special if is_special else font_body
         
-        # Quality Score
         score_val = m["score"]
         cell_score = ws1.cell(row=row_num, column=4, value=score_val)
         cell_score.alignment = Alignment(horizontal="center", vertical="center")
@@ -600,7 +641,6 @@ def build_excel_report(ranked_data, output_excel):
         else:
             cell_score.fill = PatternFill(start_color="F8CBAD", end_color="F8CBAD", fill_type="solid")
             
-        # Relational Accuracy (%) Column - PASS FRACTION TO EXCEL SO IT FORMATS ACCURATELY AS 93.0%, NOT 9300.0%!
         rel_acc_fraction = m["relational_acc"] / 100.0
         cell_rel = ws1.cell(row=row_num, column=5, value=rel_acc_fraction)
         cell_rel.alignment = Alignment(horizontal="center", vertical="center")
@@ -614,7 +654,6 @@ def build_excel_report(ranked_data, output_excel):
         else:
             cell_rel.fill = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
             
-        # RIGHT & WRONG Counts
         cell_right = ws1.cell(row=row_num, column=6, value=m["right_count"])
         cell_right.alignment = Alignment(horizontal="center", vertical="center")
         cell_right.font = font_green
@@ -656,8 +695,10 @@ def build_excel_report(ranked_data, output_excel):
             cell_item = ws1.cell(row=row_num, column=c)
             cell_item.border = border_thin
             if c not in [4, 5, 16]:
-                cell_item.font = font_body
-            if idx % 2 == 0 and c not in [4, 5, 16]:
+                cell_item.font = font_special if is_special else font_body
+            if is_special and c not in [4, 5, 16]:
+                cell_item.fill = special_row_fill
+            elif idx % 2 == 0 and c not in [4, 5, 16]:
                 cell_item.fill = zebra_fill
 
     # ==========================================
@@ -673,7 +714,7 @@ def build_excel_report(ranked_data, output_excel):
     cell_t2.fill = header_fill
     cell_t2.alignment = Alignment(vertical="center", horizontal="left")
     
-    headers2 = ["Rank", "Log File Name", "Source Object (s)", "Relation Type", "Target Object (o)", "Status", "Measurement Details"]
+    headers2 = ["Rank", "Log File / Model Name", "Source Object (s)", "Relation Type", "Target Object (o)", "Status", "Measurement Details"]
     ws2.row_dimensions[4].height = 24
     for c_idx, h_text in enumerate(headers2, 1):
         c = ws2.cell(row=4, column=c_idx, value=h_text)
@@ -682,17 +723,19 @@ def build_excel_report(ranked_data, output_excel):
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = border_thin
         
-    col_widths2 = {"A": 8, "B": 45, "C": 22, "D": 20, "E": 22, "F": 14, "G": 30}
+    col_widths2 = {"A": 18, "B": 48, "C": 22, "D": 20, "E": 22, "F": 14, "G": 30}
     for col_letter, width in col_widths2.items():
         ws2.column_dimensions[col_letter].width = width
 
     curr_row2 = 5
     for idx, item in enumerate(ranked_data, 1):
-        fname = os.path.basename(item["file_path"])
+        fname = item["display_name"]
         rel_details = item["metrics"]["rel_details"]
+        rank_str = item.get("rank_label", f"#{idx}")
+        is_special = item.get("is_special", False)
         
         if not rel_details:
-            ws2.cell(row=curr_row2, column=1, value=f"#{idx}")
+            ws2.cell(row=curr_row2, column=1, value=rank_str)
             ws2.cell(row=curr_row2, column=2, value=fname)
             ws2.cell(row=curr_row2, column=3, value="No explicit GT relationships evaluated")
             for c in range(1, 8):
@@ -701,7 +744,7 @@ def build_excel_report(ranked_data, output_excel):
             continue
             
         for r_item in rel_details:
-            ws2.cell(row=curr_row2, column=1, value=f"#{idx}").alignment = Alignment(horizontal="center", vertical="center")
+            ws2.cell(row=curr_row2, column=1, value=rank_str).alignment = Alignment(horizontal="center", vertical="center")
             ws2.cell(row=curr_row2, column=2, value=fname).alignment = Alignment(horizontal="left", vertical="center")
             ws2.cell(row=curr_row2, column=3, value=f"{r_item['src_name']} ({r_item['src_id']})").alignment = Alignment(horizontal="center", vertical="center")
             ws2.cell(row=curr_row2, column=4, value=r_item['relation']).alignment = Alignment(horizontal="center", vertical="center")
@@ -721,7 +764,9 @@ def build_excel_report(ranked_data, output_excel):
             for c in range(1, 8):
                 ws2.cell(row=curr_row2, column=c).border = border_thin
                 if c not in [6]:
-                    ws2.cell(row=curr_row2, column=c).font = font_body
+                    ws2.cell(row=curr_row2, column=c).font = font_special if is_special else font_body
+                if is_special and c not in [6]:
+                    ws2.cell(row=curr_row2, column=c).fill = special_row_fill
             curr_row2 += 1
 
     wb.save(output_excel)
@@ -758,22 +803,59 @@ def main():
         
         img_fname = fname.replace(".txt", "")
         img_out = os.path.join(render_dir, f"{img_fname}.png")
-        render_scene_image(fpath, objs, metrics, img_out)
+        render_scene_image(fname, objs, metrics, img_out)
         
         scenarios.append({
             "file_path": fpath,
+            "display_name": fname,
             "metrics": metrics,
-            "img_path": img_out
+            "img_path": img_out,
+            "is_special": False
         })
         
     scenarios.sort(key=lambda x: (x["metrics"]["score"], x["metrics"]["relational_acc"]), reverse=True)
     
+    # Assign ranks to debug_bbox2 scenarios
+    for idx, item in enumerate(scenarios, 1):
+        item["rank_label"] = f"#{idx}"
+
+    # Add the 2 SPECIAL BENCHMARK ROWS requested by the user:
+    # 1. Baseline Model (physcene_collision_resolved.json)
+    # 2. Complete Released Full Model (complete_released_full_model/vis/2050/physcene_collision_resolved.json)
+    special_benchmarks = [
+        ("[BASELINE MODEL] Physcene Collision Resolved", os.path.join(BASE_DIR, "baseline/physcene_collision_resolved.json"), "baseline_physcene_collision_resolved"),
+        ("[RELEASED FULL MODEL] Complete Released Model Resolved", os.path.join(BASE_DIR, "current_works/to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json"), "complete_released_full_model_resolved")
+    ]
+    
+    for b_label, jpath, img_stem in special_benchmarks:
+        if os.path.exists(jpath):
+            objs_sp = parse_json_scene_objects(jpath, target_scene)
+            if objs_sp:
+                rel_sp = check_file_relations(objs_sp, target_scene)
+                right_sp = sum(1 for r in rel_sp if r['passed'])
+                tot_sp = len(rel_sp)
+                acc_sp = (right_sp / tot_sp * 100.0) if tot_sp > 0 else 100.0
+                metrics_sp = analyze_scene(objs_sp, [], acc_sp, rel_sp)
+                
+                img_out_sp = os.path.join(render_dir, f"{img_stem}.png")
+                render_scene_image(b_label, objs_sp, metrics_sp, img_out_sp)
+                
+                scenarios.append({
+                    "file_path": jpath,
+                    "display_name": b_label,
+                    "metrics": metrics_sp,
+                    "img_path": img_out_sp,
+                    "is_special": True,
+                    "rank_label": "[BENCHMARK]"
+                })
+    
     print("\n" + "="*85)
-    print(" TOP BEST LAYOUT CONFIGURATIONS ")
+    print(" ALL LAYOUT CONFIGURATIONS (INCLUDING SPECIAL BENCHMARK ROWS) ")
     print("="*85)
-    for rank, item in enumerate(scenarios[:5], 1):
+    for item in scenarios:
         m = item["metrics"]
-        print(f"Rank #{rank}: {os.path.basename(item['file_path'])}")
+        tag = item.get("rank_label", "")
+        print(f"{tag:<12} {item['display_name']}")
         print(f"   Score: {m['score']:.1f}/100 [{m['status']}] | Rel Acc: {m['relational_acc']:.1f}% | RIGHT: {m['right_count']} | WRONG: {m['wrong_count']} | Overlaps: {m['furn_aabb_overlaps']} | Out-of-Bounds: {m['oob_count']}")
         if m['wrong_count'] > 0:
             print(f"   ❌ WRONG Relations: {m['wrong_summary']}")
