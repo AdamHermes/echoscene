@@ -90,3 +90,7 @@ These losses are tightly integrated into the reverse diffusion sampling loop:
       x_t[mask] = noised_gt[mask]
   ```
 This enables the layout model to guide the placement iteratively in real physical space without explicit programmatic bounding boxes, relying entirely on the differentiability of the physical loss implementations.
+
+## 6. Loss Visualization
+
+For full details on visualizing Outer, Collision, Multi-Component Walkable, and Relational Guidance Losses, see [Loss Visualization System](loss_visualization.md).
