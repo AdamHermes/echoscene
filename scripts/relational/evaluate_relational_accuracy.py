@@ -75,7 +75,17 @@ def evaluate_relational_accuracy(json_path, limit=None, front_root=None):
 
         boxes_pred_den = torch.cat([sizes, trans], dim=-1)
 
-        accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_deg, None, ds_all.vocab, accuracy)
+        # Filter valid triples bounds (ensure s and o are within boxes_pred_den range)
+        valid_triples = []
+        for t in dec_triples:
+            s_idx, p_idx, o_idx = t[0].item(), t[1].item(), t[2].item()
+            if s_idx < len(boxes_pred_den) and o_idx < len(boxes_pred_den):
+                valid_triples.append([s_idx, p_idx, o_idx])
+
+        if not valid_triples:
+            continue
+        valid_triples_tensor = torch.tensor(valid_triples, dtype=torch.long)
+        accuracy = validate_constrains(valid_triples_tensor, boxes_pred_den, angles_deg, None, ds_all.vocab, accuracy)
 
     def _safe_m(k):
         return float(np.mean(accuracy[k])) if len(accuracy[k]) > 0 else float('nan')
