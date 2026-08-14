@@ -437,8 +437,8 @@ class GaussianDiffusion:
             active_pair_iou = torch.relu(pair_iou - iou_threshold)
             active_pair_penetration = torch.relu(pair_penetration - penetration_threshold)
             total_pairs += int(pair_iou.numel())
-            total_pairs_above_threshold += int((pair_iou > iou_threshold).sum().item())
-            total_pairs_with_penetration += int((pair_penetration > penetration_threshold).sum().item())
+            total_pairs_above_threshold += (pair_iou > iou_threshold).sum()
+            total_pairs_with_penetration += (pair_penetration > penetration_threshold).sum()
             per_scene_mean_ious.append(pair_iou.mean())
             per_scene_max_ious.append(pair_iou.max())
             per_scene_penetration.append(pair_penetration.mean())
@@ -460,10 +460,10 @@ class GaussianDiffusion:
                 'num_pairs': 0,
                 'pairs_above_threshold': 0,
                 'pairs_with_penetration': 0,
-                'avg_scene_iou': 0.0,
-                'max_pair_iou': 0.0,
-                'avg_scene_penetration': 0.0,
-                'max_pair_penetration': 0.0,
+                'avg_scene_iou': torch.tensor(0.0, device=denorm_boxes.device),
+                'max_pair_iou': torch.tensor(0.0, device=denorm_boxes.device),
+                'avg_scene_penetration': torch.tensor(0.0, device=denorm_boxes.device),
+                'max_pair_penetration': torch.tensor(0.0, device=denorm_boxes.device),
                 'iou_threshold': iou_threshold,
                 'penetration_threshold': penetration_threshold,
                 'metric': metric,
@@ -477,10 +477,10 @@ class GaussianDiffusion:
                 'num_pairs': total_pairs,
                 'pairs_above_threshold': total_pairs_above_threshold,
                 'pairs_with_penetration': total_pairs_with_penetration,
-                'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
-                'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
-                'avg_scene_penetration': float(torch.stack(per_scene_penetration).mean().detach().item()),
-                'max_pair_penetration': float(torch.stack(per_scene_max_penetration).max().detach().item()),
+                'avg_scene_iou': torch.stack(per_scene_mean_ious).mean().detach(),
+                'max_pair_iou': torch.stack(per_scene_max_ious).max().detach(),
+                'avg_scene_penetration': torch.stack(per_scene_penetration).mean().detach(),
+                'max_pair_penetration': torch.stack(per_scene_max_penetration).max().detach(),
                 'iou_threshold': iou_threshold,
                 'penetration_threshold': penetration_threshold,
                 'iou_weight': iou_weight,
@@ -495,10 +495,10 @@ class GaussianDiffusion:
             'num_pairs': total_pairs,
             'pairs_above_threshold': total_pairs_above_threshold,
             'pairs_with_penetration': total_pairs_with_penetration,
-            'avg_scene_iou': float(torch.stack(per_scene_mean_ious).mean().detach().item()),
-            'max_pair_iou': float(torch.stack(per_scene_max_ious).max().detach().item()),
-            'avg_scene_penetration': float(torch.stack(per_scene_penetration).mean().detach().item()),
-            'max_pair_penetration': float(torch.stack(per_scene_max_penetration).max().detach().item()),
+            'avg_scene_iou': torch.stack(per_scene_mean_ious).mean().detach(),
+            'max_pair_iou': torch.stack(per_scene_max_ious).max().detach(),
+            'avg_scene_penetration': torch.stack(per_scene_penetration).mean().detach(),
+            'max_pair_penetration': torch.stack(per_scene_max_penetration).max().detach(),
             'iou_threshold': iou_threshold,
             'penetration_threshold': penetration_threshold,
             'iou_weight': iou_weight,
@@ -509,7 +509,7 @@ class GaussianDiffusion:
 
     def _apply_inference_guidance(self, pred_xstart, model_mean, model_variance, timestep, scene_ids, floor_plan=None, room_outer_box=None, objectness=None):
         step_stats = {
-            'timestep': int(timestep),
+            'timestep': timestep,
             'applied': False,
         }
         if not self._guidance_active_for_timestep(timestep):
@@ -551,11 +551,11 @@ class GaussianDiffusion:
         
         components_cfg = cfg_get(walkable_cfg, 'components', None) if walkable_cfg else None
         
-        walkable_loss = 0.0
-        c_center_loss = 0.0
-        c_path_loss = 0.0
-        c1_loss = 0.0
-        c2_loss = 0.0
+        walkable_loss = torch.tensor(0.0, device=denorm_boxes.device)
+        c_center_loss = torch.tensor(0.0, device=denorm_boxes.device)
+        c_path_loss = torch.tensor(0.0, device=denorm_boxes.device)
+        c1_loss = torch.tensor(0.0, device=denorm_boxes.device)
+        c2_loss = torch.tensor(0.0, device=denorm_boxes.device)
 
         if components_cfg is not None:
             # --- MODULAR MULTI-COMPONENT WALKABLE LOSS SYSTEM ---
@@ -565,7 +565,7 @@ class GaussianDiffusion:
                 cp_w = float(cfg_get(cp_cfg, 'weight', 1.0))
                 sigma = float(cfg_get(cp_cfg, 'sigma', 0.5))
                 cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness, sigma=sigma)
-                c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
+                c_center_loss = cp_val.detach() if isinstance(cp_val, torch.Tensor) else torch.tensor(float(cp_val), device=denorm_boxes.device)
                 walkable_loss = walkable_loss + cp_val * cp_w
 
             # 2. Pathfinding Sub-Component
@@ -578,7 +578,7 @@ class GaussianDiffusion:
                     denorm_boxes, floor_plan, objectness=objectness,
                     robot_width_real=rw, robot_hight_real=rh
                 )
-                c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
+                c_path_loss = pf_val.detach() if isinstance(pf_val, torch.Tensor) else torch.tensor(float(pf_val), device=denorm_boxes.device)
                 walkable_loss = walkable_loss + pf_val * pf_w
 
             # 3. Edge-Gaussian Sub-Component
@@ -596,8 +596,8 @@ class GaussianDiffusion:
                     sigma_scale=sigma_scale, heatmap_weight=hm_w, repulsion_weight=rep_w,
                     return_components=True, verbose=False
                 )
-                c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
-                c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+                c1_loss = comp_dict['c1_floor_heatmap'].detach()
+                c2_loss = comp_dict['c2_pairwise_repulsion'].detach()
                 walkable_loss = walkable_loss + eg_val * eg_w
         else:
             # --- LEGACY SINGLE TYPE FALLBACK ---
@@ -612,18 +612,18 @@ class GaussianDiffusion:
                     sigma_scale=sigma_scale, heatmap_weight=heatmap_weight, repulsion_weight=repulsion_weight,
                     return_components=True, verbose=False
                 )
-                c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
-                c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+                c1_loss = comp_dict['c1_floor_heatmap'].detach()
+                c2_loss = comp_dict['c2_pairwise_repulsion'].detach()
             elif walkable_type == 'center_penalty':
                 cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness)
-                c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
+                c_center_loss = cp_val.detach() if isinstance(cp_val, torch.Tensor) else torch.tensor(float(cp_val), device=denorm_boxes.device)
                 walkable_loss = cp_val
             else:
                 pf_val = compute_pathfinding_walkable_loss(
                     denorm_boxes, floor_plan, objectness=objectness,
                     robot_width_real=robot_width_real, robot_hight_real=robot_hight_real
                 )
-                c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
+                c_path_loss = pf_val.detach() if isinstance(pf_val, torch.Tensor) else torch.tensor(float(pf_val), device=denorm_boxes.device)
                 walkable_loss = pf_val
         
         # [MODIFIED] Handle the case where collision_loss is None
@@ -661,17 +661,17 @@ class GaussianDiffusion:
         step_stats.update({
             'applied': True,
             'guidance_strength': strength,
-            'collision_loss': float(collision_loss.detach().item()) if collision_loss is not None else 0.0,
-            'room_outer_loss': float(room_outer_loss.detach().item()) if isinstance(room_outer_loss, torch.Tensor) else float(room_outer_loss),
-            'walkable_loss': float(walkable_loss.detach().item()) if isinstance(walkable_loss, torch.Tensor) else float(walkable_loss),
+            'collision_loss': collision_loss.detach() if collision_loss is not None else torch.tensor(0.0, device=denorm_boxes.device),
+            'room_outer_loss': room_outer_loss.detach() if isinstance(room_outer_loss, torch.Tensor) else torch.tensor(float(room_outer_loss), device=denorm_boxes.device),
+            'walkable_loss': walkable_loss.detach() if isinstance(walkable_loss, torch.Tensor) else torch.tensor(float(walkable_loss), device=denorm_boxes.device),
             'walkable_center_penalty': c_center_loss,
             'walkable_pathfinding': c_path_loss,
             'walkable_c1_heatmap': c1_loss,
             'walkable_c2_repulsion': c2_loss,
-            'variance_scale_mean': float(model_variance.mean().detach().item()),
-            'variance_scale_max': float(model_variance.max().detach().item()),
-            'grad_norm_mean': float(grad_norm.mean().detach().item()),
-            'grad_norm_max': float(grad_norm.max().detach().item()),
+            'variance_scale_mean': model_variance.mean().detach(),
+            'variance_scale_max': model_variance.max().detach(),
+            'grad_norm_mean': grad_norm.mean().detach(),
+            'grad_norm_max': grad_norm.max().detach(),
         })
         return guided_mean.detach(), step_stats
 
@@ -689,12 +689,15 @@ class GaussianDiffusion:
         summary['start_ratio'] = float(cfg_get(self.inference_guidance, 'start_ratio', 0.0)) if self._guidance_enabled() else 0.0
 
         applied_stats = [stat for stat in step_stats if stat.get('applied')]
+        def _to_float(v):
+            if isinstance(v, torch.Tensor): return float(v.detach().cpu().item())
+            return float(v)
         if applied_stats:
-            summary['avg_guided_scene_iou'] = float(np.mean([stat['avg_scene_iou'] for stat in applied_stats]))
-            summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
-            summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
-            summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
-            summary['avg_guided_variance_scale'] = float(np.mean([stat.get('variance_scale_mean', 0.0) for stat in applied_stats]))
+            summary['avg_guided_scene_iou'] = float(np.mean([_to_float(stat['avg_scene_iou']) for stat in applied_stats]))
+            summary['avg_guided_scene_penetration'] = float(np.mean([_to_float(stat.get('avg_scene_penetration', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_collision_loss'] = float(np.mean([_to_float(stat['collision_loss']) for stat in applied_stats]))
+            summary['avg_guided_grad_norm'] = float(np.mean([_to_float(stat['grad_norm_mean']) for stat in applied_stats]))
+            summary['avg_guided_variance_scale'] = float(np.mean([_to_float(stat.get('variance_scale_mean', 0.0)) for stat in applied_stats]))
         else:
             summary['avg_guided_scene_iou'] = 0.0
             summary['avg_guided_scene_penetration'] = 0.0
@@ -704,13 +707,13 @@ class GaussianDiffusion:
 
         try:
             _, final_collision_stats = self._compute_collision_guidance_loss(final_sample.detach(), scene_ids, ignore_enabled=True, objectness=objectness)
-            summary['final_avg_scene_iou'] = float(final_collision_stats.get('avg_scene_iou', 0.0))
-            summary['final_max_pair_iou'] = float(final_collision_stats.get('max_pair_iou', 0.0))
-            summary['final_avg_scene_penetration'] = float(final_collision_stats.get('avg_scene_penetration', 0.0))
-            summary['final_max_pair_penetration'] = float(final_collision_stats.get('max_pair_penetration', 0.0))
-            summary['final_pairs_above_threshold'] = int(final_collision_stats.get('pairs_above_threshold', 0))
-            summary['final_pairs_with_penetration'] = int(final_collision_stats.get('pairs_with_penetration', 0))
-            summary['final_num_pairs'] = int(final_collision_stats.get('num_pairs', 0))
+            summary['final_avg_scene_iou'] = _to_float(final_collision_stats.get('avg_scene_iou', 0.0))
+            summary['final_max_pair_iou'] = _to_float(final_collision_stats.get('max_pair_iou', 0.0))
+            summary['final_avg_scene_penetration'] = _to_float(final_collision_stats.get('avg_scene_penetration', 0.0))
+            summary['final_max_pair_penetration'] = _to_float(final_collision_stats.get('max_pair_penetration', 0.0))
+            summary['final_pairs_above_threshold'] = int(_to_float(final_collision_stats.get('pairs_above_threshold', 0)))
+            summary['final_pairs_with_penetration'] = int(_to_float(final_collision_stats.get('pairs_with_penetration', 0)))
+            summary['final_num_pairs'] = int(_to_float(final_collision_stats.get('num_pairs', 0)))
         except ValueError as exc:
             summary['final_avg_scene_iou'] = 0.0
             summary['final_max_pair_iou'] = 0.0
@@ -718,6 +721,8 @@ class GaussianDiffusion:
             summary['final_max_pair_penetration'] = 0.0
             summary['final_pairs_above_threshold'] = 0
             summary['final_pairs_with_penetration'] = 0
+            summary['final_num_pairs'] = 0
+            summary['final_metrics_error'] = str(exc)
             summary['final_num_pairs'] = 0
             summary['final_metrics_error'] = str(exc)
 
