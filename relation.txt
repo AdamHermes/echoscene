@@ -1,0 +1,85 @@
+------------------------------------------------------------
+  table                   right                   nightstand  (rel_idx=2)
+  double_bed              behind                  wardrobe  (rel_idx=4)
+  ceiling_lamp            left                    armchair  (rel_idx=1)
+  nightstand              shorter than            armchair  (rel_idx=11)
+  wardrobe                front                   nightstand  (rel_idx=3)
+  ceiling_lamp            above                   double_bed  (rel_idx=6)
+  armchair                standing on             floor  (rel_idx=7)
+  double_bed              standing on             floor  (rel_idx=7)
+  ceiling_lamp            above                   armchair  (rel_idx=6)
+  ceiling_lamp            same style as           table  (rel_idx=13)
+  nightstand              shorter than            double_bed  (rel_idx=11)
+  double_bed              bigger than             wardrobe  (rel_idx=8)
+  ceiling_lamp            same style as           nightstand  (rel_idx=13)
+  armchair                bigger than             nightstand  (rel_idx=8)
+  table                   same style as           nightstand  (rel_idx=13)
+  double_bed              close by                nightstand  (rel_idx=5)
+  double_bed              shorter than            wardrobe  (rel_idx=11)
+  nightstand              same super category as  table  (rel_idx=14)
+  table                   same style as           armchair  (rel_idx=13)
+  wardrobe                front                   table  (rel_idx=3)
+  table                   standing on             floor  (rel_idx=7)
+  table                   right                   double_bed  (rel_idx=2)
+  table                   smaller than            double_bed  (rel_idx=9)
+  double_bed              taller than             armchair  (rel_idx=10)
+  armchair                bigger than             ceiling_lamp  (rel_idx=8)
+  table                   right                   wardrobe  (rel_idx=2)
+  ceiling_lamp            front                   nightstand  (rel_idx=3)
+  ceiling_lamp            above                   table  (rel_idx=6)
+  wardrobe                same super category as  nightstand  (rel_idx=14)
+  table                   right                   ceiling_lamp  (rel_idx=2)
+  table                   smaller than            armchair  (rel_idx=9)
+  table                   bigger than             ceiling_lamp  (rel_idx=8)
+  ceiling_lamp            front                   table  (rel_idx=3)
+  wardrobe                bigger than             ceiling_lamp  (rel_idx=8)
+  table                   front                   nightstand  (rel_idx=3)
+  table                   shorter than            wardrobe  (rel_idx=11)
+  nightstand              left                    ceiling_lamp  (rel_idx=1)
+  table                   shorter than            nightstand  (rel_idx=11)
+  armchair                shorter than            wardrobe  (rel_idx=11)
+  nightstand              left                    armchair  (rel_idx=1)
+  double_bed              bigger than             nightstand  (rel_idx=8)
+  wardrobe                front                   ceiling_lamp  (rel_idx=3)
+  ceiling_lamp            smaller than            double_bed  (rel_idx=9)
+  wardrobe                front                   armchair  (rel_idx=3)
+  nightstand              bigger than             ceiling_lamp  (rel_idx=8)
+  nightstand              same style as           armchair  (rel_idx=13)
+  ceiling_lamp            above                   floor  (rel_idx=6)
+  ceiling_lamp            same style as           armchair  (rel_idx=13)
+  wardrobe                taller than             nightstand  (rel_idx=10)
+  armchair                right                   double_bed  (rel_idx=2)
+  wardrobe                bigger than             nightstand  (rel_idx=8)
+  armchair                right                   wardrobe  (rel_idx=2)
+  table                   smaller than            wardrobe  (rel_idx=9)
+  wardrobe                standing on             floor  (rel_idx=7)
+  ceiling_lamp            front                   armchair  (rel_idx=3)
+  nightstand              standing on             floor  (rel_idx=7)
+  armchair                smaller than            wardrobe  (rel_idx=9)
+  armchair                taller than             table  (rel_idx=10)
+  table                   shorter than            double_bed  (rel_idx=11)
+  ceiling_lamp            above                   nightstand  (rel_idx=6)
+  table                   same super category as  wardrobe  (rel_idx=14)
+  wardrobe                same material as        nightstand  (rel_idx=15)
+  armchair                smaller than            double_bed  (rel_idx=9)
+  ceiling_lamp            above                   wardrobe  (rel_idx=6)
+============================================================
+
+
+  Thong ke relation:
+----------------------------------------
+  front                         8
+  bigger than                   8
+  shorter than                  7
+  right                         6
+  above                         6
+  same style as                 6
+  smaller than                  6
+  standing on                   5
+  left                          3
+  same super category as        3
+  taller than                   3
+  behind                        1
+  close by                      1
+  same material as              1
+----------------------------------------
