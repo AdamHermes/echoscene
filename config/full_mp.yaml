@@ -51,7 +51,7 @@ layout_branch:
       train_stats_file: null
     inference_guidance:
       enabled: true
-      interval: 5
+      interval: 1
       start_ratio: 0.9
       grad_clip: 10.1
       clip_to_bounds: true
@@ -86,7 +86,7 @@ layout_branch:
               robot_hight_real: 1.5
               
             edge_gaussian:
-              enabled: false
+              enabled: true
               weight: 1.0
               robot_width_real: 0.35
               robot_hight_real: 1.5
