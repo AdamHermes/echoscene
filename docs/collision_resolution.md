@@ -59,3 +59,18 @@ Run the post-processing script:
 python scripts/collision/post_process.py
 ```
 **Output**: A new folder named `to_be_merged/complete_released_full_model_post_processed` containing the updated dataset where all geometries have been properly scaled, rotated, and shifted according to the newly resolved bounding boxes. The background floor/walls are omitted to perfectly mirror the standard output format.
+
+## Step 5: Collision Metrics Evaluation (ColObj & ColScene)
+
+To measure the reduction in collisions after running resolution, evaluate **ColObj** (Object Collision Rate) and **ColScene** (Scene Collision Rate):
+
+```bash
+# 1. Evaluate raw input (before resolution)
+python scripts/eval_collision.py --json to_be_merged/complete_released_full_model/vis/2050/physcene_collision_input.json --max_rooms 190
+
+# 2. Evaluate resolved output (after resolution)
+python scripts/eval_collision.py --json to_be_merged/complete_released_full_model/vis/2050/physcene_collision_resolved.json --max_rooms 190
+```
+
+Alternatively, open [`PhyScene.ipynb`](../../PhyScene.ipynb) and run Cell 8 to view interactive category breakdowns (`bedroom`, `livingroom`, `diningroom`, `masterbedroom`, `secondbedroom`).
+
