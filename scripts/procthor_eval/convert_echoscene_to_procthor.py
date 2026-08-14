@@ -61,7 +61,8 @@ def parse_final_json(file_path, full=False):
     with open(file_path, 'r') as f:
         data = json.load(f)
         
-    class_map = {
+    vocab_14 = ['armchair', 'bookshelf', 'cabinet', 'chair', 'desk', 'bed', 'lamp', 'nightstand', 'sunk', 'sofa', 'table', 'tv_stand', 'floor', '_scene_']
+    class_map_13 = {
         1: 'bed', 2: 'bookshelf', 3: 'cabinet', 4: 'chair', 5: 'desk', 
         6: 'floor', 7: 'lamp', 8: 'nightstand', 9: 'shelf', 10: 'sofa', 
         11: 'table', 12: 'tv_stand', 13: 'wardrobe'
@@ -87,10 +88,14 @@ def parse_final_json(file_path, full=False):
             except ValueError:
                 continue
                 
-            if class_idx == 14: # padding
+            if len(labels[j]) >= 14 and class_idx < len(vocab_14):
+                name = vocab_14[class_idx]
+            else:
+                name = class_map_13.get(class_idx, f"unknown_{class_idx}")
+
+            if name in ['_scene_', 'padding', 'unknown_14']:
                 continue
             
-            name = class_map.get(class_idx, f"unknown_{class_idx}")
             l, h, w = sizes[j]
             x, y, z = translations[j]
             angle = angles[j][0]
