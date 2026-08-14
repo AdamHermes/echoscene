@@ -112,6 +112,16 @@ def evaluate_furniture_collisions(json_path, max_rooms=None, conf_thresh=0.0):
         print(f" {cat:<18} | {co:<8.4f} | {cs:<8.4f} | {col_str}")
     print("=" * 75)
 
+    return {
+        "col_obj": co_rate,
+        "col_scene": cs_rate,
+        "tot_obj": tot_obj,
+        "col_obj_cnt": col_obj,
+        "num_scenes": num_scenes,
+        "col_scene_cnt": col_scene
+    }
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate ColObj and ColScene for 3D indoor scene predictions.")
     parser.add_argument("--json", type=str, required=True, help="Path to prediction JSON file (e.g. physcene_collision_input.json)")
