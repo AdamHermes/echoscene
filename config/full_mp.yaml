@@ -52,7 +52,7 @@ layout_branch:
     inference_guidance:
       enabled: true
       interval: 1
-      start_ratio: 0.95
+      start_ratio: 0.9
       grad_clip: 10.1
       clip_to_bounds: true
       constraints:
@@ -64,7 +64,7 @@ layout_branch:
           penetration_threshold: 0.0
           iou_weight: 0.5
           penetration_weight: 2.0
-          metric: aabb
+          metric: obb
           ignore_labels: ["scene", "floor"]
         room_outer:
           weight: 10.0
