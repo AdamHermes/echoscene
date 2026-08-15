@@ -171,26 +171,41 @@ class CheckpointFunction(torch.autograd.Function):
         return (None, None) + input_grads
 
 
+_TIMESTEP_EMBED_CACHE = {}
+
 def timestep_embedding(timesteps, dim, max_period=10000, repeat_only=False):
     """
-    Create sinusoidal timestep embeddings.
-    :param timesteps: a 1-D Tensor of N indices, one per batch element.
-                      These may be fractional.
-    :param dim: the dimension of the output.
-    :param max_period: controls the minimum frequency of the embeddings.
-    :return: an [N x dim] Tensor of positional embeddings.
+    Create sinusoidal timestep embeddings with GPU table cache.
     """
-    if not repeat_only:
+    if repeat_only:
+        return repeat(timesteps, 'b -> b d', d=dim)
+
+    dev = timesteps.device
+    key = (dim, max_period, dev)
+    if key not in _TIMESTEP_EMBED_CACHE:
         half = dim // 2
         freqs = torch.exp(
-            -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32, device=timesteps.device) / half
+            -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32, device=dev) / half
         )
-        args = timesteps[:, None].float() * freqs[None]
-        embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
+        all_t = torch.arange(2001, dtype=torch.float32, device=dev)
+        args = all_t[:, None] * freqs[None]
+        table = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
         if dim % 2:
-            embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
-    else:
-        embedding = repeat(timesteps, 'b -> b d', d=dim)
+            table = torch.cat([table, torch.zeros_like(table[:, :1])], dim=-1)
+        _TIMESTEP_EMBED_CACHE[key] = table
+
+    table = _TIMESTEP_EMBED_CACHE[key]
+    if timesteps.dtype == torch.int64 and (timesteps < 2000).all() and (timesteps >= 0).all():
+        return table[timesteps]
+
+    half = dim // 2
+    freqs = torch.exp(
+        -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32, device=dev) / half
+    )
+    args = timesteps[:, None].float() * freqs[None]
+    embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
+    if dim % 2:
+        embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
     return embedding
 
 

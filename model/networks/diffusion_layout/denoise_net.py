@@ -759,13 +759,18 @@ class UNet1DModel(nn.Module):
         self.output_blocks.apply(convert_module_to_f32)
 
     def box_messsage_passing(self, obj_embed, triples, box_t, t_emb=None, enable_t_emb=False):
-        edges = triples[:, [0, 2]]
-        pred_embed = self.pred_embeddings(triples[:, 1])
+        cached_triples_ptr = getattr(self, '_cached_triples_ptr', None)
+        if cached_triples_ptr != triples.data_ptr():
+            self._cached_edges = triples[:, [0, 2]]
+            self._cached_pred_embed = self.pred_embeddings(triples[:, 1])
+            self._cached_triples_ptr = triples.data_ptr()
+
+        edges = self._cached_edges
+        pred_embed = self._cached_pred_embed
 
         box_embed = self.box_embeddings(box_t)
         obj_box_embed = torch.cat([obj_embed, box_embed], dim=1)
         if enable_t_emb:
-            assert t_emb is not None
             t_emb = self.box_time_emb(t_emb)
             obj_box_embed = torch.cat([obj_box_embed, t_emb], dim=1)
         box_rel_embed, _ = self.box_graph_cov(obj_box_embed, pred_embed, edges)

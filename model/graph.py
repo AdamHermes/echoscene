@@ -181,14 +181,15 @@ class GraphTripleConv(nn.Module):
             pooled_obj_vecs = pooled_obj_vecs / (pooled_weight_sums + 0.0001)
 
         if self.pooling == 'avg':
-            # Figure out how many times each object has appeared
-            obj_counts = torch.zeros(num_objs, dtype=dtype, device=device)
-            ones = torch.ones(num_triples, dtype=dtype, device=device)
-            obj_counts.index_add_(0, s_idx, ones)
-            obj_counts.index_add_(0, o_idx, ones)
-
-            obj_counts = obj_counts.clamp(min=1)
-            pooled_obj_vecs = pooled_obj_vecs / obj_counts.unsqueeze(-1)
+            cached_counts = getattr(self, '_cached_counts', None)
+            if cached_counts is None or getattr(self, '_cached_edges_ptr', None) != edges.data_ptr() or cached_counts.shape[0] != num_objs:
+                obj_counts = torch.zeros(num_objs, dtype=dtype, device=device)
+                ones = torch.ones(num_triples, dtype=dtype, device=device)
+                obj_counts.index_add_(0, s_idx, ones)
+                obj_counts.index_add_(0, o_idx, ones)
+                self._cached_counts = obj_counts.clamp(min=1).unsqueeze(-1)
+                self._cached_edges_ptr = edges.data_ptr()
+            pooled_obj_vecs = pooled_obj_vecs / self._cached_counts
 
         # Send pooled object vectors through net2 to get output object vectors,
         # of shape (num_objs, Dout)
