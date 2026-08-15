@@ -249,13 +249,29 @@ class GaussianDiffusion:
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
 
-    def p_mean_variance(self, denoise_fn, data, t, obj_embed, triples, condition, clip_denoised: bool, return_pred_xstart: bool):
-
+    def p_mean_variance(self, denoise_fn, data, t, obj_embed, triples, condition, clip_denoised: bool, return_pred_xstart: bool, t_int: int = None):
         model_output = denoise_fn(data, obj_embed, triples, t, condition)
+        device = data.device
 
+        if t_int is not None and self.model_var_type == 'fixedsmall' and self.model_mean_type == 'eps':
+            model_variance = self._get_tensor('posterior_variance', device)[t_int].view(1, 1)
+            model_log_variance = self._get_tensor('posterior_log_variance_clipped', device)[t_int].view(1, 1)
+            recip_alpha = self._get_tensor('sqrt_recip_alphas_cumprod', device)[t_int].view(1, 1)
+            recipm1_alpha = self._get_tensor('sqrt_recipm1_alphas_cumprod', device)[t_int].view(1, 1)
+            coef1 = self._get_tensor('posterior_mean_coef1', device)[t_int].view(1, 1)
+            coef2 = self._get_tensor('posterior_mean_coef2', device)[t_int].view(1, 1)
+
+            x_recon = recip_alpha * data - recipm1_alpha * model_output
+            if clip_denoised:
+                x_recon = torch.clamp(x_recon, -1.0, 1.0)
+            model_mean = coef1 * x_recon + coef2 * data
+
+            if return_pred_xstart:
+                return model_mean, model_variance, model_log_variance, x_recon
+            else:
+                return model_mean, model_variance, model_log_variance
 
         if self.model_var_type in ['fixedsmall', 'fixedlarge']:
-            # below: only log_variance is used in the KL computations
             if self.model_var_type == 'fixedlarge':
                 if not hasattr(self, '_fixedlarge_logvar'):
                     self._fixedlarge_logvar = torch.log(torch.cat([self.posterior_variance[1:2], self.betas[1:]]))
@@ -290,10 +306,6 @@ class GaussianDiffusion:
         else:
             raise NotImplementedError(self.loss_type)
 
-
-        assert model_mean.shape == x_recon.shape == data.shape
-        assert model_variance.shape == model_log_variance.shape
-        assert model_variance.shape[0] == data.shape[0]
         if return_pred_xstart:
             return model_mean, model_variance, model_log_variance, x_recon
         else:
@@ -461,9 +473,9 @@ class GaussianDiffusion:
             per_scene_max_penetration.append(pair_penetration_depth.max())
 
             scene_loss_terms = []
-            if iou_weight > 0.0 and torch.any(active_pair_iou > 0):
+            if iou_weight > 0.0:
                 scene_loss_terms.append(iou_weight * active_pair_iou.mean())
-            if penetration_weight > 0.0 and torch.any(active_pair_penetration > 0):
+            if penetration_weight > 0.0:
                 scene_loss_terms.append(penetration_weight * active_pair_penetration.mean())
             if len(scene_loss_terms) > 0:
                 scene_losses.append(torch.stack(scene_loss_terms).sum())
@@ -784,6 +796,7 @@ class GaussianDiffusion:
                     condition=condition,
                     clip_denoised=clip_denoised,
                     return_pred_xstart=True,
+                    t_int=t_int,
                 )
                 model_mean, guidance_step_stats = self._apply_inference_guidance(
                     pred_xstart=pred_xstart,
@@ -807,6 +820,7 @@ class GaussianDiffusion:
                 condition=condition,
                 clip_denoised=clip_denoised,
                 return_pred_xstart=True,
+                t_int=t_int,
             )
         
         if t_int > 0:
@@ -815,7 +829,6 @@ class GaussianDiffusion:
         else:
             sample = model_mean
 
-        assert sample.shape == pred_xstart.shape
         if return_pred_xstart:
             return sample, pred_xstart, guidance_step_stats
         return sample, guidance_step_stats
@@ -1258,22 +1271,13 @@ class DiffusionPoint(nn.Module):
 
 
     def _denoise(self, data, obj_embed, triples, t, condition_cross):
-        B, D = data.shape
-        assert data.dtype == torch.float
-        assert t.shape == torch.Size([B]) and t.dtype == torch.int64
-        # data = data.unsqueeze(1)
         if self.model.conditioning_key == 'concat':
             out = self.model(data, obj_embed, triples, t)
         elif self.model.conditioning_key == 'crossattn':
             out = self.model(data, obj_embed, triples, t, context=condition_cross)
         else:
             raise NotImplementedError
-        # elif self.model.conditioning_key == 'hybrid':
-        #     out = self.model(data, condition, t, context=condition_cross)
-        out = out.squeeze(-1)
-
-        assert out.shape == torch.Size([B, D])
-        return out
+        return out.squeeze(-1)
 
     def get_loss_iter(self, obj_embed, preds, data, scene_ids=None, condition_cross=None):
         B, _ = data.shape
