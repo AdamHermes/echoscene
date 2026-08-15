@@ -75,7 +75,7 @@ layout_branch:
           # Modular sub-components configured to match real_current_best behavior:
           components:
             center_penalty:
-              enabled: false
+              enabled: true
               weight: 1.0
               sigma: 0.5
               
