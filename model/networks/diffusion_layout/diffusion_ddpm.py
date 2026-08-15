@@ -873,7 +873,45 @@ class GaussianDiffusion:
             freeze_mask = ~self.objectness.bool()
             has_gt_freeze = bool(freeze_mask.any())  # only one sync, at setup time
 
-        # Cache guidance flag once — avoids 1000x cfg_get dict lookups
+        # Pre-fetch all schedule tensors directly on target device
+        sqrt_recip_alphas_cumprod = self._get_tensor('sqrt_recip_alphas_cumprod', device)
+        sqrt_recipm1_alphas_cumprod = self._get_tensor('sqrt_recipm1_alphas_cumprod', device)
+        posterior_mean_coef1 = self._get_tensor('posterior_mean_coef1', device)
+        posterior_mean_coef2 = self._get_tensor('posterior_mean_coef2', device)
+        posterior_logvar = self._get_tensor('posterior_log_variance_clipped', device)
+        sqrt_alphas_cumprod = self._get_tensor('sqrt_alphas_cumprod', device)
+        sqrt_one_minus_alphas_cumprod = self._get_tensor('sqrt_one_minus_alphas_cumprod', device)
+
+        # CUDA Graph capture for fast unguided DDPM kernel execution
+        use_cuda_graph = (
+            torch.cuda.is_available() and 
+            ((isinstance(device, torch.device) and device.type == 'cuda') or (isinstance(device, str) and 'cuda' in device))
+        )
+        denoise_graph = None
+        static_x = None
+        static_t = None
+        static_out = None
+
+        if use_cuda_graph and hasattr(torch.cuda, 'CUDAGraph'):
+            try:
+                static_x = torch.empty(shape, dtype=torch.float, device=device)
+                static_t = torch.empty(shape[0], dtype=torch.int64, device=device)
+                
+                # Warmup on side stream
+                s = torch.cuda.Stream()
+                s.wait_stream(torch.cuda.current_stream())
+                with torch.cuda.stream(s):
+                    for _ in range(3):
+                        static_out = denoise_fn(static_x, obj_embed, triples, static_t, condition)
+                torch.cuda.current_stream().wait_stream(s)
+                
+                # Record graph
+                denoise_graph = torch.cuda.CUDAGraph()
+                with torch.cuda.graph(denoise_graph, stream=s):
+                    static_out = denoise_fn(static_x, obj_embed, triples, static_t, condition)
+            except Exception:
+                denoise_graph = None
+
         guidance_on = self._guidance_enabled()
         guided_steps_set = {
             t for t in range(total_steps) if self._guidance_active_for_timestep(t)
@@ -882,25 +920,49 @@ class GaussianDiffusion:
         for t_int in tqdm(reversed(range(0, total_steps)), mininterval=0.2):
             t_batch.fill_(t_int)
             is_guided = t_int in guided_steps_set
-            x_t, guidance_step_stats = self.p_sample_sg(
-                denoise_fn=denoise_fn, data=x_t, t=t_batch, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
-                clip_denoised=clip_denoised, return_pred_xstart=False, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness,
-                t_int=t_int, is_guided_step=is_guided
-            )
+
+            if is_guided:
+                x_t, guidance_step_stats = self.p_sample_sg(
+                    denoise_fn=denoise_fn, data=x_t, t=t_batch, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
+                    clip_denoised=clip_denoised, return_pred_xstart=False, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness,
+                    t_int=t_int, is_guided_step=True
+                )
+                step_stats.append(guidance_step_stats)
+            else:
+                if denoise_graph is not None:
+                    static_x.copy_(x_t)
+                    static_t.fill_(t_int)
+                    denoise_graph.replay()
+                    model_output = static_out
+                else:
+                    model_output = denoise_fn(x_t, obj_embed, triples, t_batch, condition)
+
+                recip_alpha = sqrt_recip_alphas_cumprod[t_int].view(1, 1)
+                recipm1_alpha = sqrt_recipm1_alphas_cumprod[t_int].view(1, 1)
+                coef1 = posterior_mean_coef1[t_int].view(1, 1)
+                coef2 = posterior_mean_coef2[t_int].view(1, 1)
+                logvar = posterior_logvar[t_int].view(1, 1)
+
+                x_recon = recip_alpha * x_t - recipm1_alpha * model_output
+                if clip_denoised:
+                    x_recon = torch.clamp(x_recon, -1.0, 1.0)
+                model_mean = coef1 * x_recon + coef2 * x_t
+
+                if t_int > 0:
+                    noise = noise_fn(size=x_t.shape, dtype=x_t.dtype, device=device)
+                    x_t = model_mean + torch.exp(0.5 * logvar) * noise
+                else:
+                    x_t = model_mean
 
             # Freeze non-object nodes (e.g. floor, _scene_) using their Ground Truth values
             if has_gt_freeze:
                 if t_int > 0:
                     noise = torch.randn_like(self.gt_boxes)
-                    noised_gt = self.q_sample(x_start=self.gt_boxes, t=t_batch, noise=noise)
+                    noised_gt = sqrt_alphas_cumprod[t_int].view(1, 1) * self.gt_boxes + sqrt_one_minus_alphas_cumprod[t_int].view(1, 1) * noise
                 else:
                     noised_gt = self.gt_boxes
                 x_t[freeze_mask] = noised_gt[freeze_mask]
 
-            if is_guided:
-                step_stats.append(guidance_step_stats)
-
-        assert x_t.shape == shape
         self.latest_sampling_stats = self._summarize_guidance_stats(step_stats, x_t, scene_ids, objectness=objectness)
         return x_t
 
@@ -933,6 +995,31 @@ class GaussianDiffusion:
         guided_steps_set = {
             int(t) for t, _ in time_pairs if self._guidance_active_for_timestep(int(t))
         } if guidance_on else set()
+
+        use_cuda_graph = (
+            torch.cuda.is_available() and 
+            ((isinstance(device, torch.device) and device.type == 'cuda') or (isinstance(device, str) and 'cuda' in device))
+        )
+        denoise_graph = None
+        static_x = None
+        static_t = None
+        static_out = None
+
+        if use_cuda_graph and hasattr(torch.cuda, 'CUDAGraph'):
+            try:
+                static_x = torch.empty(shape, dtype=torch.float, device=device)
+                static_t = torch.empty(shape[0], dtype=torch.int64, device=device)
+                s = torch.cuda.Stream()
+                s.wait_stream(torch.cuda.current_stream())
+                with torch.cuda.stream(s):
+                    for _ in range(3):
+                        static_out = denoise_fn(static_x, obj_embed, triples, static_t, condition)
+                torch.cuda.current_stream().wait_stream(s)
+                denoise_graph = torch.cuda.CUDAGraph()
+                with torch.cuda.graph(denoise_graph, stream=s):
+                    static_out = denoise_fn(static_x, obj_embed, triples, static_t, condition)
+            except Exception:
+                denoise_graph = None
 
         for t_int, t_prev_int in tqdm(time_pairs, desc="DDIM Layout Sampler", mininterval=0.2):
             t_batch.fill_(int(t_int))
@@ -983,7 +1070,14 @@ class GaussianDiffusion:
                     pred_xstart = pred_xstart.detach()
                     eps = (x_t - torch.sqrt(alpha_cumprod_t) * pred_xstart) / torch.clamp(torch.sqrt(1. - alpha_cumprod_t), min=1e-8)
             else:
-                model_output = denoise_fn(x_t, obj_embed, triples, t_batch, condition)
+                if denoise_graph is not None:
+                    static_x.copy_(x_t)
+                    static_t.fill_(int(t_int))
+                    denoise_graph.replay()
+                    model_output = static_out
+                else:
+                    model_output = denoise_fn(x_t, obj_embed, triples, t_batch, condition)
+
                 if self.model_mean_type == 'eps':
                     eps = model_output
                     pred_xstart = self._predict_xstart_from_eps(x_t, t=t_batch, eps=eps)
