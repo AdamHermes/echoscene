@@ -468,5 +468,110 @@ def compute_edge_gaussian_walkable_loss(
     return total_loss
 
 
+def compute_relational_guidance_loss(
+    bbox, 
+    triples, 
+    predicate_names=None, 
+    objectness=None, 
+    margin=0.05, 
+    close_threshold=0.45, 
+    stand_threshold=0.04
+):
+    """
+    Computes Differentiable Directional & Support Relational Guidance Loss.
+    Actively steers object bounding boxes during diffusion sampling to satisfy 
+    scene graph relation triplets (left, right, front, behind, close by, standing on).
+    """
+    if triples is None or len(triples) == 0:
+        return torch.tensor(0.0, device=bbox.device, dtype=bbox.dtype)
+
+    if len(bbox.shape) == 2:
+        bbox = bbox.unsqueeze(0)  # [1, N, 7]
+
+    B, N, _ = bbox.shape
+    device = bbox.device
+    dtype = bbox.dtype
+
+    # Denormalized box centers: [l, h, w, x, y, z, angle]
+    centers_x = bbox[:, :, 3]
+    centers_y = bbox[:, :, 4]
+    centers_z = bbox[:, :, 5]
+
+    total_loss = torch.tensor(0.0, device=device, dtype=dtype)
+    num_relations = 0
+
+    if triples.dim() == 2:
+        triples_batch = [triples]
+    else:
+        triples_batch = triples
+
+    if predicate_names is None:
+        predicate_names = [
+            "in", "left", "right", "front", "behind", "close by",
+            "above", "standing on", "bigger than", "smaller than",
+            "taller than", "shorter than", "symmetrical to"
+        ]
+
+    for b in range(min(B, len(triples_batch))):
+        cur_triples = triples_batch[b]
+        if cur_triples is None or len(cur_triples) == 0:
+            continue
+
+        for edge in cur_triples:
+            if len(edge) < 3:
+                continue
+            s_idx = int(edge[0].item())
+            p_idx = int(edge[1].item())
+            o_idx = int(edge[2].item())
+
+            if s_idx < 0 or s_idx >= N or o_idx < 0 or o_idx >= N or s_idx == o_idx:
+                continue
+
+            if p_idx < len(predicate_names):
+                p_name = predicate_names[p_idx].strip().lower()
+            else:
+                p_name = str(p_idx)
+
+            xs, ys, zs = centers_x[b, s_idx], centers_y[b, s_idx], centers_z[b, s_idx]
+            xo, yo, zo = centers_x[b, o_idx], centers_y[b, o_idx], centers_z[b, o_idx]
+
+            loss_rel = torch.tensor(0.0, device=device, dtype=dtype)
+
+            # 1. left: Subject Z must be < Object Z - margin (along Z axis)
+            if p_name in ("left", "1"):
+                loss_rel = torch.relu(zs - zo + margin)
+
+            # 2. right: Subject Z must be > Object Z + margin (along Z axis)
+            elif p_name in ("right", "2"):
+                loss_rel = torch.relu(zo - zs + margin)
+
+            # 3. front: Subject X must be > Object X + margin (along X axis)
+            elif p_name in ("front", "3"):
+                loss_rel = torch.relu(xo - xs + margin)
+
+            # 4. behind: Subject X must be < Object X - margin (along X axis)
+            elif p_name in ("behind", "4"):
+                loss_rel = torch.relu(xs - xo + margin)
+
+            # 5. close by: 2D distance between Subject and Object must be <= close_threshold (0.45m)
+            elif p_name in ("close by", "5"):
+                dist_xz = torch.sqrt((xs - xo)**2 + (zs - zo)**2 + 1e-8)
+                loss_rel = torch.relu(dist_xz - close_threshold)
+
+            # 6. standing on / above: Center Y difference must be < stand_threshold (0.04m)
+            elif p_name in ("standing on", "7", "above", "6"):
+                loss_rel = torch.relu(torch.abs(ys - yo) - stand_threshold)
+
+            if loss_rel > 0:
+                total_loss = total_loss + loss_rel
+                num_relations += 1
+
+    if num_relations > 0:
+        total_loss = total_loss / num_relations
+
+    return total_loss
+
+
+
 
 

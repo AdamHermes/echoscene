@@ -51,8 +51,8 @@ layout_branch:
       train_stats_file: null
     inference_guidance:
       enabled: true
-      interval: 5
-      start_ratio: 0.9
+      interval: 1
+      start_ratio: 0.95
       grad_clip: 10.1
       clip_to_bounds: true
       constraints:
@@ -91,8 +91,14 @@ layout_branch:
               robot_width_real: 0.35
               robot_hight_real: 1.5
               sigma_scale: 0.5
-              heatmap_weight: 0.8
-              repulsion_weight: 0.2
+              heatmap_weight: 0.8    # Component 1 (Floor Edge Heatmap)
+              repulsion_weight: 0.2   # Component 2 (Pairwise Furniture Repulsion)
+        relational:
+          enabled: true
+          weight: 0.5
+          margin: 0.05
+          close_threshold: 0.45
+          stand_threshold: 0.04
 
 shape_branch:
     model: sdfusion-txt2shape_mp

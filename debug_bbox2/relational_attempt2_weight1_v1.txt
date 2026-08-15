@@ -1,0 +1,59 @@
+1.11.0+cu113
+loading CLIP
+Checking for missing clip feats. This can be slow the first time.
+100% 370/370 [00:28<00:00, 12.82it/s]
+Working with z of shape (1, 3, 16, 16, 16) = 12288 dimensions.
+[*] VQVAE: weight successfully load from: ./checkpoint/vqvae_threedfront_best.pth
+[*] setting ddim_steps=100
+[*] create image directory:
+/content/echoscene/full_mp/diff_crossattn/images...
+[*] shape branch has successfully been restored from: ../released_full_model/checkpoint/model2050.pth
+[*] GCN and layout branch has successfully been restored from: ../released_full_model/checkpoint/model2050.pth
+Evaluating 1 sample(s)
+
+Editing Mode - Additions
+
+Editing Mode - Relationship changes
+
+Generation Mode
+['DiningRoom-31158']
+1000it [01:26, 11.59it/s]
+[Inference Guidance Summary] Applied Steps: 10/1000 | Collision Loss: 0.1342 | Room Outer Loss: 0.0000 | Walkable Loss: 3.1022 (Center Penalty: 4.5108, C1 Heatmap: 0.4495, C2 Repulsion: 6.6705) | Relational Loss: 1.1272
+inference mode.. no gt sdf
+Data shape for DDIM sampling is (8, 3, 16, 16, 16), eta 0.0
+Running DDIM Sampling with 100 timesteps
+DDIM Sampler: 100% 100/100 [02:07<00:00,  1.27s/it]
+Scene DiningRoom-31158 - Final Step Collision Loss: 0.0998, Room Outer Loss: 0.0000, Walkable Loss: 2.8633 (Center Penalty: 4.2410, C1 Heatmap: 0.4422, C2 Repulsion: 5.6598)
+  [OBB resolve] converged at iteration 5
+
+============================================================
+SCENE: DiningRoom-31158  |  8 objects
+============================================================
+Obj                       l      h      w        x       y       z    angle
+----------------------------------------------------------------------
+table                 1.553  0.800  1.189    0.140   0.002   0.139    89.99°
+chair                 0.561  0.761  0.515    1.035  -0.002   0.520   179.95°
+chair                 0.526  0.789  0.575   -0.785   0.002   0.398   179.59°
+chair                 0.515  0.810  0.472    0.344  -0.002  -0.895    -0.03°
+chair                 0.645  0.793  0.649   -0.784   0.002  -0.559     0.04°
+lamp                  1.186  1.112  1.212   -0.220   1.565   0.066     0.03°
+floor                 4.020  0.000  2.461    0.001   0.000   0.002    -0.06°
+_scene_               0.065 -0.000  0.019   -5.674  -0.004  -5.715   -57.29°
+
+  Pairwise overlap check (axis-aligned bbox):
+  !! OVERLAP: table <-> chair  depth=[0.162, 0.761, 0.471]
+  !! OVERLAP: table <-> chair  depth=[0.115, 0.789, 0.575]
+  !! OVERLAP: table <-> chair  depth=[0.176, 0.793, 0.222]
+  !! OVERLAP: table <-> floor  depth=[1.553, 0.000, 1.189]
+  !! OVERLAP: chair <-> floor  depth=[0.561, 0.000, 0.515]
+  !! OVERLAP: chair <-> floor  depth=[0.526, 0.000, 0.575]
+  !! OVERLAP: chair <-> floor  depth=[0.515, 0.000, 0.472]
+  !! OVERLAP: chair <-> floor  depth=[0.645, 0.000, 0.649]
+============================================================
+
+rendering ['table', 'chair', 'chair', 'chair', 'chair', 'lamp', 'floor', '_scene_']
+eval_3dfront.py:511: RuntimeWarning: Mean of empty slice
+  tash_mean = np.nanmean([_safe_m(keys[6]), _safe_m(keys[7])])
+acc & L/R: 1.00 & F/B: 1.00 & Bi/Sm: 0.90 & Ta/Sh: nan & Stand: 1.00 & Close: 0.33 & Symm: nan. Total: &0.88
+means of mean: 0.85
+PhyScene input saved to: ../released_full_model/vis/2050/physcene_collision_input.json

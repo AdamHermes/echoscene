@@ -1,0 +1,205 @@
+import os
+import glob
+import re
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
+from matplotlib.widgets import Button
+
+def load_scene_from_log_file(file_path):
+    """Parses the raw text layout output block directly from a log file."""
+    objects = []
+    color_map = {
+        "bed": "#3498db", "chair": "#e74c3c", "nightstand": "#9b59b6", 
+        "table": "#e67e22", "wardrobe": "#2ecc71", "lamp": "#f1c40f", 
+        "floor": "#bdc3c7"
+    }
+    
+    if not os.path.exists(file_path):
+        return []
+        
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+        
+    start_parsing = False
+    for line in lines:
+        if "---" in line:
+            start_parsing = True
+            continue
+        if "Pairwise overlap" in line or "==" in line:
+            start_parsing = False
+            
+        if start_parsing and line.strip():
+            parts = line.split()
+            if len(parts) >= 8:
+                name = parts[0]
+                try:
+                    l = float(parts[1])
+                    w = float(parts[3])  # Z-size
+                    x = float(parts[4])  # X-center
+                    z = float(parts[6])  # Z-center
+                    angle = float(parts[7].replace('°', ''))
+                    
+                    objects.append({
+                        "name": name, "l": l, "w": w, "x": x, "z": z, "angle": angle,
+                        "color": color_map.get(name, "#1abc9c")
+                    })
+                except ValueError:
+                    continue
+    return objects
+
+def get_obb_corners(x, z, l, w, angle_deg):
+    """Calculates the 4 corners of the Oriented Bounding Box (OBB)."""
+    angle_rad = np.radians(angle_deg)
+    cos_a, sin_a = np.cos(angle_rad), np.sin(angle_rad)
+    corners = np.array([[-l/2, -w/2], [l/2, -w/2], [l/2, w/2], [-l/2, w/2]])
+    
+    rotated = []
+    for cx, cz in corners:
+        rx = cx * cos_a - cz * sin_a
+        rz = cx * sin_a + cz * cos_a
+        rotated.append([x + rx, z + rz])
+    return np.array(rotated)
+
+def wrap_filename(text, width=60):
+    """Wraps a filename that may contain underscores, hyphens or dots without spaces."""
+    if len(text) <= width:
+        return text
+    parts = re.split(r'([_\-\.\s])', text)
+    lines = []
+    current_line = ""
+    for part in parts:
+        if len(current_line) + len(part) > width:
+            if current_line:
+                lines.append(current_line)
+                current_line = part
+            else:
+                for i in range(0, len(part), width):
+                    lines.append(part[i:i+width])
+        else:
+            current_line += part
+    if current_line:
+        lines.append(current_line)
+    return "\n".join(lines)
+
+def natural_sort_key(s):
+    """Sorts strings using natural numerical ordering (matching VS Code / File Explorer order)."""
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
+
+class SceneVisualizer:
+    def __init__(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        txt_files = glob.glob(os.path.join(script_dir, "*.txt"))
+        self.files = sorted([os.path.basename(f) for f in txt_files], key=natural_sort_key)
+        self.script_dir = script_dir
+        
+        if not self.files:
+            print("No .txt log files found in directory!")
+            exit(1)
+            
+        self.current_idx = 0
+        self.show_gpt_collision = False
+        
+        self.fig, self.ax = plt.subplots(figsize=(9, 9))
+        self.fig.subplots_adjust(bottom=0.15)
+        
+        ax_gpt = plt.axes([0.75, 0.02, 0.2, 0.06])
+        self.btn_gpt = Button(ax_gpt, 'GPT Mode: OFF')
+        self.btn_gpt.on_clicked(self.toggle_gpt)
+        
+        self.fig.canvas.mpl_connect('key_press_event', self.on_key)
+        self.update_plot()
+
+    def toggle_gpt(self, event):
+        self.show_gpt_collision = not self.show_gpt_collision
+        self.btn_gpt.label.set_text('GPT Mode: ON (Naive AABB)' if self.show_gpt_collision else 'GPT Mode: OFF')
+        self.update_plot()
+
+    def update_plot(self):
+        self.ax.clear()
+        filename = self.files[self.current_idx]
+        file_path = os.path.join(self.script_dir, filename)
+        objects = load_scene_from_log_file(file_path)
+        
+        for obj in objects:
+            obb_corners = get_obb_corners(obj["x"], obj["z"], obj["l"], obj["w"], obj["angle"])
+            
+            if self.show_gpt_collision:
+                # Naive unrotated AABB
+                min_x = obj["x"] - obj["l"]/2
+                max_x = obj["x"] + obj["l"]/2
+                min_z = obj["z"] - obj["w"]/2
+                max_z = obj["z"] + obj["w"]/2
+            else:
+                # Correct rotated AABB
+                min_x, min_z = np.min(obb_corners, axis=0)
+                max_x, max_z = np.max(obb_corners, axis=0)
+            
+            if obj["name"] == "_scene_":
+                # Mark scene location with a red circle and text
+                circle = patches.Circle((obj["x"], obj["z"]), radius=0.08, color='red', alpha=0.8, zorder=5)
+                self.ax.add_patch(circle)
+                self.ax.text(obj["x"], obj["z"] - 0.15, obj["name"], ha='center', va='top', 
+                             color='red', fontsize=9, weight='bold', zorder=6,
+                             bbox=dict(facecolor='white', alpha=0.7, edgecolor='red', pad=2))
+                continue
+
+            alpha = 0.25 if obj["name"] == "floor" else 0.7
+            
+            # Draw OBB (Oriented Bounding Box)
+            obb_polygon = patches.Polygon(
+                obb_corners, closed=True, facecolor=obj["color"], 
+                edgecolor='black', alpha=alpha, linewidth=1.5
+            )
+            self.ax.add_patch(obb_polygon)
+            
+            # Draw AABB (Dashed Red Line) for everything except floor/lamp
+            if obj["name"] not in ["floor", "lamp"]:
+                aabb_rect = patches.Rectangle(
+                    (min_x, min_z), max_x - min_x, max_z - min_z, 
+                    linewidth=1, edgecolor='#e74c3c', facecolor='none', 
+                    linestyle='--', alpha=0.6
+                )
+                self.ax.add_patch(aabb_rect)
+            
+            # Label
+            if obj["name"] != "floor":
+                self.ax.text(obj["x"], obj["z"], obj["name"], ha='center', va='center', 
+                             fontsize=9, weight='bold',
+                             bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=2))
+
+        # View settings
+        self.ax.set_aspect('equal')
+        self.ax.set_xlim(-3.5, 3.5)
+        self.ax.set_ylim(-3.5, 3.5)
+        self.ax.grid(True, linestyle=':', alpha=0.5)
+        
+        # Header text info
+        wrapped_file_path = wrap_filename(filename, width=60)
+        title = f"File [{self.current_idx + 1}/{len(self.files)}]: {wrapped_file_path}\n"
+        title += "Use ← or → arrow keys to switch logs"
+        self.ax.set_title(title, fontsize=12, weight='bold', pad=10, wrap=True)
+        
+        # Legend
+        aabb_label = 'Naive Unrotated AABB (GPT Mode)' if self.show_gpt_collision else 'Correct AABB Boundary'
+        custom_lines = [
+            patches.Patch(facecolor='#3498db', edgecolor='black', alpha=0.7, label='True OBB Shape'),
+            plt.Line2D([0], [0], color='#e74c3c', lw=1, linestyle='--', label=aabb_label)
+        ]
+        self.ax.legend(handles=custom_lines, loc='upper right')
+        
+        self.fig.canvas.draw()
+
+    def on_key(self, event):
+        if event.key == 'right':
+            self.current_idx = (self.current_idx + 1) % len(self.files)
+            self.update_plot()
+        elif event.key == 'left':
+            self.current_idx = (self.current_idx - 1) % len(self.files)
+            self.update_plot()
+        elif event.key == 'g':
+            self.toggle_gpt(None)
+
+if __name__ == "__main__":
+    vis = SceneVisualizer()
+    plt.show()
