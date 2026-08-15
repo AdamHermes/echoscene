@@ -1101,11 +1101,7 @@ class GaussianDiffusion:
 
         iou_indices = torch.where(scene_mask)
         w_iou_selected = w_iou[iou_indices[0]].reshape(-1)
-        if not torch.isnan(bbox_iou[iou_indices]).any():
-            bbox_iou_valid = bbox_iou[iou_indices] + 1e-6
-        else:
-            bbox_iou_valid = torch.zeros(len(w_iou_selected), device=data_t.device)  # meaningful bbox_iou in the same scene.
-            print("bbox_iou is NaN")
+        bbox_iou_valid = bbox_iou[iou_indices] + 1e-6
         loss_iou_valid = w_iou_selected * 0.5 * bbox_iou_valid
         return loss_iou_valid, bbox_iou_valid
 

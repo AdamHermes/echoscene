@@ -756,12 +756,10 @@ class UNet1DModel(nn.Module):
         self.output_blocks.apply(convert_module_to_f32)
 
     def box_messsage_passing(self, obj_embed, triples, box_t, t_emb=None, enable_t_emb=False):
-        s, p, o = triples.chunk(3, dim=1)  # All have shape (T, 1)
-        s, p, o = [i.squeeze(1) for i in [s, p, o]]  # Now have shape (T,)
-        edges = torch.stack([s, o], dim=1)  # Shape is (T, 2)
+        edges = triples[:, [0, 2]]
+        pred_embed = self.pred_embeddings(triples[:, 1])
 
         box_embed = self.box_embeddings(box_t)
-        pred_embed = self.pred_embeddings(p)
         obj_box_embed = torch.cat([obj_embed, box_embed], dim=1)
         if enable_t_emb:
             assert t_emb is not None

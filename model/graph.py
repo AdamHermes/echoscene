@@ -169,34 +169,26 @@ class GraphTripleConv(nn.Module):
             new_s_vecs = s_weights * new_s_vecs
             new_o_vecs = o_weights * new_o_vecs
 
-        # Use scatter_add to sum vectors for objects that appear in multiple triples;
-        # we first need to expand the indices to have shape (num_triples, D)
-        s_idx_exp = s_idx.view(-1, 1).expand_as(new_s_vecs)
-        o_idx_exp = o_idx.view(-1, 1).expand_as(new_o_vecs)
-        pooled_obj_vecs = pooled_obj_vecs.scatter_add(0, s_idx_exp, new_s_vecs)
-        pooled_obj_vecs = pooled_obj_vecs.scatter_add(0, o_idx_exp, new_o_vecs)
+        # Use index_add_ to sum vectors for objects that appear in multiple triples
+        pooled_obj_vecs.index_add_(0, s_idx, new_s_vecs)
+        pooled_obj_vecs.index_add_(0, o_idx, new_o_vecs)
 
         if self.pooling == 'wAvg':
             pooled_weight_sums = torch.zeros(num_objs, 1, dtype=dtype, device=device)
-            pooled_weight_sums = pooled_weight_sums.scatter_add(0, o_idx.view(-1, 1), o_weights)
-            pooled_weight_sums = pooled_weight_sums.scatter_add(0, s_idx.view(-1, 1), s_weights)
+            pooled_weight_sums.index_add_(0, o_idx, o_weights)
+            pooled_weight_sums.index_add_(0, s_idx, s_weights)
 
             pooled_obj_vecs = pooled_obj_vecs / (pooled_weight_sums + 0.0001)
 
         if self.pooling == 'avg':
-            # Figure out how many times each object has appeared, again using
-            # some scatter_add trickery.
+            # Figure out how many times each object has appeared
             obj_counts = torch.zeros(num_objs, dtype=dtype, device=device)
             ones = torch.ones(num_triples, dtype=dtype, device=device)
-            obj_counts = obj_counts.scatter_add(0, s_idx, ones)
-            obj_counts = obj_counts.scatter_add(0, o_idx, ones)
+            obj_counts.index_add_(0, s_idx, ones)
+            obj_counts.index_add_(0, o_idx, ones)
 
-            # Divide the new object vectors by the number of times they
-            # appeared, but first clamp at 1 to avoid dividing by zero;
-            # objects that appear in no triples will have output vector 0
-            # so this will not affect them.
             obj_counts = obj_counts.clamp(min=1)
-            pooled_obj_vecs = pooled_obj_vecs / obj_counts.view(-1, 1)
+            pooled_obj_vecs = pooled_obj_vecs / obj_counts.unsqueeze(-1)
 
         # Send pooled object vectors through net2 to get output object vectors,
         # of shape (num_objs, Dout)

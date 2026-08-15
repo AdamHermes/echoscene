@@ -179,31 +179,12 @@ class CrossAttention(nn.Module):
         q = self.to_q(x)
         context = default(context, x)
 
-        if context is not None:
-            if torch.isnan(context).any():
-                import pdb; pdb.set_trace()
-
         k = self.to_k(context)
         v = self.to_v(context)
-
-        # if torch.isnan(q).any():
-        #     import pdb; pdb.set_trace()
-
-        # if torch.isnan(k).any():
-        #     import pdb; pdb.set_trace()
-
-        # if torch.isnan(v).any():
-        #     import pdb; pdb.set_trace()
-
-        # print("q, k, v: ", q.shape, k.shape, v.shape)
-        # print("context: ", context.shape)
 
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
 
         sim = einsum('b i d, b j d -> b i j', q, k) * self.scale
-
-        if torch.isnan(sim).any():
-            import pdb; pdb.set_trace()
 
         if exists(mask):
             mask = rearrange(mask, 'b ... -> b (...)')
