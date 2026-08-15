@@ -75,7 +75,7 @@ layout_branch:
           # Modular sub-components configured to match real_current_best behavior:
           components:
             center_penalty:
-              enabled: true
+              enabled: false
               weight: 1.0
               sigma: 0.5
               
@@ -86,7 +86,7 @@ layout_branch:
               robot_hight_real: 1.5
               
             edge_gaussian:
-              enabled: false
+              enabled: true
               weight: 1.0
               robot_width_real: 0.35
               robot_hight_real: 1.5
