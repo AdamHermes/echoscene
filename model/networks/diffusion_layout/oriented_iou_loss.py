@@ -18,10 +18,8 @@ def box2corners_th(box:torch.Tensor)-> torch.Tensor:
     w = box[..., 2:3]
     h = box[..., 3:4]
     alpha = box[..., 4:5] # (B, N, 1)
-    x4 = torch.FloatTensor([0.5, -0.5, -0.5, 0.5]).unsqueeze(0).unsqueeze(0).to(box.device) # (1,1,4)
-    x4 = x4 * w     # (B, N, 4)
-    y4 = torch.FloatTensor([0.5, 0.5, -0.5, -0.5]).unsqueeze(0).unsqueeze(0).to(box.device)
-    y4 = y4 * h     # (B, N, 4)
+    x4 = torch.tensor([0.5, -0.5, -0.5, 0.5], dtype=box.dtype, device=box.device).view(1, 1, 4) * w
+    y4 = torch.tensor([0.5, 0.5, -0.5, -0.5], dtype=box.dtype, device=box.device).view(1, 1, 4) * h
     corners = torch.stack([x4, y4], dim=-1)     # (B, N, 4, 2)
     sin = torch.sin(alpha)
     cos = torch.cos(alpha)

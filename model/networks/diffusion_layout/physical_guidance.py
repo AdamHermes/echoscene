@@ -447,9 +447,6 @@ def compute_edge_gaussian_walkable_loss(
 
     total_loss = total_heatmap * heatmap_weight + total_repulsion * repulsion_weight
 
-    if verbose:
-        print(f"[Edge-Gaussian Walkable Loss] Component 1 (Floor Heatmap, w={heatmap_weight}): {total_heatmap.item():.4f} | Component 2 (Pairwise Repulsion, w={repulsion_weight}): {total_repulsion.item():.4f} | Total Weighted Walkable: {total_loss.item():.4f}")
-
     if return_components:
         return total_loss, {"c1_floor_heatmap": total_heatmap, "c2_pairwise_repulsion": total_repulsion}
     return total_loss
