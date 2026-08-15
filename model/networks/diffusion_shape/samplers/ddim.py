@@ -47,10 +47,10 @@ class DDIMSampler(object):
         ddim_sigmas, ddim_alphas, ddim_alphas_prev = make_ddim_sampling_parameters(alphacums=alphas_cumprod.cpu(),
                                                                                    ddim_timesteps=self.ddim_timesteps,
                                                                                    eta=ddim_eta,verbose=verbose)
-        self.register_buffer('ddim_sigmas', ddim_sigmas)
-        self.register_buffer('ddim_alphas', ddim_alphas)
-        self.register_buffer('ddim_alphas_prev', ddim_alphas_prev)
-        self.register_buffer('ddim_sqrt_one_minus_alphas', np.sqrt(1. - ddim_alphas))
+        self.register_buffer('ddim_sigmas', to_torch(ddim_sigmas))
+        self.register_buffer('ddim_alphas', to_torch(ddim_alphas))
+        self.register_buffer('ddim_alphas_prev', to_torch(ddim_alphas_prev))
+        self.register_buffer('ddim_sqrt_one_minus_alphas', to_torch(np.sqrt(1. - ddim_alphas)))
         sigmas_for_original_sampling_steps = ddim_eta * torch.sqrt(
             (1 - self.alphas_cumprod_prev) / (1 - self.alphas_cumprod) * (
                         1 - self.alphas_cumprod / self.alphas_cumprod_prev))
@@ -151,7 +151,7 @@ class DDIMSampler(object):
         total_steps = timesteps if ddim_use_original_steps else timesteps.shape[0]
         print(f"Running DDIM Sampling with {total_steps} timesteps")
 
-        iterator = tqdm(time_range, desc='DDIM Sampler', total=total_steps)
+        iterator = tqdm(time_range, desc='DDIM Sampler', total=total_steps, mininterval=0.2)
 
         for i, step in enumerate(iterator):
             index = total_steps - i - 1
@@ -239,14 +239,14 @@ class DDIMSampler(object):
         # select parameters corresponding to the currently considered timestep
         
         if x.dim() == 5:
-            param_shape = (b, 1, 1, 1, 1)
+            param_shape = (1, 1, 1, 1, 1)
         else:
-            param_shape = (b, 1, 1, 1)
+            param_shape = (1, 1, 1, 1)
 
-        a_t = torch.full(param_shape, alphas[index], device=device)
-        a_prev = torch.full(param_shape, alphas_prev[index], device=device)
-        sigma_t = torch.full(param_shape, sigmas[index], device=device)
-        sqrt_one_minus_at = torch.full(param_shape, sqrt_one_minus_alphas[index],device=device)
+        a_t = alphas[index].view(param_shape)
+        a_prev = alphas_prev[index].view(param_shape)
+        sigma_t = sigmas[index].view(param_shape)
+        sqrt_one_minus_at = sqrt_one_minus_alphas[index].view(param_shape)
 
         # current prediction for x_0
         pred_x0 = (x - sqrt_one_minus_at * e_t) / a_t.sqrt()
