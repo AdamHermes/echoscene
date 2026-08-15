@@ -106,26 +106,28 @@ class EchoToLayout(Module):
 
         return loss, loss_dict
 
-    def sample(self, box_dim, batch_size, obj_embed=None, obj_triples=None, text=None, rel=None, ret_traj=False, ddim=False, clip_denoised=False, freq=40, batch_seeds=None, floor_plan=None, room_outer_box=None, objectness=None):
+    def sample(self, box_dim, batch_size, obj_embed=None, obj_triples=None, text=None, rel=None, ret_traj=False, ddim=False, ddim_steps=100, clip_denoised=False, freq=40, batch_seeds=None, floor_plan=None, room_outer_box=None, objectness=None):
 
         noise_shape = (batch_size, box_dim)
         condition = rel if self.rel_condition else None
         condition_cross = None
         # reverse sampling
-        # [MODIFIED] Passing floor_plan and room_outer_box down to the diffusion process for physical guidance
-        samples = self.df.gen_samples_sg(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, clip_denoised=clip_denoised, scene_ids=self.scene_ids, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
+        if ddim:
+            samples = self.df.gen_samples_sg_ddim(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, ddim_steps=ddim_steps, clip_denoised=clip_denoised, scene_ids=self.scene_ids, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
+        else:
+            samples = self.df.gen_samples_sg(noise_shape, obj_embed.device, obj_embed, obj_triples, condition=condition, clip_denoised=clip_denoised, scene_ids=self.scene_ids, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
         
         return samples
 
     @torch.no_grad()
-    def generate_layout_sg(self, box_dim, text=None, ret_traj=False, ddim=False, clip_denoised=False, batch_seeds=None):
+    def generate_layout_sg(self, box_dim, text=None, ret_traj=False, ddim=False, ddim_steps=100, clip_denoised=False, batch_seeds=None):
 
         rel = self.rel
         obj_embed = self.uc_rel
         triples = self.preds
 
         # [MODIFIED] Pass floor_plan and room_outer_box stored during set_input to the sample method
-        samples = self.sample(box_dim, batch_size=len(obj_embed), obj_embed=obj_embed, obj_triples=triples, text=text, rel=rel, ret_traj=ret_traj, ddim=ddim, clip_denoised=clip_denoised, batch_seeds=batch_seeds, floor_plan=self.floor_plan, room_outer_box=self.room_outer_box, objectness=self.objectness)
+        samples = self.sample(box_dim, batch_size=len(obj_embed), obj_embed=obj_embed, obj_triples=triples, text=text, rel=rel, ret_traj=ret_traj, ddim=ddim, ddim_steps=ddim_steps, clip_denoised=clip_denoised, batch_seeds=batch_seeds, floor_plan=self.floor_plan, room_outer_box=self.room_outer_box, objectness=self.objectness)
         samples_dict = {
             "sizes": samples[:, 0:self.size_dim].contiguous(),
             "translations": samples[:, self.size_dim:self.size_dim + self.translation_dim].contiguous(),

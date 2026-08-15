@@ -92,40 +92,27 @@ def compute_room_outer_loss(bbox, room_outer_box=None, scene_ids=None, objectnes
             scene_mask = torch.ones(bbox.shape[0], dtype=torch.bool, device=bbox.device)
             
         if objectness is not None:
-            obj_mask = scene_mask & objectness.to(dtype=torch.bool, device=bbox.device)
-            non_obj_mask = scene_mask & ~objectness.to(dtype=torch.bool, device=bbox.device)
+            obj_mask = scene_mask & objectness.bool()
+            non_obj_mask = scene_mask & ~objectness.bool()
         else:
             obj_mask = scene_mask
             non_obj_mask = torch.zeros_like(scene_mask)
             
-        if not obj_mask.any():
-            continue
-            
-        # Default fallback boundaries
-        max_bound_x = 3.0
-        min_bound_x = -3.0
-        max_bound_z = 3.0
-        min_bound_z = -3.0
+        # Extract the floor boundary if available entirely on GPU without CPU sync
+        non_obj_mask_f = non_obj_mask.float()
+        sizes_x = half_sizes_obj[:, 0]
+        sizes_z = half_sizes_obj[:, 2]
+        areas = sizes_x * sizes_z * non_obj_mask_f
+        best_idx = torch.argmax(areas)
         
-        # Extract the floor boundary if available
-        if non_obj_mask.any():
-            # non_obj_mask contains background objects like `_scene_` and `floor`.
-            # Find the largest object (by X * Z area) which is typically the floor.
-            non_obj_idx = torch.where(non_obj_mask)[0]
-            sizes_x = half_sizes_obj[non_obj_idx, 0]
-            sizes_z = half_sizes_obj[non_obj_idx, 2]
-            areas = sizes_x * sizes_z
-            best_idx = non_obj_idx[torch.argmax(areas)]
-            
-            best_center = centers_obj[best_idx].detach()
-            best_half_size = half_sizes_obj[best_idx].detach()
-            
-            max_bound_x = best_center[0] + best_half_size[0]
-            min_bound_x = best_center[0] - best_half_size[0]
-            max_bound_z = best_center[2] + best_half_size[2]
-            min_bound_z = best_center[2] - best_half_size[2]
-        else:
-            print("Warning: No floor object found for scene. Falling back to default [-3.0, 3.0] boundaries for room outer loss.")
+        best_center = centers_obj[best_idx].detach()
+        best_half_size = half_sizes_obj[best_idx].detach()
+        has_floor = areas[best_idx] > 0
+        
+        max_bound_x = torch.where(has_floor, best_center[0] + best_half_size[0], torch.tensor(3.0, device=bbox.device))
+        min_bound_x = torch.where(has_floor, best_center[0] - best_half_size[0], torch.tensor(-3.0, device=bbox.device))
+        max_bound_z = torch.where(has_floor, best_center[2] + best_half_size[2], torch.tensor(3.0, device=bbox.device))
+        min_bound_z = torch.where(has_floor, best_center[2] - best_half_size[2], torch.tensor(-3.0, device=bbox.device))
             
         # Compute L1 penalty for objects exceeding these boundaries
         cur_max_corners = max_corners[obj_mask]

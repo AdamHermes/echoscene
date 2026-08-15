@@ -185,6 +185,18 @@ class GaussianDiffusion:
         self.logvar = torch.full(fill_value=logvar_init, size=(self.num_timesteps,))
         self.latest_sampling_stats = None
 
+    def _get_tensor(self, name, device):
+        if not hasattr(self, '_device_buffers'):
+            self._device_buffers = {}
+        key = (name, device)
+        if key not in self._device_buffers:
+            val = getattr(self, name)
+            if isinstance(val, torch.Tensor):
+                self._device_buffers[key] = val.to(device)
+            else:
+                self._device_buffers[key] = val
+        return self._device_buffers[key]
+
     @staticmethod
     def _extract(a, t, x_shape):
         """
@@ -203,9 +215,9 @@ class GaussianDiffusion:
         """
         diffusion step: q(x_t | x_{t-1})
         """
-        mean = self._extract(self.sqrt_alphas_cumprod.to(x_start.device), t, x_start.shape) * x_start
-        variance = self._extract(1. - self.alphas_cumprod.to(x_start.device), t, x_start.shape)
-        log_variance = self._extract(self.log_one_minus_alphas_cumprod.to(x_start.device), t, x_start.shape)
+        mean = self._extract(self._get_tensor('sqrt_alphas_cumprod', x_start.device), t, x_start.shape) * x_start
+        variance = self._extract(1. - self._get_tensor('alphas_cumprod', x_start.device), t, x_start.shape)
+        log_variance = self._extract(self._get_tensor('log_one_minus_alphas_cumprod', x_start.device), t, x_start.shape)
         return mean, variance, log_variance
 
     def q_sample(self, x_start, t, noise=None):
@@ -216,8 +228,8 @@ class GaussianDiffusion:
             noise = torch.randn(x_start.shape, device=x_start.device)
         assert noise.shape == x_start.shape
         return (
-                self._extract(self.sqrt_alphas_cumprod.to(x_start.device), t, x_start.shape) * x_start +
-                self._extract(self.sqrt_one_minus_alphas_cumprod.to(x_start.device), t, x_start.shape) * noise
+                self._extract(self._get_tensor('sqrt_alphas_cumprod', x_start.device), t, x_start.shape) * x_start +
+                self._extract(self._get_tensor('sqrt_one_minus_alphas_cumprod', x_start.device), t, x_start.shape) * noise
         )
 
 
@@ -227,11 +239,11 @@ class GaussianDiffusion:
         """
         assert x_start.shape == x_t.shape
         posterior_mean = (
-                self._extract(self.posterior_mean_coef1.to(x_start.device), t, x_t.shape) * x_start +
-                self._extract(self.posterior_mean_coef2.to(x_start.device), t, x_t.shape) * x_t
+                self._extract(self._get_tensor('posterior_mean_coef1', x_start.device), t, x_t.shape) * x_start +
+                self._extract(self._get_tensor('posterior_mean_coef2', x_start.device), t, x_t.shape) * x_t
         )
-        posterior_variance = self._extract(self.posterior_variance.to(x_start.device), t, x_t.shape)
-        posterior_log_variance_clipped = self._extract(self.posterior_log_variance_clipped.to(x_start.device), t, x_t.shape)
+        posterior_variance = self._extract(self._get_tensor('posterior_variance', x_start.device), t, x_t.shape)
+        posterior_log_variance_clipped = self._extract(self._get_tensor('posterior_log_variance_clipped', x_start.device), t, x_t.shape)
         assert (posterior_mean.shape[0] == posterior_variance.shape[0] == posterior_log_variance_clipped.shape[0] ==
                 x_start.shape[0])
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
@@ -244,14 +256,17 @@ class GaussianDiffusion:
 
         if self.model_var_type in ['fixedsmall', 'fixedlarge']:
             # below: only log_variance is used in the KL computations
-            model_variance, model_log_variance = {
-                # for fixedlarge, we set the initial (log-)variance like so to get a better decoder log likelihood
-                'fixedlarge': (self.betas.to(data.device),
-                               torch.log(torch.cat([self.posterior_variance[1:2], self.betas[1:]])).to(data.device)),
-                'fixedsmall': (self.posterior_variance.to(data.device), self.posterior_log_variance_clipped.to(data.device)),
-            }[self.model_var_type]
-            model_variance = self._extract(model_variance, t, data.shape) * torch.ones_like(data)
-            model_log_variance = self._extract(model_log_variance, t, data.shape) * torch.ones_like(data)
+            if self.model_var_type == 'fixedlarge':
+                if not hasattr(self, '_fixedlarge_logvar'):
+                    self._fixedlarge_logvar = torch.log(torch.cat([self.posterior_variance[1:2], self.betas[1:]]))
+                var_tensor = self._get_tensor('betas', data.device)
+                logvar_tensor = self._get_tensor('_fixedlarge_logvar', data.device)
+            else:
+                var_tensor = self._get_tensor('posterior_variance', data.device)
+                logvar_tensor = self._get_tensor('posterior_log_variance_clipped', data.device)
+
+            model_variance = self._extract(var_tensor, t, data.shape)
+            model_log_variance = self._extract(logvar_tensor, t, data.shape)
         else:
             raise NotImplementedError(self.model_var_type)
 
@@ -277,7 +292,8 @@ class GaussianDiffusion:
 
 
         assert model_mean.shape == x_recon.shape == data.shape
-        assert model_variance.shape == model_log_variance.shape == data.shape
+        assert model_variance.shape == model_log_variance.shape
+        assert model_variance.shape[0] == data.shape[0]
         if return_pred_xstart:
             return model_mean, model_variance, model_log_variance, x_recon
         else:
@@ -286,21 +302,21 @@ class GaussianDiffusion:
     def _predict_xstart_from_eps(self, x_t, t, eps):
         assert x_t.shape == eps.shape
         return (
-                self._extract(self.sqrt_recip_alphas_cumprod.to(x_t.device), t, x_t.shape) * x_t -
-                self._extract(self.sqrt_recipm1_alphas_cumprod.to(x_t.device), t, x_t.shape) * eps
+                self._extract(self._get_tensor('sqrt_recip_alphas_cumprod', x_t.device), t, x_t.shape) * x_t -
+                self._extract(self._get_tensor('sqrt_recipm1_alphas_cumprod', x_t.device), t, x_t.shape) * eps
         )
     
     def _predict_eps_from_start(self, x_t, t, x0):
         return (
-            (self._extract(self.sqrt_recip_alphas_cumprod.to(x_t.device), t, x_t.shape) * x_t - x0) / \
-            self._extract(self.sqrt_recipm1_alphas_cumprod.to(x_t.device), t, x_t.shape)
+            (self._extract(self._get_tensor('sqrt_recip_alphas_cumprod', x_t.device), t, x_t.shape) * x_t - x0) /
+            self._extract(self._get_tensor('sqrt_recipm1_alphas_cumprod', x_t.device), t, x_t.shape)
         )
 
     def _scene_ids_tensor(self, scene_ids, num_boxes, device):
         if scene_ids is None:
             return torch.zeros(num_boxes, dtype=torch.long, device=device)
         if isinstance(scene_ids, torch.Tensor):
-            return scene_ids.to(device=device, dtype=torch.long)
+            return scene_ids.to(dtype=torch.long, device=device) if scene_ids.device != device or scene_ids.dtype != torch.long else scene_ids
         return torch.as_tensor(scene_ids, dtype=torch.long, device=device)
 
     def _denormalize_box_params(self, box_params):
@@ -387,7 +403,7 @@ class GaussianDiffusion:
         if objectness is None:
             objectness = torch.ones(box_params.shape[0], dtype=torch.bool, device=box_params.device)
         else:
-            objectness = objectness.to(device=box_params.device, dtype=torch.bool)
+            objectness = objectness.to(device=box_params.device).bool()
         scene_losses = []
         per_scene_mean_ious = []
         per_scene_max_ious = []
@@ -399,7 +415,7 @@ class GaussianDiffusion:
 
         for scene_id in torch.unique(scene_ids):
             scene_mask = (scene_ids == scene_id) & objectness 
-            if int(scene_mask.sum().item()) < 2:
+            if scene_mask.sum() < 2:
                 continue
 
             scene_boxes = denorm_boxes[scene_mask]
@@ -541,7 +557,7 @@ class GaussianDiffusion:
         # [MODIFIED] Add room outer loss and walkable loss from PhyScene physical guidance
         denorm_boxes = self._denormalize_box_params(pred_xstart)
         if objectness is not None:
-            obj_mask = objectness.to(device=denorm_boxes.device, dtype=torch.bool)
+            obj_mask = objectness.to(device=denorm_boxes.device).bool()
             denorm_boxes_for_room = denorm_boxes[obj_mask]
         else:
             denorm_boxes_for_room = denorm_boxes
@@ -723,8 +739,6 @@ class GaussianDiffusion:
             summary['final_pairs_with_penetration'] = 0
             summary['final_num_pairs'] = 0
             summary['final_metrics_error'] = str(exc)
-            summary['final_num_pairs'] = 0
-            summary['final_metrics_error'] = str(exc)
 
         return summary
 
@@ -745,16 +759,20 @@ class GaussianDiffusion:
         assert sample.shape == pred_xstart.shape
         return (sample, pred_xstart) if return_pred_xstart else sample
 
-    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=False, return_pred_xstart=False, floor_plan=None, room_outer_box=None, objectness=None):
+    def p_sample_sg(self, denoise_fn, data, t, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=False, return_pred_xstart=False, floor_plan=None, room_outer_box=None, objectness=None, t_int=None, is_guided_step=False):
         """
-        Sample from the model
+        Sample from the model without CPU-GPU synchronization stalls.
+        t_int MUST be provided as a Python int by the caller — never left as None during inference.
+        is_guided_step: bool indicating if guidance gradient optimization is active for this step.
         """
+        assert t_int is not None, "t_int must be a Python int — never call p_sample_sg without t_int during inference"
+
         guidance_step_stats = {
-            'timestep': int(t[0].item()),
+            'timestep': t_int,
             'applied': False,
             'skip_reason': 'guidance_disabled',
         }
-        if self._guidance_enabled():
+        if is_guided_step:
             with torch.enable_grad():
                 guided_data = data.detach().clone().requires_grad_(True)
                 model_mean, model_variance, model_log_variance, pred_xstart = self.p_mean_variance(
@@ -767,12 +785,11 @@ class GaussianDiffusion:
                     clip_denoised=clip_denoised,
                     return_pred_xstart=True,
                 )
-                # [MODIFIED] Pass floor_plan and room_outer_box down to apply_inference_guidance
                 model_mean, guidance_step_stats = self._apply_inference_guidance(
                     pred_xstart=pred_xstart,
                     model_mean=model_mean,
                     model_variance=model_variance,
-                    timestep=int(t[0].item()),
+                    timestep=t_int,
                     scene_ids=scene_ids,
                     floor_plan=floor_plan,
                     room_outer_box=room_outer_box,
@@ -791,12 +808,13 @@ class GaussianDiffusion:
                 clip_denoised=clip_denoised,
                 return_pred_xstart=True,
             )
-        noise = noise_fn(size=data.shape, dtype=data.dtype, device=data.device)
-        assert noise.shape == data.shape
-        # no noise when t == 0
-        nonzero_mask = torch.reshape(1 - (t == 0).float(), [data.shape[0]] + [1] * (len(data.shape) - 1))
+        
+        if t_int > 0:
+            noise = noise_fn(size=data.shape, dtype=data.dtype, device=data.device)
+            sample = model_mean + torch.exp(0.5 * model_log_variance) * noise
+        else:
+            sample = model_mean
 
-        sample = model_mean + nonzero_mask * torch.exp(0.5 * model_log_variance) * noise
         assert sample.shape == pred_xstart.shape
         if return_pred_xstart:
             return sample, pred_xstart, guidance_step_stats
@@ -808,52 +826,186 @@ class GaussianDiffusion:
         """
         Generate samples
         keep_running: True if we run 2 x num_timesteps, False if we just run num_timesteps
-
         """
-
         assert isinstance(shape, (tuple, list))
+
+        total_steps = self.num_timesteps if not keep_running else len(self.betas)
+
         img_t = noise_fn(size=shape, dtype=torch.float, device=device)
-        for t in reversed(range(0, self.num_timesteps if not keep_running else len(self.betas))):
-            t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
-            img_t = self.p_sample(denoise_fn=denoise_fn, data=img_t,t=t_, condition=condition, condition_cross=condition_cross, noise_fn=noise_fn,
+        for t in reversed(range(0, total_steps)):
+            t_batch = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
+            img_t = self.p_sample(denoise_fn=denoise_fn, data=img_t, t=t_batch, condition=condition, condition_cross=condition_cross, noise_fn=noise_fn,
                                   clip_denoised=clip_denoised, return_pred_xstart=False)
 
         assert img_t.shape == shape
         return img_t
 
-    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=True, keep_running=False, floor_plan=None, room_outer_box=None,objectness=None):
+    def p_sample_loop_sg(self, denoise_fn, shape, device, obj_embed, triples, condition, scene_ids=None, noise_fn=torch.randn, clip_denoised=True, keep_running=False, floor_plan=None, room_outer_box=None, objectness=None):
         """
-        Generate samples
-        keep_running: True if we run 2 x num_timesteps, False if we just run num_timesteps
-
+        Generate DDPM layout samples at 100% GPU utilization by avoiding CPU-GPU sync stalls.
         """
 
         assert isinstance(shape, (tuple, list))
         x_t = noise_fn(size=shape, dtype=torch.float, device=device)
         step_stats = []
-        for t in tqdm(reversed(range(0, self.num_timesteps if not keep_running else len(self.betas)))):
-            t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
-            # [MODIFIED] Pass floor_plan and room_outer_box
-            x_t, guidance_step_stats = self.p_sample_sg(denoise_fn=denoise_fn, data=x_t, t=t_, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
-                                  clip_denoised=clip_denoised, return_pred_xstart=False, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
-            
-            # [MODIFIED] Freeze non-object nodes (e.g. floor, _scene_) using their Ground Truth values
-            if getattr(self, 'objectness', None) is not None and getattr(self, 'gt_boxes', None) is not None:
-                mask = ~self.objectness.bool()
-                if mask.any():
-                    if t > 0:
-                        noise = torch.randn_like(self.gt_boxes)
-                        noised_gt = self.q_sample(x_start=self.gt_boxes, t=t_, noise=noise)
-                    else:
-                        noised_gt = self.gt_boxes
-                    x_t[mask] = noised_gt[mask]
+        t_batch = torch.empty(shape[0], dtype=torch.int64, device=device)
+        total_steps = self.num_timesteps if not keep_running else len(self.betas)
 
-            if self._guidance_enabled():
+        # Pre-compute GT-freeze mask once — avoids mask.any() GPU→CPU sync every step
+        has_gt_freeze = (
+            getattr(self, 'objectness', None) is not None and
+            getattr(self, 'gt_boxes', None) is not None
+        )
+        if has_gt_freeze:
+            freeze_mask = ~self.objectness.bool()
+            has_gt_freeze = bool(freeze_mask.any())  # only one sync, at setup time
+
+        # Cache guidance flag once — avoids 1000x cfg_get dict lookups
+        guidance_on = self._guidance_enabled()
+        guided_steps_set = {
+            t for t in range(total_steps) if self._guidance_active_for_timestep(t)
+        } if guidance_on else set()
+
+        for t_int in tqdm(reversed(range(0, total_steps)), mininterval=0.2):
+            t_batch.fill_(t_int)
+            is_guided = t_int in guided_steps_set
+            x_t, guidance_step_stats = self.p_sample_sg(
+                denoise_fn=denoise_fn, data=x_t, t=t_batch, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
+                clip_denoised=clip_denoised, return_pred_xstart=False, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness,
+                t_int=t_int, is_guided_step=is_guided
+            )
+
+            # Freeze non-object nodes (e.g. floor, _scene_) using their Ground Truth values
+            if has_gt_freeze:
+                if t_int > 0:
+                    noise = torch.randn_like(self.gt_boxes)
+                    noised_gt = self.q_sample(x_start=self.gt_boxes, t=t_batch, noise=noise)
+                else:
+                    noised_gt = self.gt_boxes
+                x_t[freeze_mask] = noised_gt[freeze_mask]
+
+            if is_guided:
                 step_stats.append(guidance_step_stats)
 
         assert x_t.shape == shape
         self.latest_sampling_stats = self._summarize_guidance_stats(step_stats, x_t, scene_ids, objectness=objectness)
         return x_t
+
+    def p_sample_loop_sg_ddim(self, denoise_fn, shape, device, obj_embed, triples, condition, ddim_steps=100, eta=0.0, scene_ids=None, noise_fn=torch.randn, clip_denoised=True, floor_plan=None, room_outer_box=None, objectness=None):
+        """
+        Generate layout samples using fast DDIM sampling (100% GPU utilization).
+        """
+        assert isinstance(shape, (tuple, list))
+        c = max(1, self.num_timesteps // ddim_steps)
+        ddim_timesteps = np.asarray(list(range(0, self.num_timesteps, c)))
+        time_pairs = list(zip(reversed(ddim_timesteps), reversed(np.append([-1], ddim_timesteps[:-1]))))
+
+        x_t = noise_fn(size=shape, dtype=torch.float, device=device)
+        step_stats = []
+        # Pre-allocate both time batches — reused with fill_() to avoid per-step allocation
+        t_batch = torch.empty(shape[0], dtype=torch.int64, device=device)
+        t_prev_batch = torch.empty(shape[0], dtype=torch.int64, device=device)
+
+        # Pre-compute GT-freeze mask once — avoids mask.any() GPU→CPU sync every step
+        has_gt_freeze = (
+            getattr(self, 'objectness', None) is not None and
+            getattr(self, 'gt_boxes', None) is not None
+        )
+        if has_gt_freeze:
+            freeze_mask = ~self.objectness.bool()
+            has_gt_freeze = bool(freeze_mask.any())  # only one sync, at setup time
+
+        # Cache guidance flag once — avoids N×cfg_get dict lookups
+        guidance_on = self._guidance_enabled()
+        guided_steps_set = {
+            int(t) for t, _ in time_pairs if self._guidance_active_for_timestep(int(t))
+        } if guidance_on else set()
+
+        for t_int, t_prev_int in tqdm(time_pairs, desc="DDIM Layout Sampler", mininterval=0.2):
+            t_batch.fill_(int(t_int))
+
+            alpha_cumprod_t = self._extract(self._get_tensor('alphas_cumprod', device), t_batch, x_t.shape)
+            if t_prev_int >= 0:
+                t_prev_batch.fill_(int(t_prev_int))
+                alpha_cumprod_prev = self._extract(self._get_tensor('alphas_cumprod', device), t_prev_batch, x_t.shape)
+            else:
+                alpha_cumprod_prev = torch.ones_like(alpha_cumprod_t)
+
+            is_guided = int(t_int) in guided_steps_set
+
+            guidance_step_stats = {
+                'timestep': int(t_int),
+                'applied': False,
+                'skip_reason': 'guidance_disabled',
+            }
+
+            if is_guided:
+                with torch.enable_grad():
+                    guided_data = x_t.detach().clone().requires_grad_(True)
+                    model_output = denoise_fn(guided_data, obj_embed, triples, t_batch, condition)
+
+                    if self.model_mean_type == 'eps':
+                        pred_xstart = self._predict_xstart_from_eps(guided_data, t=t_batch, eps=model_output)
+                        eps = model_output
+                    elif self.model_mean_type == 'x0':
+                        pred_xstart = model_output
+                        eps = self._predict_eps_from_start(guided_data, t=t_batch, x0=pred_xstart)
+
+                    if clip_denoised:
+                        pred_xstart = torch.clamp(pred_xstart, -1.0, 1.0)
+
+                    model_mean = torch.sqrt(alpha_cumprod_prev) * pred_xstart + torch.sqrt(1. - alpha_cumprod_prev) * eps
+                    model_variance = 1. - alpha_cumprod_prev
+
+                    model_mean, guidance_step_stats = self._apply_inference_guidance(
+                        pred_xstart=pred_xstart,
+                        model_mean=model_mean,
+                        model_variance=model_variance,
+                        timestep=int(t_int),
+                        scene_ids=scene_ids,
+                        floor_plan=floor_plan,
+                        room_outer_box=room_outer_box,
+                        objectness=objectness
+                    )
+                    pred_xstart = pred_xstart.detach()
+                    eps = (x_t - torch.sqrt(alpha_cumprod_t) * pred_xstart) / torch.clamp(torch.sqrt(1. - alpha_cumprod_t), min=1e-8)
+            else:
+                model_output = denoise_fn(x_t, obj_embed, triples, t_batch, condition)
+                if self.model_mean_type == 'eps':
+                    eps = model_output
+                    pred_xstart = self._predict_xstart_from_eps(x_t, t=t_batch, eps=eps)
+                elif self.model_mean_type == 'x0':
+                    pred_xstart = model_output
+                    eps = self._predict_eps_from_start(x_t, t=t_batch, x0=pred_xstart)
+
+                if clip_denoised:
+                    pred_xstart = torch.clamp(pred_xstart, -1.0, 1.0)
+
+            sigmas = eta * torch.sqrt((1 - alpha_cumprod_prev) / (1 - alpha_cumprod_t) * (1 - alpha_cumprod_t / alpha_cumprod_prev))
+            dir_xt = torch.sqrt(torch.clamp(1. - alpha_cumprod_prev - sigmas**2, min=0.)) * eps
+
+            if eta > 0 and t_prev_int > 0:
+                noise = noise_fn(size=x_t.shape, dtype=x_t.dtype, device=device)
+            else:
+                noise = 0.0
+
+            x_t = torch.sqrt(alpha_cumprod_prev) * pred_xstart + dir_xt + sigmas * noise
+
+            if has_gt_freeze:
+                if t_int > 0:
+                    noise = torch.randn_like(self.gt_boxes)
+                    noised_gt = self.q_sample(x_start=self.gt_boxes, t=t_batch, noise=noise)
+                else:
+                    noised_gt = self.gt_boxes
+                x_t[freeze_mask] = noised_gt[freeze_mask]
+
+            if is_guided:
+                step_stats.append(guidance_step_stats)
+
+        assert x_t.shape == shape
+        self.latest_sampling_stats = self._summarize_guidance_stats(step_stats, x_t, scene_ids, objectness=objectness)
+        return x_t
+
 
     def p_sample_loop_trajectory(self, denoise_fn, shape, device, freq, condition, condition_cross,
                                  noise_fn=torch.randn,clip_denoised=True, keep_running=False):
@@ -866,29 +1018,38 @@ class GaussianDiffusion:
         """
         assert isinstance(shape, (tuple, list))
 
-        total_steps =  self.num_timesteps if not keep_running else len(self.betas)
+        total_steps = self.num_timesteps if not keep_running else len(self.betas)
 
         img_t = noise_fn(size=shape, dtype=torch.float, device=device)
         imgs = [img_t]
-        for t in reversed(range(0,total_steps)):
+        # Pre-allocate t_ once; reuse with fill_() to avoid per-step allocation
+        t_ = torch.empty(shape[0], dtype=torch.int64, device=device)
 
-            t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
+        # Pre-compute GT-freeze mask once
+        has_gt_freeze = (
+            getattr(self, 'objectness', None) is not None and
+            getattr(self, 'gt_boxes', None) is not None
+        )
+        if has_gt_freeze:
+            freeze_mask = ~self.objectness.bool()
+            has_gt_freeze = bool(freeze_mask.any())  # only one sync, at setup time
+
+        for t in reversed(range(0, total_steps)):
+            t_.fill_(t)
             img_t = self.p_sample(denoise_fn=denoise_fn, data=img_t, t=t_, condition=condition, condition_cross=condition_cross, noise_fn=noise_fn,
                                   clip_denoised=clip_denoised,
                                   return_pred_xstart=False)
 
-            # [MODIFIED] Freeze non-object nodes (e.g. floor, _scene_) using their Ground Truth values
-            if getattr(self, 'objectness', None) is not None and getattr(self, 'gt_boxes', None) is not None:
-                mask = ~self.objectness.bool()
-                if mask.any():
-                    if t > 0:
-                        noise = torch.randn_like(self.gt_boxes)
-                        noised_gt = self.q_sample(x_start=self.gt_boxes, t=t_, noise=noise)
-                    else:
-                        noised_gt = self.gt_boxes
-                    img_t[mask] = noised_gt[mask]
+            # Freeze non-object nodes (e.g. floor, _scene_) using their Ground Truth values
+            if has_gt_freeze:
+                if t > 0:
+                    noise = torch.randn_like(self.gt_boxes)
+                    noised_gt = self.q_sample(x_start=self.gt_boxes, t=t_, noise=noise)
+                else:
+                    noised_gt = self.gt_boxes
+                img_t[freeze_mask] = noised_gt[freeze_mask]
 
-            if t % freq == 0 or t == total_steps-1:
+            if t % freq == 0 or t == total_steps - 1:
                 imgs.append(img_t)
 
         assert imgs[-1].shape == shape
@@ -924,7 +1085,7 @@ class GaussianDiffusion:
         bbox_iou = torch.where(torch.isnan(bbox_iou), torch.zeros_like(bbox_iou), bbox_iou)
 
         # get the iou loss weight w.r.t time
-        w_iou = self._extract(self.alphas_cumprod.to(data_t.device), timestep, bbox_iou.shape)
+        w_iou = self._extract(self._get_tensor('alphas_cumprod', data_t.device), timestep, bbox_iou.shape)
         # only consider bboxes in the same scenes
         assert scene_ids is not None
         scene_ids = torch.tensor(scene_ids, dtype=torch.int64, device=data_t.device)
@@ -934,7 +1095,7 @@ class GaussianDiffusion:
 
         # [MODIFIED] Do not compute IoU loss for floor/_scene_
         if getattr(self, 'objectness', None) is not None:
-            obj_mask = self.objectness.to(device=scene_mask.device, dtype=torch.bool)
+            obj_mask = self.objectness.bool().to(scene_mask.device)
             valid_pairs = obj_mask.unsqueeze(1) & obj_mask.unsqueeze(0)
             scene_mask = scene_mask & valid_pairs
 
@@ -943,7 +1104,7 @@ class GaussianDiffusion:
         if not torch.isnan(bbox_iou[iou_indices]).any():
             bbox_iou_valid = bbox_iou[iou_indices] + 1e-6
         else:
-            bbox_iou_valid = torch.zeros(len(w_iou_selected)).to(data_t.device) # meaningful bbox_iou in the same scene.
+            bbox_iou_valid = torch.zeros(len(w_iou_selected), device=data_t.device)  # meaningful bbox_iou in the same scene.
             print("bbox_iou is NaN")
         loss_iou_valid = w_iou_selected * 0.5 * bbox_iou_valid
         return loss_iou_valid, bbox_iou_valid
@@ -955,13 +1116,13 @@ class GaussianDiffusion:
         loss_angle = torch.nn.functional.mse_loss(target[:, self.size_dim + self.translation_dim:self.bbox_dim], denoise_out[:, self.size_dim + self.translation_dim:self.bbox_dim], reduction='none').mean(
             dim=list(range(1, len(data_t.shape))))
         loss_bbox = torch.nn.functional.mse_loss(target, denoise_out, reduction='none').mean(dim=list(range(1, len(data_t.shape))))
-        logvar_t = self.logvar[t].to(data_t.device)
+        logvar_t = self._get_tensor('logvar', data_t.device)[t]
         loss = loss_bbox / torch.exp(logvar_t) + logvar_t
         if self.loss_iou:
             loss_iou_valid, bbox_iou_valid = self.IoU_loss(data_t,  timestep=t, pred_data=denoise_out, scene_ids=scene_ids)
         else:
-            loss_iou_valid = torch.zeros(len(denoise_out)).to(data_t.device)
-            bbox_iou_valid = torch.zeros(len(denoise_out)).to(data_t.device)
+            loss_iou_valid = torch.zeros(len(denoise_out), device=data_t.device)
+            bbox_iou_valid = torch.zeros(len(denoise_out), device=data_t.device)
         return loss.mean() + loss_iou_valid.mean(), {
             'loss.bbox': loss_bbox.mean(),
             'loss.trans': loss_trans.mean(),
@@ -987,8 +1148,8 @@ class GaussianDiffusion:
         if self.loss_iou:
             loss_iou_valid, bbox_iou_valid = self.IoU_loss(data_t, timestep=t, pred_data=denoise_out,scene_ids=scene_ids)
         else:
-            loss_iou_valid = torch.zeros(len(denoise_out)).to(data_t.device)
-            bbox_iou_valid = torch.zeros(len(denoise_out)).to(data_t.device)
+            loss_iou_valid = torch.zeros(len(denoise_out), device=data_t.device)
+            bbox_iou_valid = torch.zeros(len(denoise_out), device=data_t.device)
 
         return losses.mean() + loss_iou_valid.mean(), {
             'loss.bbox': loss_bbox.mean(),
@@ -1037,7 +1198,8 @@ class GaussianDiffusion:
             t_ = torch.empty(B, dtype=torch.int64, device=x_start.device).fill_(T-1)
             qt_mean, _, qt_log_variance = self.q_mean_variance(x_start, t=t_)
             kl_prior = normal_kl(mean1=qt_mean, logvar1=qt_log_variance,
-                                 mean2=torch.tensor([0.]).to(qt_mean), logvar2=torch.tensor([0.]).to(qt_log_variance))
+                                 mean2=torch.zeros(1, device=qt_mean.device, dtype=qt_mean.dtype),
+                                 logvar2=torch.zeros(1, device=qt_log_variance.device, dtype=qt_log_variance.dtype))
             assert kl_prior.shape == x_start.shape
             return kl_prior.mean(dim=list(range(1, len(kl_prior.shape)))) / np.log(2.)
 
@@ -1142,6 +1304,11 @@ class DiffusionPoint(nn.Module):
         # [MODIFIED] Pass floor_plan and room_outer_box
         return self.diffusion.p_sample_loop_sg(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, scene_ids=scene_ids, noise_fn=noise_fn,
                                             clip_denoised=clip_denoised, keep_running=keep_running, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
+
+    def gen_samples_sg_ddim(self, shape, device, obj_embed, triples=None, condition=None, ddim_steps=100, eta=0.0, noise_fn=torch.randn,
+                        clip_denoised=True, scene_ids=None, floor_plan=None, room_outer_box=None, objectness=None):
+        return self.diffusion.p_sample_loop_sg_ddim(self._denoise, shape=shape, device=device, obj_embed=obj_embed, triples=triples, condition=condition, ddim_steps=ddim_steps, eta=eta, scene_ids=scene_ids, noise_fn=noise_fn,
+                                            clip_denoised=clip_denoised, floor_plan=floor_plan, room_outer_box=room_outer_box, objectness=objectness)
 
     def get_latest_sampling_stats(self):
         return self.diffusion.latest_sampling_stats

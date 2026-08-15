@@ -425,16 +425,12 @@ class Sg2ScDiffModel(nn.Module):
 
         return obj_selected, Shape_loss, Layout_loss, loss_dict
 
-    def sample(self, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat, gen_shape=False):
+    def sample(self, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat, gen_shape=False, ddim=False):
         with torch.no_grad():
             obj_embed, pred_embed, latent_obj_vecs, latent_pred_vecs = self.init_encoder(dec_objs, dec_triplets,
                                                                                          dec_text_feat,
                                                                                          dec_rel_feat)
-            change_repr = []
-            for i in range(len(latent_obj_vecs)):
-                noisechange = np.zeros(self.embedding_dim)
-                change_repr.append(torch.from_numpy(noisechange).float().cuda())
-            change_repr = torch.stack(change_repr, dim=0)
+            change_repr = torch.zeros((latent_obj_vecs.shape[0], self.embedding_dim), device=latent_obj_vecs.device, dtype=latent_obj_vecs.dtype)
             latent_obj_vecs_ = torch.cat([latent_obj_vecs, change_repr], dim=1)
             latent_obj_vecs_, pred_vecs_, obj_embed_, pred_embed_ = self.manipulate(latent_obj_vecs_, dec_objs,
                                                                                     dec_triplets, dec_text_feat,
@@ -444,7 +440,8 @@ class Sg2ScDiffModel(nn.Module):
 
             self.LayoutDiff.set_input(box_diff_dict)
             gen_box_dict = self.LayoutDiff.generate_layout_sg(
-                box_dim=self.diff_cfg.layout_branch.denoiser_kwargs.in_channels)
+                box_dim=self.diff_cfg.layout_branch.denoiser_kwargs.in_channels,
+                ddim=ddim)
 
             gen_sdf = None
             if gen_shape:
@@ -459,28 +456,24 @@ class Sg2ScDiffModel(nn.Module):
 
             return {'shapes': gen_sdf}, gen_box_dict
 
-    def sample_with_changes(self, enc_objs, enc_triples, enc_text_feat, enc_rel_feat, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat, manipulated_nodes, gen_shape=False):
+    def sample_with_changes(self, enc_objs, enc_triples, enc_text_feat, enc_rel_feat, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat, manipulated_nodes, gen_shape=False, ddim=False):
         with torch.no_grad():
             obj_embed, pred_embed, latent_obj_vecs, latent_pred_vecs = self.init_encoder(enc_objs, enc_triples,
                                                                                          enc_text_feat,
                                                                                          enc_rel_feat)
             # mark changes in nodes
-            change_repr = []
-            for i in range(len(latent_obj_vecs)):
-                if i not in manipulated_nodes:
-                    noisechange = np.zeros(self.embedding_dim)
-                else:
-                    noisechange = np.random.normal(0, 1, self.embedding_dim)
-                change_repr.append(torch.from_numpy(noisechange).float().cuda())
-            change_repr = torch.stack(change_repr, dim=0)
+            change_repr = torch.zeros((latent_obj_vecs.shape[0], self.embedding_dim), device=latent_obj_vecs.device, dtype=latent_obj_vecs.dtype)
+            if len(manipulated_nodes) > 0:
+                mani_idx = torch.as_tensor(list(manipulated_nodes), dtype=torch.long, device=latent_obj_vecs.device)
+                change_repr[mani_idx] = torch.randn((len(mani_idx), self.embedding_dim), device=latent_obj_vecs.device, dtype=latent_obj_vecs.dtype)
+
             latent_obj_vecs_ = torch.cat([latent_obj_vecs, change_repr], dim=1)
             latent_obj_vecs_, pred_vecs_, obj_embed_, pred_embed_ = self.manipulate(latent_obj_vecs_, dec_objs,
                                                                                     dec_triplets, dec_text_feat,
                                                                                     dec_rel_feat)
             if not self.replace_all_latent:
                 # take original nodes when untouched
-                touched_nodes = torch.tensor(sorted(manipulated_nodes)).long()
-                for touched_node in touched_nodes:
+                for touched_node in sorted(manipulated_nodes):
                     latent_obj_vecs = torch.cat(
                         [latent_obj_vecs[:touched_node], latent_obj_vecs_[touched_node:touched_node + 1],
                          latent_obj_vecs[touched_node + 1:]], dim=0)
@@ -490,7 +483,8 @@ class Sg2ScDiffModel(nn.Module):
             box_diff_dict = self.prepare_boxes(dec_triplets, obj_embed_, relation_cond=latent_obj_vecs, dec_objs=dec_objs)
             self.LayoutDiff.set_input(box_diff_dict)
             layout_dict = self.LayoutDiff.generate_layout_sg(
-                box_dim=self.diff_cfg.layout_branch.denoiser_kwargs.in_channels)
+                box_dim=self.diff_cfg.layout_branch.denoiser_kwargs.in_channels,
+                ddim=ddim)
             gen_sdf = None
             if gen_shape:
                 # relation embeddings -> diffusion
@@ -502,44 +496,35 @@ class Sg2ScDiffModel(nn.Module):
                 shape_diff_dict = {'obj_cat': dec_objs, 'triples': dec_triplets, 'c_s': c_rel_feat_s,
                                    'uc_s': uc_rel_feat_s}
                 gen_sdf = self.ShapeDiff.rel2shape(shape_diff_dict)
-        keep = []
-        for i in range(len(layout_dict["translations"])):
-            if i not in manipulated_nodes:
-                keep.append(1)
-            else:
-                keep.append(0)
-        keep = torch.from_numpy(np.asarray(keep).reshape(-1, 1)).float().cuda()
+
+        keep = torch.ones((len(layout_dict["translations"]), 1), dtype=torch.float32, device=latent_obj_vecs.device)
+        if len(manipulated_nodes) > 0:
+            mani_idx = torch.as_tensor(list(manipulated_nodes), dtype=torch.long, device=latent_obj_vecs.device)
+            keep[mani_idx] = 0.0
         return keep, {'shapes': gen_sdf}, layout_dict
 
-    def sample_with_additions(self, enc_objs, enc_triples, enc_text_feat, enc_rel_feat, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat, missing_nodes, gen_shape=False):
+    def sample_with_additions(self, enc_objs, enc_triples, enc_text_feat, enc_rel_feat, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat, missing_nodes, gen_shape=False, ddim=False):
         with torch.no_grad():
             obj_embed, pred_embed, latent_obj_vecs, latent_pred_vecs = self.init_encoder(enc_objs, enc_triples, enc_text_feat, enc_rel_feat)
             # append zero nodes
-            nodes_added=[]
+            nodes_added = []
             for i in range(len(missing_nodes)):
                 ad_id = missing_nodes[i] + i
                 nodes_added.append(ad_id)
-                noise = np.zeros(self.out_dim_ini_encoder)
-                zeros = torch.from_numpy(noise.reshape(1, self.out_dim_ini_encoder))
-                zeros.requires_grad = True
-                zeros = zeros.float().cuda()
+                zeros = torch.zeros((1, self.out_dim_ini_encoder), device=latent_obj_vecs.device, dtype=latent_obj_vecs.dtype)
                 latent_obj_vecs = torch.cat([latent_obj_vecs[:ad_id], zeros, latent_obj_vecs[ad_id:]], dim=0)
 
-            change_repr = []
-            for i in range(len(latent_obj_vecs)):
-                if i not in missing_nodes:
-                    noisechange = np.zeros(self.embedding_dim)
-                else:
-                    noisechange = np.random.normal(0, 1, self.embedding_dim)
-                change_repr.append(torch.from_numpy(noisechange).float().cuda())
-            change_repr = torch.stack(change_repr, dim=0)
+            change_repr = torch.zeros((latent_obj_vecs.shape[0], self.embedding_dim), device=latent_obj_vecs.device, dtype=latent_obj_vecs.dtype)
+            if len(missing_nodes) > 0:
+                miss_idx = torch.as_tensor(list(missing_nodes), dtype=torch.long, device=latent_obj_vecs.device)
+                change_repr[miss_idx] = torch.randn((len(miss_idx), self.embedding_dim), device=latent_obj_vecs.device, dtype=latent_obj_vecs.dtype)
+
             latent_obj_vecs_ = torch.cat([latent_obj_vecs, change_repr], dim=1)
             latent_obj_vecs_, pred_vecs_, obj_embed_, pred_embed_ = self.manipulate(latent_obj_vecs_, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat)
 
             if not self.replace_all_latent:
                 # take original nodes when untouched
-                touched_nodes = torch.tensor(sorted(nodes_added)).long()
-                for touched_node in touched_nodes:
+                for touched_node in sorted(nodes_added):
                     latent_obj_vecs = torch.cat(
                         [latent_obj_vecs[:touched_node], latent_obj_vecs_[touched_node:touched_node + 1],
                          latent_obj_vecs[touched_node + 1:]], dim=0)
@@ -549,7 +534,8 @@ class Sg2ScDiffModel(nn.Module):
             box_diff_dict = self.prepare_boxes(dec_triplets, obj_embed_, relation_cond=latent_obj_vecs, dec_objs=dec_objs)
             self.LayoutDiff.set_input(box_diff_dict)
             layout_dict = self.LayoutDiff.generate_layout_sg(
-                box_dim=self.diff_cfg.layout_branch.denoiser_kwargs.in_channels)
+                box_dim=self.diff_cfg.layout_branch.denoiser_kwargs.in_channels,
+                ddim=ddim)
             gen_sdf = None
             if gen_shape:
                 # relation embeddings -> diffusion
@@ -562,13 +548,10 @@ class Sg2ScDiffModel(nn.Module):
                                    'uc_s': uc_rel_feat_s}
                 gen_sdf = self.ShapeDiff.rel2shape(shape_diff_dict)
 
-        keep = []
-        for i in range(len(layout_dict["translations"])):
-            if i not in nodes_added:
-                keep.append(1)
-            else:
-                keep.append(0)
-        keep = torch.from_numpy(np.asarray(keep).reshape(-1, 1)).float().cuda()
+        keep = torch.ones((len(layout_dict["translations"]), 1), dtype=torch.float32, device=latent_obj_vecs.device)
+        if len(nodes_added) > 0:
+            added_idx = torch.as_tensor(list(nodes_added), dtype=torch.long, device=latent_obj_vecs.device)
+            keep[added_idx] = 0.0
         return keep, {'shapes': gen_sdf}, layout_dict
 
     def state_dict(self, epoch, counter):

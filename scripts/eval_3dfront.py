@@ -42,6 +42,7 @@ parser.add_argument('--save_3d', default=True, type=bool_flag, help='Save .obj a
 parser.add_argument('--default_exp', default='../released_full_model', help='default exp load arguments')
 parser.add_argument('--debug', default=False, type=bool_flag, help='Print debug bbox info')
 parser.add_argument('--resolve_collisions', default=False, type=bool_flag, help='Apply OBB post-process collision resolution after box prediction')
+parser.add_argument('--ddim', default=False, type=bool_flag, help='Use DDIM sampler for layout diffusion instead of DDPM')
 # Shortcut flags: auto-set start_idx=<room_start> and max_samples=20
 # Indices derived from test_rooms_list (1) (1).txt:
 #   Bedroom     -> 0
@@ -217,6 +218,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
             print("Exception: skipping scene", e)
             continue
 
+        dec_objs_cpu = dec_objs
         enc_objs, enc_triples = enc_objs.cuda(), enc_triples.cuda()
         dec_objs, dec_triples, dec_tight_boxes = dec_objs.cuda(), dec_triples.cuda(), dec_tight_boxes.cuda()
         encoded_enc_rel_feat, encoded_enc_text_feat, encoded_dec_text_feat, encoded_dec_rel_feat = None, None, None, None
@@ -227,12 +229,10 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
         all_pred_boxes = []
         all_pred_angles = []
 
-        class_idx = dec_objs.cpu().numpy().astype(int)
-        objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
-        for i, idx in enumerate(class_idx):
-            label = obj_classes[int(idx)].strip('\n')
-            if label in ['_scene_', 'floor']:
-                objectness_mask[i] = False
+        objectness_mask = torch.tensor(
+            [obj_classes[int(idx)].strip('\n') not in ['_scene_', 'floor'] for idx in dec_objs_cpu],
+            dtype=torch.bool, device=dec_objs.device
+        )
         model.diff.current_objectness = objectness_mask
         model.diff.current_gt_boxes = dec_tight_boxes
 
@@ -242,7 +242,7 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                 # original graph
                 print("***original graph***")
                 original_data_dict = model.sample_box_and_shape(enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat,
-                                                       gen_shape=gen_shape)
+                                                       gen_shape=gen_shape, ddim=args.ddim)
                 log_collision_stats(original_data_dict, data['scan_id'][0], modelArgs['store_path'], prefix="[Original] ")
                 original_boxes_pred, original_angles_pred = torch.concat((original_data_dict['sizes'], original_data_dict['translations']), dim=-1), original_data_dict['angles']
                 original_shapes_pred = None
@@ -261,12 +261,12 @@ def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized
                 keep, data_dict = model.sample_boxes_and_shape_with_changes(enc_objs, enc_triples, encoded_enc_text_feat,
                                                                             encoded_enc_rel_feat, dec_objs, dec_triples,
                                                                             encoded_dec_text_feat, encoded_dec_rel_feat,
-                                                                            manipulated_nodes, gen_shape=gen_shape)
+                                                                            manipulated_nodes, gen_shape=gen_shape, ddim=args.ddim)
             else:
                 keep, data_dict = model.sample_boxes_and_shape_with_additions(enc_objs, enc_triples, encoded_enc_text_feat,
                                                                               encoded_enc_rel_feat, dec_objs, dec_triples,
                                                                               encoded_dec_text_feat, encoded_dec_rel_feat,
-                                                                              missing_nodes, gen_shape=gen_shape)
+                                                                              missing_nodes, gen_shape=gen_shape, ddim=args.ddim)
 
             log_collision_stats(data_dict, data['scan_id'][0], modelArgs['store_path'], prefix="[Manipulated] ")
             boxes_pred, angles_pred = torch.concat((data_dict['sizes'], data_dict['translations']), dim=-1), data_dict['angles']
@@ -374,6 +374,7 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
             print(e)
             continue
 
+        dec_objs_cpu = dec_objs
         dec_objs, dec_triples = dec_objs.cuda(), dec_triples.cuda()
         encoded_dec_text_feat, encoded_dec_rel_feat = None, None
         if modelArgs['with_CLIP']:
@@ -382,18 +383,16 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         all_pred_boxes = []
         all_pred_angles = []
 
-        class_idx = dec_objs.cpu().numpy().astype(int)
-        objectness_mask = torch.ones(len(dec_objs), dtype=torch.bool, device=dec_objs.device)
-        for i, idx in enumerate(class_idx):
-            label = test_dataset.classes_r[int(idx)].strip('\n')
-            if label in ['_scene_', 'floor']:
-                objectness_mask[i] = False
+        objectness_mask = torch.tensor(
+            [test_dataset.classes_r[int(idx)].strip('\n') not in ['_scene_', 'floor'] for idx in dec_objs_cpu],
+            dtype=torch.bool, device=dec_objs.device
+        )
         model.diff.current_objectness = objectness_mask
         model.diff.current_gt_boxes = dec_tight_boxes.cuda()
 
         with torch.no_grad():
 
-            data_dict = model.sample_box_and_shape(dec_objs, dec_triples, encoded_dec_text_feat, encoded_dec_rel_feat, gen_shape=gen_shape)
+            data_dict = model.sample_box_and_shape(dec_objs, dec_triples, encoded_dec_text_feat, encoded_dec_rel_feat, gen_shape=gen_shape, ddim=args.ddim)
 
             log_collision_stats(data_dict, data['scan_id'][0], modelArgs['store_path'])
             boxes_pred, angles_pred = torch.concat((data_dict['sizes'],data_dict['translations']),dim=-1), data_dict['angles']
