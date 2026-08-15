@@ -213,7 +213,9 @@ class BasicTransformerBlock(nn.Module):
         self.checkpoint = checkpoint
 
     def forward(self, x, context=None):
-        return checkpoint(self._forward, (x, context), self.parameters(), self.checkpoint)
+        if self.checkpoint and torch.is_grad_enabled():
+            return checkpoint(self._forward, (x, context), self.parameters(), True)
+        return self._forward(x, context)
 
     def _forward(self, x, context=None):
         x = self.attn1(self.norm1(x)) + x

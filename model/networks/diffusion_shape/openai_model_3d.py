@@ -286,9 +286,11 @@ class ResBlock(TimestepBlock):
         :param emb: an [N x emb_channels] Tensor of timestep embeddings.
         :return: an [N x C x ...] Tensor of outputs.
         """
-        return checkpoint(
-            self._forward, (x, emb), self.parameters(), self.use_checkpoint
-        )
+        if self.use_checkpoint and torch.is_grad_enabled():
+            return checkpoint(
+                self._forward, (x, emb), self.parameters(), True
+            )
+        return self._forward(x, emb)
 
 
     def _forward(self, x, emb):
@@ -351,8 +353,9 @@ class AttentionBlock(nn.Module):
         self.proj_out = zero_module(conv_nd(1, channels, channels, 1))
 
     def forward(self, x):
-        return checkpoint(self._forward, (x,), self.parameters(), True)   # TODO: check checkpoint usage, is True # TODO: fix the .half call!!!
-        #return pt_checkpoint(self._forward, x)  # pytorch
+        if self.use_checkpoint and torch.is_grad_enabled():
+            return checkpoint(self._forward, (x,), self.parameters(), True)
+        return self._forward(x)
 
     def _forward(self, x):
         b, c, *spatial = x.shape
