@@ -4,6 +4,7 @@ import open3d as o3d # open3d needs to be imported before other packages!
 import argparse
 import os
 import random
+from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import torch
 import torch.nn.parallel
@@ -577,98 +578,116 @@ def validate_constrains_loop_batched(modelArgs, test_dataset, model, epoch=None,
     objectness_lookup = torch.tensor(
         [test_dataset.classes_r[i].strip('\n') not in ['_scene_', 'floor'] for i in range(len(test_dataset.classes_r))],
         dtype=torch.bool, device='cuda' if torch.cuda.is_available() else 'cpu')
+    # Mesh extraction/export is CPU-bound (SDF -> NumPy -> marching cubes ->
+    # trimesh).  In fast mode, keep one render in flight while CUDA starts the
+    # next scene.  A two-item cap avoids retaining many full 64^3 SDF tensors.
+    render_pool = ThreadPoolExecutor(max_workers=1) if args.fast and args.visualize else None
+    pending_renders = []
 
-    for batch_index, data in enumerate(loader):
-        print(data['scan_id'])
-        try:
-            decoder = data['decoder']
-            dec_objs = decoder['objs'].cuda(non_blocking=True)
-            dec_triples = decoder['tripltes'].cuda(non_blocking=True)
-            dec_tight_boxes = decoder['boxes'].cuda(non_blocking=True)
-            obj_to_scene = decoder['obj_to_scene'].cuda(non_blocking=True)
-            triple_to_scene = decoder['triple_to_scene'].cuda(non_blocking=True)
-        except Exception as exc:
-            print(exc)
-            continue
+    try:
+        for batch_index, data in enumerate(loader):
+            print(data['scan_id'])
+            try:
+                decoder = data['decoder']
+                dec_objs = decoder['objs'].cuda(non_blocking=True)
+                dec_triples = decoder['tripltes'].cuda(non_blocking=True)
+                dec_tight_boxes = decoder['boxes'].cuda(non_blocking=True)
+                obj_to_scene = decoder['obj_to_scene'].cuda(non_blocking=True)
+                triple_to_scene = decoder['triple_to_scene'].cuda(non_blocking=True)
+            except Exception as exc:
+                print(exc)
+                continue
 
-        text_feats = decoder['text_feats'].cuda(non_blocking=True) if modelArgs['with_CLIP'] else None
-        rel_feats = decoder['rel_feats'].cuda(non_blocking=True) if modelArgs['with_CLIP'] else None
-        objectness_mask = objectness_lookup[dec_objs]
-        model.diff.current_objectness = objectness_mask
-        model.diff.current_gt_boxes = dec_tight_boxes
-        model.diff.current_scene_ids = obj_to_scene
+            text_feats = decoder['text_feats'].cuda(non_blocking=True) if modelArgs['with_CLIP'] else None
+            rel_feats = decoder['rel_feats'].cuda(non_blocking=True) if modelArgs['with_CLIP'] else None
+            objectness_mask = objectness_lookup[dec_objs]
+            model.diff.current_objectness = objectness_mask
+            model.diff.current_gt_boxes = dec_tight_boxes
+            model.diff.current_scene_ids = obj_to_scene
 
-        # This is the former per-scene 1,000-step loop.  Packing graphs here
-        # multiplies useful work per CUDA launch and removes the CPU launch gap.
-        with torch.no_grad():
-            layout_dict = model.sample_box_and_shape(dec_objs, dec_triples, text_feats, rel_feats,
-                                                      gen_shape=False, ddim=args.ddim)
-            boxes_pred = torch.cat((layout_dict['sizes'], layout_dict['translations']), dim=-1)
-            angles_pred = layout_dict['angles']
-            if modelArgs['bin_angle']:
-                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1) * 15.0
-                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file)
-            else:
-                angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
-                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
-        log_collision_stats(layout_dict, ', '.join(data['scan_id']), modelArgs['store_path'])
-
-        for scene_index, scan_id in enumerate(data['scan_id']):
-            object_indices = torch.nonzero(obj_to_scene == scene_index, as_tuple=False).squeeze(1)
-            scene_objs = dec_objs[object_indices]
-            scene_boxes = boxes_pred_den[object_indices]
-            scene_angles = angles_pred[object_indices]
-            scene_objectness = objectness_mask[object_indices]
-            scene_triples = dec_triples[triple_to_scene == scene_index].clone()
-            if scene_triples.numel():
-                scene_triples[:, [0, 2]] -= object_indices[0]
-            scene_text_feats = text_feats[object_indices] if text_feats is not None else None
-            scene_rel_feats = rel_feats[triple_to_scene == scene_index] if rel_feats is not None else None
-
-            # Shape diffusion is deliberately per scene: unlike layout DDPM it
-            # creates 64^3 volumes and batching all objects can exhaust a T4.
-            scene_shapes = model.sample_shapes(scene_objs, scene_triples, scene_text_feats, scene_rel_feats) if gen_shape else None
-            if args.resolve_collisions:
-                scene_boxes = resolve_bbox_collisions_obb(scene_boxes, scene_angles, objectness_mask=scene_objectness)
-
-            if args.debug:
-                debug_log_path = os.path.join(modelArgs['store_path'], 'debug_bbox.txt')
-                os.makedirs(modelArgs['store_path'], exist_ok=True)
-                with open(debug_log_path, 'a' if batch_index or scene_index else 'w') as dbg_file:
-                    obj_ids = scene_objs.cpu().tolist()
-                    boxes_np, angles_np = scene_boxes.cpu().numpy(), scene_angles.cpu().numpy()
-                    dbg_file.write(f"\nSCENE: {scan_id} | {len(obj_ids)} objects\n")
-                    for n, obj_id in enumerate(obj_ids):
-                        name = test_dataset.classes_r[obj_id].strip('\n')
-                        l, h, w, x, y, z = boxes_np[n]
-                        dbg_file.write(f"{name:<20} {l:6.3f} {h:6.3f} {w:6.3f} {x:7.3f} {y:7.3f} {z:7.3f} {float(angles_np[n]):7.2f}°\n")
-
-            entry = build_physcene_json_entry(scene_objs, scene_boxes, scene_angles, test_dataset.classes_r, scan_id)
-            for key in ['class_labels', 'translations', 'sizes', 'angles', 'objfeats_32', 'objectness']:
-                physcene_export[key].append(entry[key])
-            physcene_export['scene_ids'].append(entry['scene_id'])
-
-            if args.visualize:
-                classes, scene_scan_ids = test_dataset.classes_r, [scan_id]
-                print("rendering", [classes[obj_id].strip('\n') for obj_id in scene_objs.cpu().tolist()])
-                if model.type_ == 'echolayout':
-                    render_box(scene_scan_ids, scene_objs.cpu().numpy(), scene_boxes, scene_angles, datasize=datasize,
-                               classes=classes, render_type=args.render_type, store_img=False, render_boxes=False,
-                               visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'], save_3d=args.save_3d)
-                elif model.type_ == 'echoscene':
-                    render_full(scene_scan_ids, scene_objs.cpu().numpy(), scene_boxes, scene_angles, datasize=datasize,
-                                classes=classes, render_type=args.render_type, shapes_pred=scene_shapes.cpu().detach() if scene_shapes is not None else None,
-                                store_img=True, render_boxes=False, visual=False, demo=False, epoch=epoch,
-                                without_lamp=False, store_path=modelArgs['store_path'], save_3d=args.save_3d)
-                    if args.export_3d and args.save_3d:
-                        scene_data = dict(data)
-                        scene_data['scan_id'] = scene_scan_ids
-                        scene_data['instance_id'] = [data['instance_id'][scene_index]]
-                        export_echoscene_sidecar(modelArgs, test_dataset, scene_data, scene_objs, scene_triples,
-                                                 scene_boxes, scene_angles, classes, epoch=epoch, render_type=args.render_type)
+            # This is the former per-scene 1,000-step loop.  Packing graphs here
+            # multiplies useful work per CUDA launch and removes the CPU launch gap.
+            with torch.no_grad():
+                layout_dict = model.sample_box_and_shape(dec_objs, dec_triples, text_feats, rel_feats,
+                                                          gen_shape=False, ddim=args.ddim)
+                boxes_pred = torch.cat((layout_dict['sizes'], layout_dict['translations']), dim=-1)
+                angles_pred = layout_dict['angles']
+                if modelArgs['bin_angle']:
+                    angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1) * 15.0
+                    boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file)
                 else:
-                    raise NotImplementedError
-            accuracy = validate_constrains(scene_triples, scene_boxes, scene_angles, None, model.vocab, accuracy)
+                    angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
+                    boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
+            log_collision_stats(layout_dict, ', '.join(data['scan_id']), modelArgs['store_path'])
+
+            for scene_index, scan_id in enumerate(data['scan_id']):
+                object_indices = torch.nonzero(obj_to_scene == scene_index, as_tuple=False).squeeze(1)
+                scene_objs = dec_objs[object_indices]
+                scene_boxes = boxes_pred_den[object_indices]
+                scene_angles = angles_pred[object_indices]
+                scene_objectness = objectness_mask[object_indices]
+                scene_triples = dec_triples[triple_to_scene == scene_index].clone()
+                if scene_triples.numel():
+                    scene_triples[:, [0, 2]] -= object_indices[0]
+                scene_text_feats = text_feats[object_indices] if text_feats is not None else None
+                scene_rel_feats = rel_feats[triple_to_scene == scene_index] if rel_feats is not None else None
+
+                # Shape diffusion is deliberately per scene: unlike layout DDPM it
+                # creates 64^3 volumes and batching all objects can exhaust a T4.
+                scene_shapes = model.sample_shapes(scene_objs, scene_triples, scene_text_feats, scene_rel_feats) if gen_shape else None
+                if args.resolve_collisions:
+                    scene_boxes = resolve_bbox_collisions_obb(scene_boxes, scene_angles, objectness_mask=scene_objectness)
+
+                if args.debug:
+                    debug_log_path = os.path.join(modelArgs['store_path'], 'debug_bbox.txt')
+                    os.makedirs(modelArgs['store_path'], exist_ok=True)
+                    with open(debug_log_path, 'a' if batch_index or scene_index else 'w') as dbg_file:
+                        obj_ids = scene_objs.cpu().tolist()
+                        boxes_np, angles_np = scene_boxes.cpu().numpy(), scene_angles.cpu().numpy()
+                        dbg_file.write(f"\nSCENE: {scan_id} | {len(obj_ids)} objects\n")
+                        for n, obj_id in enumerate(obj_ids):
+                            name = test_dataset.classes_r[obj_id].strip('\n')
+                            l, h, w, x, y, z = boxes_np[n]
+                            dbg_file.write(f"{name:<20} {l:6.3f} {h:6.3f} {w:6.3f} {x:7.3f} {y:7.3f} {z:7.3f} {float(angles_np[n]):7.2f}°\n")
+
+                entry = build_physcene_json_entry(scene_objs, scene_boxes, scene_angles, test_dataset.classes_r, scan_id)
+                for key in ['class_labels', 'translations', 'sizes', 'angles', 'objfeats_32', 'objectness']:
+                    physcene_export[key].append(entry[key])
+                physcene_export['scene_ids'].append(entry['scene_id'])
+
+                if args.visualize:
+                    classes, scene_scan_ids = test_dataset.classes_r, [scan_id]
+                    print("rendering", [classes[obj_id].strip('\n') for obj_id in scene_objs.cpu().tolist()])
+                    if model.type_ == 'echolayout':
+                        render_box(scene_scan_ids, scene_objs.cpu().numpy(), scene_boxes, scene_angles, datasize=datasize,
+                                   classes=classes, render_type=args.render_type, store_img=False, render_boxes=False,
+                                   visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'], save_3d=args.save_3d)
+                    elif model.type_ == 'echoscene':
+                        render_args = (scene_scan_ids, scene_objs.cpu().numpy(), scene_boxes.cpu(), scene_angles.cpu())
+                        render_kwargs = dict(datasize=datasize, classes=classes, render_type=args.render_type,
+                                             shapes_pred=scene_shapes.cpu().detach() if scene_shapes is not None else None,
+                                             store_img=True, render_boxes=False, visual=False, demo=False, epoch=epoch,
+                                             without_lamp=False, store_path=modelArgs['store_path'], save_3d=args.save_3d)
+                        if render_pool is None:
+                            render_full(*render_args, **render_kwargs)
+                        else:
+                            pending_renders.append(render_pool.submit(render_full, *render_args, **render_kwargs))
+                            if len(pending_renders) >= 2:
+                                pending_renders.pop(0).result()
+                        if args.export_3d and args.save_3d:
+                            scene_data = dict(data)
+                            scene_data['scan_id'] = scene_scan_ids
+                            scene_data['instance_id'] = [data['instance_id'][scene_index]]
+                            export_echoscene_sidecar(modelArgs, test_dataset, scene_data, scene_objs, scene_triples,
+                                                     scene_boxes, scene_angles, classes, epoch=epoch, render_type=args.render_type)
+                    else:
+                        raise NotImplementedError
+                accuracy = validate_constrains(scene_triples, scene_boxes, scene_angles, None, model.vocab, accuracy)
+    finally:
+        if render_pool is not None:
+            for render_future in pending_renders:
+                render_future.result()
+            render_pool.shutdown()
 
     keys = list(accuracy.keys())
     file_path_for_output = os.path.join(modelArgs['store_path'], f'{test_dataset.eval_type}_accuracy_analysis.txt')
