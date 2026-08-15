@@ -903,7 +903,9 @@ class GaussianDiffusion:
                 )
                 step_stats.append(guidance_step_stats)
             else:
-                model_output = denoise_fn(x_t, obj_embed, triples, t_batch, condition)
+                with torch.cuda.amp.autocast(enabled=torch.cuda.is_available()):
+                    model_output = denoise_fn(x_t, obj_embed, triples, t_batch, condition)
+                model_output = model_output.float()
 
                 recip_alpha = sqrt_recip_alphas_cumprod[t_int].view(1, 1)
                 recipm1_alpha = sqrt_recipm1_alphas_cumprod[t_int].view(1, 1)

@@ -44,12 +44,12 @@ parser.add_argument('--default_exp', default='../released_full_model', help='def
 parser.add_argument('--debug', default=False, type=bool_flag, help='Print debug bbox info')
 parser.add_argument('--resolve_collisions', default=False, type=bool_flag, help='Apply OBB post-process collision resolution after box prediction')
 parser.add_argument('--ddim', default=False, type=bool_flag, help='Use DDIM sampler for layout diffusion instead of DDPM')
-parser.add_argument('--inference_batch_size', type=int, default=1,
-                    help='Number of independent scene graphs sampled together. Lower this on OOM; use 1 to disable layout batching.')
+parser.add_argument('--inference_batch_size', type=int, default=8,
+                    help='Number of independent scene graphs sampled together (default: 8). Lower this on OOM; use 1 to disable layout batching.')
 parser.add_argument('--num_workers', type=int, default=0,
                     help='CPU workers for preparing the next inference batch (0 is safest after CLIP initializes CUDA).')
 parser.add_argument('--fast', default=False, type=bool_flag,
-                    help='Use two-scene layout DDPM batches; shape generation and rendering remain per scene.')
+                    help='Use layout DDPM batches; shape generation and rendering remain per scene.')
 # Shortcut flags: auto-set start_idx=<room_start> and max_samples=20
 # Indices derived from test_rooms_list (1) (1).txt:
 #   Bedroom     -> 0
@@ -71,10 +71,8 @@ elif args.diningroom:
     args.start_idx  = 245
     args.max_samples = 20
 
-# Fast mode raises only layout-DDPM concurrency.  The 64^3 shape diffusion is
-# still executed scene by scene, which keeps peak VRAM close to the legacy run.
 if args.fast:
-    args.inference_batch_size = 2
+    args.inference_batch_size = max(args.inference_batch_size, 8)
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
 
