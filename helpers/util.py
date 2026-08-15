@@ -1,8 +1,10 @@
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 import torch
 import numpy as np
 import trimesh
+import mcubes
 import json
 import glob
 import random
@@ -295,10 +297,36 @@ def pytorch3d_to_trimesh(pytorch3d_mesh):
 #             obj_list.append(create_bbox_marker(box_points, color=color))
 #     return lamp_mesh_list, obj_list, raw_obj_list
 
+def _single_sdf_to_trimesh(sdf_np, level=0.02, n_cell=64):
+    try:
+        verts, faces = mcubes.marching_cubes(sdf_np, level)
+        verts = (verts / n_cell) - 0.5
+        tri_mesh = trimesh.Trimesh(vertices=verts, faces=faces, process=False)
+        tri_mesh.invert()
+        return tri_mesh
+    except Exception:
+        return trimesh.creation.box(extents=(0.1, 0.1, 0.1))
+
+def sdf_to_trimesh_list(shapes, level=0.02):
+    if torch.is_tensor(shapes):
+        sdf_nps = [shapes[i, 0].detach().cpu().numpy() for i in range(shapes.shape[0])]
+    elif isinstance(shapes, (list, tuple)):
+        sdf_nps = [s[0].detach().cpu().numpy() if torch.is_tensor(s) else s[0] for s in shapes]
+    else:
+        sdf_nps = [shapes[i, 0] for i in range(len(shapes))]
+
+    n_cell = sdf_nps[0].shape[-1] if len(sdf_nps) > 0 else 64
+    workers = min(8, max(1, os.cpu_count() or 1), len(sdf_nps))
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            meshes = list(executor.map(lambda arr: _single_sdf_to_trimesh(arr, level, n_cell), sdf_nps))
+    else:
+        meshes = [_single_sdf_to_trimesh(arr, level, n_cell) for arr in sdf_nps]
+    return meshes
+
 def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes=False, colors=None, without_lamp=False):
-    mesh_gen = sdf_to_mesh(shapes,render_all=True)
+    trimesh_meshes = iter(sdf_to_trimesh_list(shapes))
     colors = iter(colors)
-    trimesh_meshes = iter([pytorch3d_to_trimesh(mesh) for mesh in mesh_gen])
     obj_list = []
     lamp_mesh_list = []
     raw_obj_list = []
@@ -320,11 +348,6 @@ def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes
 
         box_points, obj = fit_shapes_to_box_v2(obj, boxes[j], degrees=True)
         obj_list.append(obj)
-        # if query_label == 'bed':
-        #     obj.export('/media/ymxlzgy/Data/asset/bedv2.glb')
-        # if query_label == 'nightstand':
-        #     obj_list.pop()
-        #     render_boxes_ = False
         if query_label == 'lamp' and without_lamp:
             lamp_mesh_list.append(obj_list.pop())
 

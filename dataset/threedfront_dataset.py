@@ -167,6 +167,14 @@ class ThreedFrontDatasetSceneGraph(data.Dataset):
             for index in tqdm(range(len(self))):
                 self.__getitem__(index)
             self.recompute_clip = False
+            # Free CLIP models from RAM and VRAM to prevent memory bloat
+            del self.cond_model, self.cond_model_cpu, preprocess, preprocess_cpu
+            self.cond_model = None
+            self.cond_model_cpu = None
+            import gc
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
     def read_relationship_json(self, json_file, box_json_file):
         """ Reads from json files the relationship labels, objects and bounding boxes
