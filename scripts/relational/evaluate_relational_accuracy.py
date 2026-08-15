@@ -75,6 +75,13 @@ def evaluate_relational_accuracy(json_path, limit=None, front_root=None):
 
         boxes_pred_den = torch.cat([sizes, trans], dim=-1)
 
+        if not isinstance(dec_triples, torch.Tensor):
+            dec_triples = torch.tensor(dec_triples, dtype=torch.long)
+        
+        # In [s, p, o] triples, subject is col 0, object is col 2
+        valid_mask = (dec_triples[:, 0] < len(boxes_pred_den)) & (dec_triples[:, 2] < len(boxes_pred_den))
+        dec_triples = dec_triples[valid_mask]
+
         accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_deg, None, ds_all.vocab, accuracy)
 
     def _safe_m(k):

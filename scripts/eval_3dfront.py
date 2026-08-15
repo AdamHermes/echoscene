@@ -51,10 +51,14 @@ parser.add_argument('--bedroom',    default=False, type=bool_flag, help='Eval fi
 parser.add_argument('--livingroom', default=False, type=bool_flag, help='Eval first 12 livingroom scenes (start_idx=162, max_samples=12)')
 parser.add_argument('--living',     default=False, type=bool_flag, help='Eval first 12 livingroom scenes (start_idx=162, max_samples=12)')
 parser.add_argument('--diningroom', default=False, type=bool_flag, help='Eval first 20 diningroom scenes (start_idx=245, max_samples=20)')
+parser.add_argument('--smalltest',  default=False, type=bool_flag, help='Eval all 52 smalltest scenes (20 bedrooms + 12 livingrooms + 20 diningrooms)')
 args = parser.parse_args()
 
 # Apply room-shortcut overrides (mutually exclusive; last one wins if multiple set)
-if args.bedroom:
+if args.smalltest:
+    args.start_idx = 0
+    args.max_samples = 52
+elif args.bedroom:
     args.start_idx  = 0
     args.max_samples = 20
 elif args.livingroom or args.living:
@@ -650,7 +654,13 @@ def evaluate():
         room_type=args.room_type)
 
     # apply start_idx and max_samples slicing only if specified
-    if args.max_samples is not None:
+    if args.smalltest:
+        test_dataset_no_changes.scans = (
+            test_dataset_no_changes.scans[0:20] +
+            test_dataset_no_changes.scans[162:174] +
+            test_dataset_no_changes.scans[245:265]
+        )
+    elif args.max_samples is not None:
         test_dataset_no_changes.scans = test_dataset_no_changes.scans[args.start_idx:args.start_idx + args.max_samples]
         #test_dataset_rels_changes.scans = test_dataset_rels_changes.scans[args.start_idx:args.start_idx + args.max_samples]
         #test_dataset_addition_changes.scans = test_dataset_addition_changes.scans[args.start_idx:args.start_idx + args.max_samples]
