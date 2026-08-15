@@ -43,6 +43,12 @@ parser.add_argument('--default_exp', default='../released_full_model', help='def
 parser.add_argument('--debug', default=False, type=bool_flag, help='Print debug bbox info')
 parser.add_argument('--resolve_collisions', default=False, type=bool_flag, help='Apply OBB post-process collision resolution after box prediction')
 parser.add_argument('--ddim', default=False, type=bool_flag, help='Use DDIM sampler for layout diffusion instead of DDPM')
+parser.add_argument('--inference_batch_size', type=int, default=1,
+                    help='Number of independent scene graphs sampled together. Lower this on OOM; use 1 to disable layout batching.')
+parser.add_argument('--num_workers', type=int, default=0,
+                    help='CPU workers for preparing the next inference batch (0 is safest after CLIP initializes CUDA).')
+parser.add_argument('--fast', default=False, type=bool_flag,
+                    help='Use two-scene layout DDPM batches; shape generation and rendering remain per scene.')
 # Shortcut flags: auto-set start_idx=<room_start> and max_samples=20
 # Indices derived from test_rooms_list (1) (1).txt:
 #   Bedroom     -> 0
@@ -63,6 +69,11 @@ elif args.livingroom:
 elif args.diningroom:
     args.start_idx  = 245
     args.max_samples = 20
+
+# Fast mode raises only layout-DDPM concurrency.  The 64^3 shape diffusion is
+# still executed scene by scene, which keeps peak VRAM close to the legacy run.
+if args.fast:
+    args.inference_batch_size = 2
 
 room_type = ['all', 'bedroom', 'livingroom', 'diningroom', 'library']
 
@@ -547,6 +558,138 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         json.dump(physcene_export, f)
     print(f"PhyScene input saved to: {export_path}")
 
+
+def validate_constrains_loop_batched(modelArgs, test_dataset, model, epoch=None, normalized_file=None,
+                                     cat2objs=None, datasize='large', gen_shape=False):
+    """Batch layout DDPM while retaining the legacy per-scene artifacts."""
+    if args.inference_batch_size < 1 or args.num_workers < 0:
+        raise ValueError('--inference_batch_size must be >= 1 and --num_workers must be >= 0')
+
+    loader_kwargs = dict(batch_size=args.inference_batch_size, collate_fn=test_dataset.collate_fn,
+                         shuffle=False, num_workers=args.num_workers, pin_memory=torch.cuda.is_available())
+    if args.num_workers:
+        loader_kwargs.update(persistent_workers=True, prefetch_factor=2)
+    loader = torch.utils.data.DataLoader(test_dataset, **loader_kwargs)
+    accuracy = {k: [] for k in ['left', 'right', 'front', 'behind', 'smaller', 'bigger', 'shorter', 'taller',
+                                 'standing on', 'close by', 'symmetrical to', 'total']}
+    physcene_export = {"class_labels": [], "translations": [], "sizes": [], "angles": [],
+                        "objfeats_32": [], "objectness": [], "scene_ids": []}
+    objectness_lookup = torch.tensor(
+        [test_dataset.classes_r[i].strip('\n') not in ['_scene_', 'floor'] for i in range(len(test_dataset.classes_r))],
+        dtype=torch.bool, device='cuda' if torch.cuda.is_available() else 'cpu')
+
+    for batch_index, data in enumerate(loader):
+        print(data['scan_id'])
+        try:
+            decoder = data['decoder']
+            dec_objs = decoder['objs'].cuda(non_blocking=True)
+            dec_triples = decoder['tripltes'].cuda(non_blocking=True)
+            dec_tight_boxes = decoder['boxes'].cuda(non_blocking=True)
+            obj_to_scene = decoder['obj_to_scene'].cuda(non_blocking=True)
+            triple_to_scene = decoder['triple_to_scene'].cuda(non_blocking=True)
+        except Exception as exc:
+            print(exc)
+            continue
+
+        text_feats = decoder['text_feats'].cuda(non_blocking=True) if modelArgs['with_CLIP'] else None
+        rel_feats = decoder['rel_feats'].cuda(non_blocking=True) if modelArgs['with_CLIP'] else None
+        objectness_mask = objectness_lookup[dec_objs]
+        model.diff.current_objectness = objectness_mask
+        model.diff.current_gt_boxes = dec_tight_boxes
+        model.diff.current_scene_ids = obj_to_scene
+
+        # This is the former per-scene 1,000-step loop.  Packing graphs here
+        # multiplies useful work per CUDA launch and removes the CPU launch gap.
+        with torch.no_grad():
+            layout_dict = model.sample_box_and_shape(dec_objs, dec_triples, text_feats, rel_feats,
+                                                      gen_shape=False, ddim=args.ddim)
+            boxes_pred = torch.cat((layout_dict['sizes'], layout_dict['translations']), dim=-1)
+            angles_pred = layout_dict['angles']
+            if modelArgs['bin_angle']:
+                angles_pred = -180 + (torch.argmax(angles_pred, dim=1, keepdim=True) + 1) * 15.0
+                boxes_pred_den = batch_torch_destandardize_box_params(boxes_pred, file=normalized_file)
+            else:
+                angles_pred = postprocess_sincos2arctan(angles_pred) / np.pi * 180
+                boxes_pred_den = descale_box_params(boxes_pred, file=normalized_file)
+        log_collision_stats(layout_dict, ', '.join(data['scan_id']), modelArgs['store_path'])
+
+        for scene_index, scan_id in enumerate(data['scan_id']):
+            object_indices = torch.nonzero(obj_to_scene == scene_index, as_tuple=False).squeeze(1)
+            scene_objs = dec_objs[object_indices]
+            scene_boxes = boxes_pred_den[object_indices]
+            scene_angles = angles_pred[object_indices]
+            scene_objectness = objectness_mask[object_indices]
+            scene_triples = dec_triples[triple_to_scene == scene_index].clone()
+            if scene_triples.numel():
+                scene_triples[:, [0, 2]] -= object_indices[0]
+            scene_text_feats = text_feats[object_indices] if text_feats is not None else None
+            scene_rel_feats = rel_feats[triple_to_scene == scene_index] if rel_feats is not None else None
+
+            # Shape diffusion is deliberately per scene: unlike layout DDPM it
+            # creates 64^3 volumes and batching all objects can exhaust a T4.
+            scene_shapes = model.sample_shapes(scene_objs, scene_triples, scene_text_feats, scene_rel_feats) if gen_shape else None
+            if args.resolve_collisions:
+                scene_boxes = resolve_bbox_collisions_obb(scene_boxes, scene_angles, objectness_mask=scene_objectness)
+
+            if args.debug:
+                debug_log_path = os.path.join(modelArgs['store_path'], 'debug_bbox.txt')
+                os.makedirs(modelArgs['store_path'], exist_ok=True)
+                with open(debug_log_path, 'a' if batch_index or scene_index else 'w') as dbg_file:
+                    obj_ids = scene_objs.cpu().tolist()
+                    boxes_np, angles_np = scene_boxes.cpu().numpy(), scene_angles.cpu().numpy()
+                    dbg_file.write(f"\nSCENE: {scan_id} | {len(obj_ids)} objects\n")
+                    for n, obj_id in enumerate(obj_ids):
+                        name = test_dataset.classes_r[obj_id].strip('\n')
+                        l, h, w, x, y, z = boxes_np[n]
+                        dbg_file.write(f"{name:<20} {l:6.3f} {h:6.3f} {w:6.3f} {x:7.3f} {y:7.3f} {z:7.3f} {float(angles_np[n]):7.2f}°\n")
+
+            entry = build_physcene_json_entry(scene_objs, scene_boxes, scene_angles, test_dataset.classes_r, scan_id)
+            for key in ['class_labels', 'translations', 'sizes', 'angles', 'objfeats_32', 'objectness']:
+                physcene_export[key].append(entry[key])
+            physcene_export['scene_ids'].append(entry['scene_id'])
+
+            if args.visualize:
+                classes, scene_scan_ids = test_dataset.classes_r, [scan_id]
+                print("rendering", [classes[obj_id].strip('\n') for obj_id in scene_objs.cpu().tolist()])
+                if model.type_ == 'echolayout':
+                    render_box(scene_scan_ids, scene_objs.cpu().numpy(), scene_boxes, scene_angles, datasize=datasize,
+                               classes=classes, render_type=args.render_type, store_img=False, render_boxes=False,
+                               visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'], save_3d=args.save_3d)
+                elif model.type_ == 'echoscene':
+                    render_full(scene_scan_ids, scene_objs.cpu().numpy(), scene_boxes, scene_angles, datasize=datasize,
+                                classes=classes, render_type=args.render_type, shapes_pred=scene_shapes.cpu().detach() if scene_shapes is not None else None,
+                                store_img=True, render_boxes=False, visual=False, demo=False, epoch=epoch,
+                                without_lamp=False, store_path=modelArgs['store_path'], save_3d=args.save_3d)
+                    if args.export_3d and args.save_3d:
+                        scene_data = dict(data)
+                        scene_data['scan_id'] = scene_scan_ids
+                        scene_data['instance_id'] = [data['instance_id'][scene_index]]
+                        export_echoscene_sidecar(modelArgs, test_dataset, scene_data, scene_objs, scene_triples,
+                                                 scene_boxes, scene_angles, classes, epoch=epoch, render_type=args.render_type)
+                else:
+                    raise NotImplementedError
+            accuracy = validate_constrains(scene_triples, scene_boxes, scene_angles, None, model.vocab, accuracy)
+
+    keys = list(accuracy.keys())
+    file_path_for_output = os.path.join(modelArgs['store_path'], f'{test_dataset.eval_type}_accuracy_analysis.txt')
+    with open(file_path_for_output, 'w') as file:
+        lr_mean = np.mean([np.mean(accuracy[keys[0]]), np.mean(accuracy[keys[1]])])
+        fb_mean = np.mean([np.mean(accuracy[keys[2]]), np.mean(accuracy[keys[3]])])
+        bism_mean = np.mean([np.mean(accuracy[keys[4]]), np.mean(accuracy[keys[5]])])
+        tash_mean = np.mean([np.mean(accuracy[keys[6]]), np.mean(accuracy[keys[7]])])
+        stand_mean, close_mean, symm_mean, total_mean = (np.mean(accuracy[keys[n]]) for n in range(8, 12))
+        means_of_mean = np.mean([lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean])
+        msg = ('acc & L/R: {:.2f} & F/B: {:.2f} & Bi/Sm: {:.2f} & Ta/Sh: {:.2f} & Stand: {:.2f} & Close: {:.2f} & Symm: {:.2f}. Total: &{:.2f}'
+               .format(lr_mean, fb_mean, bism_mean, tash_mean, stand_mean, close_mean, symm_mean, total_mean))
+        print(msg)
+        print('means of mean: {:.2f}'.format(means_of_mean))
+        file.write(msg + '\nmeans of mean: {:.2f}\n'.format(means_of_mean))
+    export_path = os.path.join(modelArgs['store_path'], 'physcene_collision_input.json')
+    os.makedirs(modelArgs['store_path'], exist_ok=True)
+    with open(export_path, 'w') as f:
+        json.dump(physcene_export, f)
+    print(f"PhyScene input saved to: {export_path}")
+
 def build_physcene_json_entry(
     dec_objs,        # (N_obj,) int tensor — class indices
     boxes_pred_den,  # (N_obj, 6) float tensor — [l,h,w,x,y,z] denormalized
@@ -685,7 +828,10 @@ def evaluate():
 
     reseed(47)
     print('\nGeneration Mode')
-    validate_constrains_loop(modelArgs, test_dataset_no_changes, model, epoch=args.epoch, normalized_file=normalized_file, cat2objs=cat2objs, datasize='large' if modelArgs['large'] else 'small', gen_shape=args.gen_shape)
+    validate_loop = validate_constrains_loop if args.inference_batch_size == 1 else validate_constrains_loop_batched
+    validate_loop(modelArgs, test_dataset_no_changes, model, epoch=args.epoch,
+                  normalized_file=normalized_file, cat2objs=cat2objs,
+                  datasize='large' if modelArgs['large'] else 'small', gen_shape=args.gen_shape)
 
 if __name__ == "__main__":
     print(torch.__version__)

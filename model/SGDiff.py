@@ -96,6 +96,11 @@ class SGDiff(nn.Module):
         else:
             raise NotImplementedError
 
+    def sample_shapes(self, dec_objs, dec_triplets, encoded_dec_text_feat, encoded_dec_rel_feat):
+        if self.type_ != 'echoscene':
+            return None
+        return self.diff.sample_shapes(dec_objs, dec_triplets, encoded_dec_text_feat, encoded_dec_rel_feat)
+
     def sample_boxes_and_shape_with_changes(self, enc_objs, enc_triples, encoded_enc_text_feat, encoded_enc_rel_feat,
                                             dec_objs, dec_triples, encoded_dec_text_feat, encoded_dec_rel_feat, manipulated_nodes, gen_shape=False, ddim=False):
         if self.type_ == 'echolayout':

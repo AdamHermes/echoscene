@@ -348,6 +348,11 @@ class Sg2ScDiffModel(nn.Module):
         return obj_cat_selected[:self.diffusion_bs], diff_dict
 
     def prepare_boxes(self, triples, obj_embed, relation_cond, scene_ids=None, obj_boxes=None, obj_angles=None, dec_objs=None):
+        # Evaluation can pack several independent scene graphs into one CUDA
+        # batch.  Sampling used to drop the collate_fn scene IDs here, which
+        # made physical guidance treat the entire batch as one room.
+        if scene_ids is None:
+            scene_ids = getattr(self, 'current_scene_ids', None)
         if obj_boxes is not None and obj_angles is not None:
             obj_boxes = torch.cat((obj_boxes, obj_angles.reshape(-1,1)), dim=-1)
         diff_dict = {'preds': triples, 'box': obj_boxes, 'uc_b': obj_embed,
@@ -455,6 +460,28 @@ class Sg2ScDiffModel(nn.Module):
                 gen_sdf = self.ShapeDiff.rel2shape(shape_diff_dict)
 
             return {'shapes': gen_sdf}, gen_box_dict
+
+    def sample_shapes(self, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat):
+        """Generate shapes only, after batched layout inference has completed."""
+        with torch.no_grad():
+            obj_embed, _, latent_obj_vecs, _ = self.init_encoder(
+                dec_objs, dec_triplets, dec_text_feat, dec_rel_feat)
+            change_repr = torch.zeros(
+                (latent_obj_vecs.shape[0], self.embedding_dim),
+                device=latent_obj_vecs.device,
+                dtype=latent_obj_vecs.dtype,
+            )
+            latent_obj_vecs = torch.cat([latent_obj_vecs, change_repr], dim=1)
+            latent_obj_vecs, _, obj_embed, _ = self.manipulate(
+                latent_obj_vecs, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat)
+            c_rel = self.rel_s_mlp(latent_obj_vecs).unsqueeze(1)
+            uc_rel = self.rel_s_mlp(obj_embed).unsqueeze(1)
+            return self.ShapeDiff.rel2shape({
+                'obj_cat': dec_objs,
+                'triples': dec_triplets,
+                'c_s': c_rel,
+                'uc_s': uc_rel,
+            })
 
     def sample_with_changes(self, enc_objs, enc_triples, enc_text_feat, enc_rel_feat, dec_objs, dec_triplets, dec_text_feat, dec_rel_feat, manipulated_nodes, gen_shape=False, ddim=False):
         with torch.no_grad():
