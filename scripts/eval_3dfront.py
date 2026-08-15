@@ -375,6 +375,8 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         "class_labels": [], "translations": [], "sizes": [],
         "angles": [], "objfeats_32": [], "objectness": [], "scene_ids": []
     }
+    render_pool = ThreadPoolExecutor(max_workers=2) if args.visualize else None
+    pending_renders = []
     for i, data in enumerate(test_dataloader_no_changes, 0):
         print(data['scan_id'])
 
@@ -506,14 +508,36 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         if args.visualize:
             classes = test_dataset.classes_r
             print("rendering", [classes[i.item()].strip('\n') for i in dec_objs])
+            scan_id_copy = list(data['scan_id'])
+            dec_objs_np = dec_objs.detach().cpu().numpy()
+            boxes_pred_den_cpu = boxes_pred_den.detach().cpu()
+            angles_pred_cpu = angles_pred.detach().cpu()
+            shapes_pred_cpu = shapes_pred.detach().cpu() if shapes_pred is not None else None
+
             if model.type_ == 'echolayout':
-                render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                if render_pool is not None:
+                    fut = render_pool.submit(
+                        render_box, scan_id_copy, dec_objs_np, boxes_pred_den_cpu, angles_pred_cpu,
+                        datasize=datasize, classes=classes, render_type=args.render_type, store_img=False,
+                        render_boxes=False, visual=False, demo=False, without_lamp=False,
+                        store_path=modelArgs['store_path'], save_3d=args.save_3d
+                    )
+                    pending_renders.append(fut)
+                else:
+                    render_box(scan_id_copy, dec_objs_np, boxes_pred_den_cpu, angles_pred_cpu, datasize=datasize,
+                               classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'], save_3d=args.save_3d)
             elif model.type_ == 'echoscene':
-                if shapes_pred is not None:
-                    shapes_pred = shapes_pred.cpu().detach()
-                render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                if render_pool is not None:
+                    fut = render_pool.submit(
+                        render_full, scan_id_copy, dec_objs_np, boxes_pred_den_cpu, angles_pred_cpu,
+                        datasize=datasize, classes=classes, render_type=args.render_type, shapes_pred=shapes_pred_cpu,
+                        store_img=True, render_boxes=False, visual=False, demo=False, epoch=epoch, without_lamp=False,
+                        store_path=modelArgs['store_path'], save_3d=args.save_3d
+                    )
+                    pending_renders.append(fut)
+                else:
+                    render_full(scan_id_copy, dec_objs_np, boxes_pred_den_cpu, angles_pred_cpu, datasize=datasize,
+                                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred_cpu, store_img=True, render_boxes=False, visual=False, demo=False, epoch=epoch, without_lamp=False, store_path=modelArgs['store_path'], save_3d=args.save_3d)
                 if args.export_3d:
                     if not args.save_3d:
                         print("Skipping structured scene export because --save_3d is False.")
@@ -527,6 +551,11 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         all_pred_boxes.append(boxes_pred_den.cpu().detach())
         all_pred_angles.append(angles_pred.cpu().detach())
         accuracy = validate_constrains(dec_triples, boxes_pred_den, angles_pred, None, model.vocab, accuracy)
+
+    if render_pool is not None:
+        for fut in pending_renders:
+            fut.result()
+        render_pool.shutdown(wait=True)
 
     keys = list(accuracy.keys())
 
