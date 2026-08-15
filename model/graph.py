@@ -158,7 +158,7 @@ class GraphTripleConv(nn.Module):
         new_o_vecs = new_t_vecs[:, (H+Din_pred):]
  
         # Allocate space for pooled object vectors of shape (num_objs, H)
-        pooled_obj_vecs = torch.zeros(num_objs, H, dtype=dtype, device=device)
+        pooled_obj_vecs = torch.zeros(num_objs, H, dtype=new_s_vecs.dtype, device=device)
 
         if self.pooling == 'wAvg':
 
@@ -174,7 +174,7 @@ class GraphTripleConv(nn.Module):
         pooled_obj_vecs.index_add_(0, o_idx, new_o_vecs)
 
         if self.pooling == 'wAvg':
-            pooled_weight_sums = torch.zeros(num_objs, 1, dtype=dtype, device=device)
+            pooled_weight_sums = torch.zeros(num_objs, 1, dtype=new_s_vecs.dtype, device=device)
             pooled_weight_sums.index_add_(0, o_idx, o_weights)
             pooled_weight_sums.index_add_(0, s_idx, s_weights)
 
@@ -183,13 +183,13 @@ class GraphTripleConv(nn.Module):
         if self.pooling == 'avg':
             cached_counts = getattr(self, '_cached_counts', None)
             if cached_counts is None or getattr(self, '_cached_edges_ptr', None) != edges.data_ptr() or cached_counts.shape[0] != num_objs:
-                obj_counts = torch.zeros(num_objs, dtype=dtype, device=device)
-                ones = torch.ones(num_triples, dtype=dtype, device=device)
+                obj_counts = torch.zeros(num_objs, dtype=new_s_vecs.dtype, device=device)
+                ones = torch.ones(num_triples, dtype=new_s_vecs.dtype, device=device)
                 obj_counts.index_add_(0, s_idx, ones)
                 obj_counts.index_add_(0, o_idx, ones)
                 self._cached_counts = obj_counts.clamp(min=1).unsqueeze(-1)
                 self._cached_edges_ptr = edges.data_ptr()
-            pooled_obj_vecs = pooled_obj_vecs / self._cached_counts
+            pooled_obj_vecs = pooled_obj_vecs / self._cached_counts.to(dtype=new_s_vecs.dtype)
 
         # Send pooled object vectors through net2 to get output object vectors,
         # of shape (num_objs, Dout)
