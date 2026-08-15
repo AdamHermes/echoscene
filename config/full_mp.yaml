@@ -94,7 +94,7 @@ layout_branch:
               heatmap_weight: 0.8    # Component 1 (Floor Edge Heatmap)
               repulsion_weight: 0.2   # Component 2 (Pairwise Furniture Repulsion)
         relational:
-          enabled: true
+          enabled: false
           weight: 0.5
           margin: 0.05
           close_threshold: 0.45
