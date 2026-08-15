@@ -607,10 +607,7 @@ def validate_constrains_loop_batched(modelArgs, test_dataset, model, epoch=None,
     objectness_lookup = torch.tensor(
         [test_dataset.classes_r[i].strip('\n') not in ['_scene_', 'floor'] for i in range(len(test_dataset.classes_r))],
         dtype=torch.bool, device='cuda' if torch.cuda.is_available() else 'cpu')
-    # Mesh extraction/export is CPU-bound (SDF -> NumPy -> marching cubes ->
-    # trimesh).  In fast mode, keep one render in flight while CUDA starts the
-    # next scene.  A two-item cap avoids retaining many full 64^3 SDF tensors.
-    render_pool = ThreadPoolExecutor(max_workers=1) if args.fast and args.visualize else None
+    render_pool = ThreadPoolExecutor(max_workers=2) if args.visualize else None
     pending_renders = []
 
     try:
@@ -701,8 +698,6 @@ def validate_constrains_loop_batched(modelArgs, test_dataset, model, epoch=None,
                             render_full(*render_args, **render_kwargs)
                         else:
                             pending_renders.append(render_pool.submit(render_full, *render_args, **render_kwargs))
-                            if len(pending_renders) >= 2:
-                                pending_renders.pop(0).result()
                         if args.export_3d and args.save_3d:
                             scene_data = dict(data)
                             scene_data['scan_id'] = scene_scan_ids
