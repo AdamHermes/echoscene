@@ -478,9 +478,9 @@ def compute_relational_guidance_loss(
     stand_threshold=0.04
 ):
     """
-    Computes Differentiable Directional & Support Relational Guidance Loss.
+    Computes Differentiable Directional, Proximity, Support, Symmetry & Size Relational Guidance Loss.
     Actively steers object bounding boxes during diffusion sampling to satisfy 
-    scene graph relation triplets (left, right, front, behind, close by, standing on).
+    scene graph relation triplets across 3D-FRONT relational categories.
     """
     if triples is None or len(triples) == 0:
         return torch.tensor(0.0, device=bbox.device, dtype=bbox.dtype)
@@ -492,13 +492,16 @@ def compute_relational_guidance_loss(
     device = bbox.device
     dtype = bbox.dtype
 
-    # Denormalized box centers: [l, h, w, x, y, z, angle]
+    # Denormalized box dimensions and centers: [l, h, w, x, y, z, angle]
+    sizes_l = bbox[:, :, 0]
+    sizes_h = bbox[:, :, 1]
+    sizes_w = bbox[:, :, 2]
     centers_x = bbox[:, :, 3]
     centers_y = bbox[:, :, 4]
     centers_z = bbox[:, :, 5]
 
     total_loss = torch.tensor(0.0, device=device, dtype=dtype)
-    num_relations = 0
+    num_valid_relations = 0
 
     if triples.dim() == 2:
         triples_batch = [triples]
@@ -534,6 +537,8 @@ def compute_relational_guidance_loss(
 
             xs, ys, zs = centers_x[b, s_idx], centers_y[b, s_idx], centers_z[b, s_idx]
             xo, yo, zo = centers_x[b, o_idx], centers_y[b, o_idx], centers_z[b, o_idx]
+            ls, hs, ws = sizes_l[b, s_idx], sizes_h[b, s_idx], sizes_w[b, s_idx]
+            lo, ho, wo = sizes_l[b, o_idx], sizes_h[b, o_idx], sizes_w[b, o_idx]
 
             loss_rel = torch.tensor(0.0, device=device, dtype=dtype)
 
@@ -558,16 +563,47 @@ def compute_relational_guidance_loss(
                 dist_xz = torch.sqrt((xs - xo)**2 + (zs - zo)**2 + 1e-8)
                 loss_rel = torch.relu(dist_xz - close_threshold)
 
-            # 6. standing on / above: Center Y difference must be < stand_threshold (0.04m)
-            elif p_name in ("standing on", "7", "above", "6"):
+            # 6. standing on: Ground-level support alignment (Center Y difference < 0.04m)
+            elif p_name in ("standing on", "7"):
                 loss_rel = torch.relu(torch.abs(ys - yo) - stand_threshold)
 
-            if loss_rel > 0:
-                total_loss = total_loss + loss_rel
-                num_relations += 1
+            # 7. above: Subject Y must be above Object Y (+margin)
+            elif p_name in ("above", "6"):
+                loss_rel = torch.relu(yo - ys + margin)
 
-    if num_relations > 0:
-        total_loss = total_loss / num_relations
+            # 8. symmetrical to: Subject and Object are mirrored across X, Z, or XZ plane (within 0.45m)
+            elif p_name in ("symmetrical to", "12"):
+                d_flip_x = torch.sqrt((-xs - xo)**2 + (zs - zo)**2 + 1e-8)
+                d_flip_z = torch.sqrt((xs - xo)**2 + (-zs - zo)**2 + 1e-8)
+                d_flip_xz = torch.sqrt((-xs - xo)**2 + (-zs - zo)**2 + 1e-8)
+                min_symm_dist = torch.minimum(torch.minimum(d_flip_x, d_flip_z), d_flip_xz)
+                loss_rel = torch.relu(min_symm_dist - close_threshold)
+
+            # 9. bigger than: Subject 3D volume > 1.18 * Object 3D volume
+            elif p_name in ("bigger than", "8"):
+                vol_s = ls * hs * ws
+                vol_o = lo * ho * wo
+                loss_rel = torch.relu(1.18 * vol_o - vol_s) / (vol_o.detach() + 1e-4)
+
+            # 10. smaller than: Subject 3D volume < 0.85 * Object 3D volume
+            elif p_name in ("smaller than", "9"):
+                vol_s = ls * hs * ws
+                vol_o = lo * ho * wo
+                loss_rel = torch.relu(vol_s - 0.85 * vol_o) / (vol_o.detach() + 1e-4)
+
+            # 11. taller than: Subject height > 1.10 * Object height
+            elif p_name in ("taller than", "10"):
+                loss_rel = torch.relu(1.10 * ho - hs) / (ho.detach() + 1e-4)
+
+            # 12. shorter than: Subject height < 0.90 * Object height
+            elif p_name in ("shorter than", "11"):
+                loss_rel = torch.relu(hs - 0.90 * ho) / (ho.detach() + 1e-4)
+
+            total_loss = total_loss + loss_rel
+            num_valid_relations += 1
+
+    if num_valid_relations > 0:
+        total_loss = total_loss / num_valid_relations
 
     return total_loss
 

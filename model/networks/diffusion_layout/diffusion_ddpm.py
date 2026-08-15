@@ -324,18 +324,68 @@ class GaussianDiffusion:
     def _guidance_enabled(self):
         return bool(cfg_get(self.inference_guidance, 'enabled', False))
 
+    def _is_constraint_active(self, constraint_cfg, denoise_progress, denoise_step):
+        if constraint_cfg is None:
+            return False
+        if not bool(cfg_get(constraint_cfg, 'enabled', True)):
+            return False
+        global_interval = max(int(cfg_get(self.inference_guidance, 'interval', 1)), 1)
+        global_start_ratio = min(max(float(cfg_get(self.inference_guidance, 'start_ratio', 0.0)), 0.0), 1.0)
+        
+        c_start_ratio = cfg_get(constraint_cfg, 'start_ratio', None)
+        if c_start_ratio is not None:
+            c_start_ratio = min(max(float(c_start_ratio), 0.0), 1.0)
+        else:
+            c_start_ratio = global_start_ratio
+
+        c_interval = cfg_get(constraint_cfg, 'interval', None)
+        if c_interval is not None:
+            c_interval = max(int(c_interval), 1)
+        else:
+            c_interval = global_interval
+
+        return denoise_progress >= c_start_ratio and denoise_step % c_interval == 0
+
     def _guidance_active_for_timestep(self, timestep):
         if not self._guidance_enabled():
             return False
-        interval = max(int(cfg_get(self.inference_guidance, 'interval', 1)), 1)
-        start_ratio = float(cfg_get(self.inference_guidance, 'start_ratio', 0.0))
-        start_ratio = min(max(start_ratio, 0.0), 1.0)
         denoise_step = (self.num_timesteps - 1) - int(timestep)
         if self.num_timesteps > 1:
             denoise_progress = denoise_step / float(self.num_timesteps - 1)
         else:
             denoise_progress = 1.0
-        return denoise_progress >= start_ratio and denoise_step % interval == 0
+
+        constraints_cfg = cfg_get(self.inference_guidance, 'constraints', None)
+        if constraints_cfg is not None:
+            # Check collision
+            collision_cfg = self._collision_guidance_cfg()
+            if collision_cfg and bool(cfg_get(collision_cfg, 'enabled', False)):
+                if self._is_constraint_active(collision_cfg, denoise_progress, denoise_step):
+                    return True
+
+            # Check room_outer
+            room_outer_cfg = cfg_get(constraints_cfg, 'room_outer', None)
+            if room_outer_cfg and float(cfg_get(room_outer_cfg, 'weight', 0.0)) > 0:
+                if self._is_constraint_active(room_outer_cfg, denoise_progress, denoise_step):
+                    return True
+
+            # Check walkable
+            walkable_cfg = cfg_get(constraints_cfg, 'walkable', None)
+            if walkable_cfg and bool(cfg_get(walkable_cfg, 'enabled', False)):
+                if self._is_constraint_active(walkable_cfg, denoise_progress, denoise_step):
+                    return True
+
+            # Check relational
+            relational_cfg = cfg_get(constraints_cfg, 'relational', None)
+            if relational_cfg and bool(cfg_get(relational_cfg, 'enabled', False)):
+                if self._is_constraint_active(relational_cfg, denoise_progress, denoise_step):
+                    return True
+
+            return False
+
+        global_interval = max(int(cfg_get(self.inference_guidance, 'interval', 1)), 1)
+        global_start_ratio = min(max(float(cfg_get(self.inference_guidance, 'start_ratio', 0.0)), 0.0), 1.0)
+        return denoise_progress >= global_start_ratio and denoise_step % global_interval == 0
 
     def _collision_guidance_cfg(self):
         constraints_cfg = cfg_get(self.inference_guidance, 'constraints', None)
@@ -517,44 +567,65 @@ class GaussianDiffusion:
             step_stats['skip_reason'] = 'schedule_inactive'
             return model_mean, step_stats
 
+        denoise_step = (self.num_timesteps - 1) - int(timestep)
+        if self.num_timesteps > 1:
+            denoise_progress = denoise_step / float(self.num_timesteps - 1)
+        else:
+            denoise_progress = 1.0
+
         collision_cfg = self._collision_guidance_cfg()
         
         # Get individual weights from config (falling back to original defaults)
-        constraints_cfg = cfg_get(self.inference_guidance, 'constraints', {})
-        room_outer_cfg = cfg_get(constraints_cfg, 'room_outer', {})
-        walkable_cfg = cfg_get(constraints_cfg, 'walkable', {})
-        relational_cfg = cfg_get(constraints_cfg, 'relational', {})
+        constraints_cfg = cfg_get(self.inference_guidance, 'constraints', {}) or {}
+        room_outer_cfg = cfg_get(constraints_cfg, 'room_outer', {}) or {}
+        walkable_cfg = cfg_get(constraints_cfg, 'walkable', {}) or {}
+        relational_cfg = cfg_get(constraints_cfg, 'relational', {}) or {}
         
         collision_weight = float(cfg_get(collision_cfg, 'weight', 10.0)) if collision_cfg is not None else 10.0
         room_outer_weight = float(cfg_get(room_outer_cfg, 'weight', 10.0))
         walkable_weight = float(cfg_get(walkable_cfg, 'weight', 1.0))
-        robot_width_real = float(cfg_get(walkable_cfg, 'robot_width_real', 0.35))
-        robot_hight_real = float(cfg_get(walkable_cfg, 'robot_hight_real', 1.5))
         
         # Keep strength as a global multiplier for backward compatibility
         strength = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
         if strength <= 0.0:
+            strength = float(cfg_get(self.inference_guidance, 'strength', 20.0))
+        if strength <= 0.0:
             step_stats['skip_reason'] = 'zero_strength'
             return model_mean, step_stats
 
-        collision_loss, collision_stats = self._compute_collision_guidance_loss(pred_xstart, scene_ids, objectness=objectness)
-        step_stats.update(collision_stats)
-        
-        # [MODIFIED] Add room outer loss and walkable loss from PhyScene physical guidance
-        denorm_boxes = self._denormalize_box_params(pred_xstart)
-        if objectness is not None:
-            obj_mask = objectness.to(device=denorm_boxes.device, dtype=torch.bool)
-            denorm_boxes_for_room = denorm_boxes[obj_mask]
+        # Check active status for each individual constraint for this timestep
+        collision_active = self._is_constraint_active(collision_cfg, denoise_progress, denoise_step) if collision_cfg and bool(cfg_get(collision_cfg, 'enabled', False)) else False
+        room_outer_active = self._is_constraint_active(room_outer_cfg, denoise_progress, denoise_step) if room_outer_cfg and room_outer_weight > 0 else False
+        walkable_active = self._is_constraint_active(walkable_cfg, denoise_progress, denoise_step) if walkable_cfg and bool(cfg_get(walkable_cfg, 'enabled', False)) and walkable_weight > 0 else False
+        relational_active = self._is_constraint_active(relational_cfg, denoise_progress, denoise_step) if relational_cfg and bool(cfg_get(relational_cfg, 'enabled', False)) else False
+
+        # Collision loss computation
+        if collision_active:
+            collision_loss, collision_stats = self._compute_collision_guidance_loss(pred_xstart, scene_ids, objectness=objectness)
+            step_stats.update(collision_stats)
         else:
-            denorm_boxes_for_room = denorm_boxes
-            
-        # Pass the full denorm_boxes, scene_ids, and objectness to dynamically find the floor
-        room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
+            collision_loss = None
+            step_stats.update({
+                'constraint': 'collision',
+                'skipped': True,
+                'skip_reason': 'schedule_inactive',
+            })
+        
+        need_denorm = room_outer_active or relational_active or walkable_active
+        if need_denorm:
+            denorm_boxes = self._denormalize_box_params(pred_xstart)
+        else:
+            denorm_boxes = None
+
+        # Room outer loss computation
+        room_outer_loss = 0.0
+        if room_outer_active and denorm_boxes is not None:
+            room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
         
         # Directional & Support Relational Guidance Loss
         relational_loss = 0.0
         rel_raw_val = 0.0
-        if relational_cfg and bool(cfg_get(relational_cfg, 'enabled', False)):
+        if relational_active and denorm_boxes is not None:
             rel_w = float(cfg_get(relational_cfg, 'weight', 10.0))
             margin = float(cfg_get(relational_cfg, 'margin', 0.05))
             close_th = float(cfg_get(relational_cfg, 'close_threshold', 0.45))
@@ -575,81 +646,91 @@ class GaussianDiffusion:
         c1_loss = 0.0
         c2_loss = 0.0
 
-        if components_cfg is not None:
-            # --- MODULAR MULTI-COMPONENT WALKABLE LOSS SYSTEM ---
-            # 1. Center Penalty Sub-Component
-            cp_cfg = cfg_get(components_cfg, 'center_penalty', None)
-            if cp_cfg and bool(cfg_get(cp_cfg, 'enabled', False)):
-                cp_w = float(cfg_get(cp_cfg, 'weight', 1.0))
-                sigma = float(cfg_get(cp_cfg, 'sigma', 0.5))
-                cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness, sigma=sigma)
-                c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
-                walkable_loss = walkable_loss + cp_val * cp_w
+        if walkable_active and denorm_boxes is not None:
+            if components_cfg is not None:
+                # --- MODULAR MULTI-COMPONENT WALKABLE LOSS SYSTEM ---
+                # 1. Center Penalty Sub-Component
+                cp_cfg = cfg_get(components_cfg, 'center_penalty', None)
+                if cp_cfg and bool(cfg_get(cp_cfg, 'enabled', False)):
+                    cp_w = float(cfg_get(cp_cfg, 'weight', 1.0))
+                    sigma = float(cfg_get(cp_cfg, 'sigma', 0.5))
+                    cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness, sigma=sigma)
+                    c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
+                    walkable_loss = walkable_loss + cp_val * cp_w
 
-            # 2. Pathfinding Sub-Component
-            pf_cfg = cfg_get(components_cfg, 'pathfinding', None)
-            if pf_cfg and bool(cfg_get(pf_cfg, 'enabled', False)):
-                pf_w = float(cfg_get(pf_cfg, 'weight', 1.0))
-                rw = float(cfg_get(pf_cfg, 'robot_width_real', 0.5))
-                rh = float(cfg_get(pf_cfg, 'robot_hight_real', 1.5))
-                pf_val = compute_pathfinding_walkable_loss(
-                    denorm_boxes, floor_plan, objectness=objectness,
-                    robot_width_real=rw, robot_hight_real=rh
-                )
-                c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
-                walkable_loss = walkable_loss + pf_val * pf_w
+                # 2. Pathfinding Sub-Component
+                pf_cfg = cfg_get(components_cfg, 'pathfinding', None)
+                if pf_cfg and bool(cfg_get(pf_cfg, 'enabled', False)):
+                    pf_w = float(cfg_get(pf_cfg, 'weight', 1.0))
+                    rw = float(cfg_get(pf_cfg, 'robot_width_real', 0.5))
+                    rh = float(cfg_get(pf_cfg, 'robot_hight_real', 1.5))
+                    pf_val = compute_pathfinding_walkable_loss(
+                        denorm_boxes, floor_plan, objectness=objectness,
+                        robot_width_real=rw, robot_hight_real=rh
+                    )
+                    c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
+                    walkable_loss = walkable_loss + pf_val * pf_w
 
-            # 3. Edge-Gaussian Sub-Component
-            eg_cfg = cfg_get(components_cfg, 'edge_gaussian', None)
-            if eg_cfg and bool(cfg_get(eg_cfg, 'enabled', False)):
-                eg_w = float(cfg_get(eg_cfg, 'weight', 1.0))
-                rw = float(cfg_get(eg_cfg, 'robot_width_real', 0.35))
-                rh = float(cfg_get(eg_cfg, 'robot_hight_real', 1.5))
-                sigma_scale = float(cfg_get(eg_cfg, 'sigma_scale', 0.5))
-                hm_w = float(cfg_get(eg_cfg, 'heatmap_weight', 0.8))
-                rep_w = float(cfg_get(eg_cfg, 'repulsion_weight', 0.2))
-                eg_val, comp_dict = compute_edge_gaussian_walkable_loss(
-                    denorm_boxes, floor_plan, objectness=objectness,
-                    robot_width_real=rw, robot_hight_real=rh,
-                    sigma_scale=sigma_scale, heatmap_weight=hm_w, repulsion_weight=rep_w,
-                    return_components=True, verbose=False
-                )
-                c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
-                c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
-                walkable_loss = walkable_loss + eg_val * eg_w
-        else:
-            # --- LEGACY SINGLE TYPE FALLBACK ---
-            walkable_type = str(cfg_get(walkable_cfg, 'type', 'pathfinding')).lower() if walkable_cfg else 'pathfinding'
-            if walkable_type == 'edge_gaussian':
-                sigma_scale = float(cfg_get(walkable_cfg, 'sigma_scale', 0.5))
-                heatmap_weight = float(cfg_get(walkable_cfg, 'heatmap_weight', 0.8))
-                repulsion_weight = float(cfg_get(walkable_cfg, 'repulsion_weight', 0.2))
-                walkable_loss, comp_dict = compute_edge_gaussian_walkable_loss(
-                    denorm_boxes, floor_plan, objectness=objectness,
-                    robot_width_real=robot_width_real, robot_hight_real=robot_hight_real,
-                    sigma_scale=sigma_scale, heatmap_weight=heatmap_weight, repulsion_weight=repulsion_weight,
-                    return_components=True, verbose=False
-                )
-                c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
-                c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
-            elif walkable_type == 'center_penalty':
-                cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness)
-                c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
-                walkable_loss = cp_val
+                # 3. Edge-Gaussian Sub-Component
+                eg_cfg = cfg_get(components_cfg, 'edge_gaussian', None)
+                if eg_cfg and bool(cfg_get(eg_cfg, 'enabled', False)):
+                    eg_w = float(cfg_get(eg_cfg, 'weight', 1.0))
+                    rw = float(cfg_get(eg_cfg, 'robot_width_real', 0.35))
+                    rh = float(cfg_get(eg_cfg, 'robot_hight_real', 1.5))
+                    sigma_scale = float(cfg_get(eg_cfg, 'sigma_scale', 0.5))
+                    hm_w = float(cfg_get(eg_cfg, 'heatmap_weight', 0.8))
+                    rep_w = float(cfg_get(eg_cfg, 'repulsion_weight', 0.2))
+                    eg_val, comp_dict = compute_edge_gaussian_walkable_loss(
+                        denorm_boxes, floor_plan, objectness=objectness,
+                        robot_width_real=rw, robot_hight_real=rh,
+                        sigma_scale=sigma_scale, heatmap_weight=hm_w, repulsion_weight=rep_w,
+                        return_components=True, verbose=False
+                    )
+                    c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
+                    c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+                    walkable_loss = walkable_loss + eg_val * eg_w
             else:
-                pf_val = compute_pathfinding_walkable_loss(
-                    denorm_boxes, floor_plan, objectness=objectness,
-                    robot_width_real=robot_width_real, robot_hight_real=robot_hight_real
-                )
-                c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
-                walkable_loss = pf_val
+                # --- LEGACY SINGLE TYPE FALLBACK ---
+                robot_width_real = float(cfg_get(walkable_cfg, 'robot_width_real', 0.35))
+                robot_hight_real = float(cfg_get(walkable_cfg, 'robot_hight_real', 1.5))
+                walkable_type = str(cfg_get(walkable_cfg, 'type', 'pathfinding')).lower() if walkable_cfg else 'pathfinding'
+                if walkable_type == 'edge_gaussian':
+                    sigma_scale = float(cfg_get(walkable_cfg, 'sigma_scale', 0.5))
+                    heatmap_weight = float(cfg_get(walkable_cfg, 'heatmap_weight', 0.8))
+                    repulsion_weight = float(cfg_get(walkable_cfg, 'repulsion_weight', 0.2))
+                    walkable_loss, comp_dict = compute_edge_gaussian_walkable_loss(
+                        denorm_boxes, floor_plan, objectness=objectness,
+                        robot_width_real=robot_width_real, robot_hight_real=robot_hight_real,
+                        sigma_scale=sigma_scale, heatmap_weight=heatmap_weight, repulsion_weight=repulsion_weight,
+                        return_components=True, verbose=False
+                    )
+                    c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
+                    c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+                elif walkable_type == 'center_penalty':
+                    cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness)
+                    c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
+                    walkable_loss = cp_val
+                else:
+                    pf_val = compute_pathfinding_walkable_loss(
+                        denorm_boxes, floor_plan, objectness=objectness,
+                        robot_width_real=robot_width_real, robot_hight_real=robot_hight_real
+                    )
+                    c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
+                    walkable_loss = pf_val
         
-        # [MODIFIED] Handle the case where collision_loss is None
+        # Combine total guidance loss
         total_guidance_loss = 0.0
         if collision_loss is not None:
             total_guidance_loss = total_guidance_loss + collision_loss * collision_weight
             
-        total_guidance_loss = total_guidance_loss + room_outer_loss * room_outer_weight + walkable_loss * walkable_weight + relational_loss
+        if room_outer_loss is not None and (not isinstance(room_outer_loss, float) or room_outer_loss > 0):
+            total_guidance_loss = total_guidance_loss + room_outer_loss * room_outer_weight
+            
+        if walkable_loss is not None and (not isinstance(walkable_loss, float) or walkable_loss > 0):
+            total_guidance_loss = total_guidance_loss + walkable_loss * walkable_weight
+            
+        if relational_loss is not None and (not isinstance(relational_loss, float) or relational_loss > 0):
+            total_guidance_loss = total_guidance_loss + relational_loss
 
         # Ensure that if all losses were effectively 0 or None, we don't try to compute grads if not required
         if isinstance(total_guidance_loss, float) and total_guidance_loss == 0.0:
@@ -659,7 +740,7 @@ class GaussianDiffusion:
             step_stats['skip_reason'] = step_stats.get('skip_reason', 'invalid_loss')
             return model_mean, step_stats
 
-        # [MODIFIED] Compute gradient using total_guidance_loss instead of just collision_loss
+        # Compute gradient using total_guidance_loss instead of just collision_loss
         guidance_grad_tuple = torch.autograd.grad(total_guidance_loss, pred_xstart, allow_unused=True)
         guidance_grad = guidance_grad_tuple[0]
         
@@ -706,6 +787,11 @@ class GaussianDiffusion:
         summary['guidance_strength'] = float(cfg_get(collision_cfg, 'strength', 0.0)) if collision_cfg is not None else 0.0
         summary['interval'] = int(cfg_get(self.inference_guidance, 'interval', 1)) if self._guidance_enabled() else 0
         summary['start_ratio'] = float(cfg_get(self.inference_guidance, 'start_ratio', 0.0)) if self._guidance_enabled() else 0.0
+        
+        relational_cfg = cfg_get(self.inference_guidance, 'constraints', {}).get('relational', {}) if self._guidance_enabled() and self.inference_guidance.get('constraints') else {}
+        rel_start_ratio = cfg_get(relational_cfg, 'start_ratio', None)
+        if rel_start_ratio is not None:
+            summary['relational_start_ratio'] = float(rel_start_ratio)
 
         applied_stats = [stat for stat in step_stats if stat.get('applied')]
         if applied_stats:
