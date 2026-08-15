@@ -795,16 +795,16 @@ class GaussianDiffusion:
 
         applied_stats = [stat for stat in step_stats if stat.get('applied')]
         if applied_stats:
-            summary['avg_guided_scene_iou'] = float(np.mean([stat['avg_scene_iou'] for stat in applied_stats]))
+            summary['avg_guided_scene_iou'] = float(np.mean([stat.get('avg_scene_iou', 0.0) for stat in applied_stats]))
             summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
-            summary['avg_guided_collision_loss'] = float(np.mean([stat['collision_loss'] for stat in applied_stats]))
+            summary['avg_guided_collision_loss'] = float(np.mean([stat.get('collision_loss', 0.0) for stat in applied_stats]))
             summary['avg_guided_room_outer_loss'] = float(np.mean([stat.get('room_outer_loss', 0.0) for stat in applied_stats]))
             summary['avg_guided_walkable_loss'] = float(np.mean([stat.get('walkable_loss', 0.0) for stat in applied_stats]))
             summary['avg_guided_center_penalty'] = float(np.mean([stat.get('walkable_center_penalty', 0.0) for stat in applied_stats]))
             summary['avg_guided_c1_heatmap'] = float(np.mean([stat.get('walkable_c1_heatmap', 0.0) for stat in applied_stats]))
             summary['avg_guided_c2_repulsion'] = float(np.mean([stat.get('walkable_c2_repulsion', 0.0) for stat in applied_stats]))
             summary['avg_guided_relational_loss'] = float(np.mean([stat.get('relational_loss', 0.0) for stat in applied_stats]))
-            summary['avg_guided_grad_norm'] = float(np.mean([stat['grad_norm_mean'] for stat in applied_stats]))
+            summary['avg_guided_grad_norm'] = float(np.mean([stat.get('grad_norm_mean', 0.0) for stat in applied_stats]))
             summary['avg_guided_variance_scale'] = float(np.mean([stat.get('variance_scale_mean', 0.0) for stat in applied_stats]))
         else:
             summary['avg_guided_scene_iou'] = 0.0
