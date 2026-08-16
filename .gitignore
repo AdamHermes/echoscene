@@ -79,7 +79,7 @@ docs/_build/
 
 # PyBuilder
 target/
-
+3DSSG/
 # Jupyter Notebook
 .ipynb_checkpoints
 
