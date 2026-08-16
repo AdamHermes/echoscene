@@ -478,9 +478,9 @@ def compute_relational_guidance_loss(
     stand_threshold=0.04
 ):
     """
-    Computes Differentiable Directional, Proximity, Support, Symmetry & Size Relational Guidance Loss.
-    Actively steers object bounding boxes during diffusion sampling to satisfy 
-    scene graph relation triplets across 3D-FRONT relational categories.
+    Computes Differentiable Spatial, Directional, Proximity, Support, Symmetry & Relative Size Relational Guidance Loss.
+    Actively steers object bounding box dimensions and positions during diffusion sampling to satisfy 
+    scene graph spatial and dimensional relations across all 3D-FRONT relational categories.
     """
     if triples is None or len(triples) == 0:
         return torch.tensor(0.0, device=bbox.device, dtype=bbox.dtype)
@@ -579,25 +579,29 @@ def compute_relational_guidance_loss(
                 min_symm_dist = torch.minimum(torch.minimum(d_flip_x, d_flip_z), d_flip_xz)
                 loss_rel = torch.relu(min_symm_dist - close_threshold)
 
-            # 9. bigger than: Subject 3D volume > 1.18 * Object 3D volume
+            # 9. bigger than: (vol_s - vol_o) / vol_s >= 0.15 <=> vol_o - 0.85 * vol_s <= 0
             elif p_name in ("bigger than", "8"):
-                vol_s = ls * hs * ws
-                vol_o = lo * ho * wo
-                loss_rel = torch.relu(1.18 * vol_o - vol_s) / (vol_o.detach() + 1e-4)
+                vol_s = ls.clamp(min=1e-3) * hs.clamp(min=1e-3) * ws.clamp(min=1e-3)
+                vol_o = lo.clamp(min=1e-3) * ho.clamp(min=1e-3) * wo.clamp(min=1e-3)
+                loss_rel = torch.relu(vol_o - 0.85 * vol_s)
 
-            # 10. smaller than: Subject 3D volume < 0.85 * Object 3D volume
+            # 10. smaller than: (vol_s - vol_o) / vol_s <= -0.15 <=> 1.15 * vol_s - vol_o <= 0
             elif p_name in ("smaller than", "9"):
-                vol_s = ls * hs * ws
-                vol_o = lo * ho * wo
-                loss_rel = torch.relu(vol_s - 0.85 * vol_o) / (vol_o.detach() + 1e-4)
+                vol_s = ls.clamp(min=1e-3) * hs.clamp(min=1e-3) * ws.clamp(min=1e-3)
+                vol_o = lo.clamp(min=1e-3) * ho.clamp(min=1e-3) * wo.clamp(min=1e-3)
+                loss_rel = torch.relu(1.15 * vol_s - vol_o)
 
-            # 11. taller than: Subject height > 1.10 * Object height
+            # 11. taller than: (top_s - top_o) / top_s >= 0.10 <=> top_o - 0.90 * top_s <= 0
             elif p_name in ("taller than", "10"):
-                loss_rel = torch.relu(1.10 * ho - hs) / (ho.detach() + 1e-4)
+                top_s = ys + hs.clamp(min=1e-3)
+                top_o = yo + ho.clamp(min=1e-3)
+                loss_rel = torch.relu(top_o - 0.90 * top_s)
 
-            # 12. shorter than: Subject height < 0.90 * Object height
+            # 12. shorter than: (top_s - top_o) / top_s <= -0.10 <=> 1.10 * top_s - top_o <= 0
             elif p_name in ("shorter than", "11"):
-                loss_rel = torch.relu(hs - 0.90 * ho) / (ho.detach() + 1e-4)
+                top_s = ys + hs.clamp(min=1e-3)
+                top_o = yo + ho.clamp(min=1e-3)
+                loss_rel = torch.relu(1.10 * top_s - top_o)
 
             total_loss = total_loss + loss_rel
             num_valid_relations += 1
