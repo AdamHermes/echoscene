@@ -154,6 +154,7 @@ def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
             pf_loss = last_step.get('walkable_pathfinding', 0.0)
             c1_loss = last_step.get('walkable_c1_heatmap', 0.0)
             c2_loss = last_step.get('walkable_c2_repulsion', 0.0)
+            rel_loss = last_step.get('relational_loss', 0.0)
             
             comp_parts = []
             if cp_loss > 0:
@@ -166,13 +167,14 @@ def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
                 comp_parts.append(f"C2 Repulsion: {c2_loss:.4f}")
                 
             comp_str = f" ({', '.join(comp_parts)})" if comp_parts else ""
-            msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f}{comp_str}"
+            msg = f"{prefix}Scene {scan_id} - Final Step Collision Loss: {col_loss:.4f}, Room Outer Loss: {room_loss:.4f}, Walkable Loss: {walk_loss:.4f}{comp_str}, Relational Loss: {rel_loss:.4f}"
                 
             print(msg)
             loss_log_path = os.path.join(store_path, 'guidance_losses.txt')
             os.makedirs(store_path, exist_ok=True)
             with open(loss_log_path, 'a') as f:
                 f.write(msg + '\n')
+            return msg
 
 def validate_constrains_loop_w_changes(modelArgs, testdataset, model, normalized_file=None, bin_angles=False, cat2objs=None, datasize='large', gen_shape=False):
 
@@ -450,6 +452,34 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                 dprint(f"\n{'='*60}")
                 dprint(f"SCENE: {data['scan_id'][0]}  |  {len(obj_ids)} objects")
                 dprint(f"{'='*60}")
+                
+                # Print loss summary in debug_bbox.txt
+                if 'collision_stats' in data_dict and data_dict['collision_stats'] is not None:
+                    stats_summary = data_dict['collision_stats']
+                    if 'step_stats' in stats_summary and len(stats_summary['step_stats']) > 0:
+                        applied_steps = [s for s in stats_summary['step_stats'] if s.get('applied')]
+                        last_step = applied_steps[-1] if len(applied_steps) > 0 else stats_summary['step_stats'][-1]
+                        c_loss = last_step.get('collision_loss', 0.0)
+                        r_loss = last_step.get('room_outer_loss', 0.0)
+                        w_loss = last_step.get('walkable_loss', 0.0)
+                        rel_l = last_step.get('relational_loss', 0.0)
+                        cp_l = last_step.get('walkable_center_penalty', 0.0)
+                        pf_l = last_step.get('walkable_pathfinding', 0.0)
+                        c1_l = last_step.get('walkable_c1_heatmap', 0.0)
+                        c2_l = last_step.get('walkable_c2_repulsion', 0.0)
+                        
+                        comp_parts = []
+                        if cp_l > 0: comp_parts.append(f"Center Penalty: {cp_l:.4f}")
+                        if pf_l > 0: comp_parts.append(f"Pathfinding: {pf_l:.4f}")
+                        if c1_l > 0: comp_parts.append(f"C1 Heatmap: {c1_l:.4f}")
+                        if c2_l > 0: comp_parts.append(f"C2 Repulsion: {c2_l:.4f}")
+                        comp_s = f" ({', '.join(comp_parts)})" if comp_parts else ""
+                        
+                        dprint(f"Final Step Collision Loss: {c_loss:.4f}, Room Outer Loss: {r_loss:.4f}, Walkable Loss: {w_loss:.4f}{comp_s}, Relational Loss: {rel_l:.4f}")
+                        if 'applied_steps' in stats_summary and 'scheduled_steps' in stats_summary:
+                            dprint(f"Guided Steps: {stats_summary['applied_steps']}/{stats_summary['scheduled_steps']}")
+                        dprint(f"{'-'*70}")
+
                 dprint(f"{'Obj':<20} {'l':>6} {'h':>6} {'w':>6}  {'x':>7} {'y':>7} {'z':>7}  {'angle':>7}")
                 dprint(f"{'-'*70}")
                 for n in range(len(obj_ids)):
