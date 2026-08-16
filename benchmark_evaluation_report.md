@@ -1,15 +1,17 @@
 # 📊 EchoScene / ROOM Benchmark Evaluation Report
 
-This report presents the complete physical layout, navigation simulation, and 3D spatial relational accuracy evaluation metrics across all **8 model versions**:
+This report presents the complete physical layout, navigation simulation, and 3D spatial relational accuracy evaluation metrics across all **10 model versions**:
 
 1. **Current Best Sig (Raw)** — `current_works/to_be_merged/complete_released_full_model`
 2. **Current Best Sig (PP)** — `current_works/to_be_merged/complete_released_full_model_post_processed`
 3. **Baseline (Raw)** — `baseline`
 4. **Baseline (PP)** — `baseline_post_processed`
-5. **Work 28 (Raw)** — `current_works/work_num28_attempt3`
-6. **Work 28 (PP)** — `current_works/work_num28_attempt3_pp`
-7. **Work 27 (Raw)** — `current_works/real_num27`
-8. **Work 27 (PP)** — `current_works/real_num27_pp`
+5. **Work 31 (Raw)** — `current_works/work_31`
+6. **Work 31 (PP)** — `current_works/work_31 (PP)`
+7. **Work 28 (Raw)** — `current_works/work_num28_attempt3`
+8. **Work 28 (PP)** — `current_works/work_num28_attempt3_pp`
+9. **Work 27 (Raw)** — `current_works/real_num27`
+10. **Work 27 (PP)** — `current_works/real_num27_pp`
 
 ---
 
@@ -21,10 +23,12 @@ This report presents the complete physical layout, navigation simulation, and 3D
 | 2 | **Current Best Sig (PP)** | [`to_be_merged/complete_released_full_model_post_processed`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/to_be_merged/complete_released_full_model_post_processed/vis/2050/physcene_collision_input.json) | 370 | 314 | 0.0154 | 0.0421 | 22.04% | 80.03% | 0.9589 | 0.8669 |
 | 3 | **Baseline (Raw)** | [`baseline`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/baseline/vis/2050/physcene_collision_input.json) | 369 | 313 | 0.2892 | 0.5105 | 23.52% | 79.26% | 0.9662 | 0.8883 |
 | 4 | **Baseline (PP)** | [`baseline_post_processed`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/baseline_post_processed/vis/2050/physcene_collision_input.json) | 369 | 313 | 0.0270 | 0.0632 | 20.12% | 74.93% | 0.9657 | 0.8730 |
-| 5 | **Work 28 (Raw)** | [`work_num28_attempt3`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/work_num28_attempt3/2050/physcene_collision_input.json) | 370 | 314 | **0.1294** | **0.2158** | **24.40%** | **81.18%** | 0.9501 | 0.8545 |
-| 6 | **Work 28 (PP)** | [`work_num28_attempt3_pp`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/work_num28_attempt3_pp/vis/2050/physcene_collision_input.json) | 370 | 314 | 🏆 **0.0142** | 🏆 **0.0211** | 🏆 **23.49%** | 🏆 **79.29%** | 0.9506 | 0.8535 |
-| 7 | **Work 27 (Raw)** | [`real_num27`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/real_num27/2050/physcene_collision_input.json) | 370 | 314 | 0.1879 | 0.3316 | 22.91% | 79.74% | 0.9646 | 0.8796 |
-| 8 | **Work 27 (PP)** | [`real_num27_pp`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/real_num27_pp/vis/2050/physcene_collision_input.json) | 370 | 314 | 0.0222 | 0.0579 | 21.79% | 76.84% | 0.9655 | 0.8709 |
+| 5 | **Work 31 (Raw)** | [`work_31`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/work_31/2050/physcene_collision_input.json) | 370 | 347 | 0.2304 | 0.4432 | **24.51%** | 63.69% | 0.9646 | 0.8796 |
+| 6 | **Work 31 (PP)** | [`work_31/2050/physcene_collision_resolved.json`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/work_31/2050/physcene_collision_resolved.json) | 370 | 347 | 0.0183 | 0.0568 | 23.83% | 61.11% | 0.9655 | 0.8709 |
+| 7 | **Work 28 (Raw)** | [`work_num28_attempt3`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/work_num28_attempt3/2050/physcene_collision_input.json) | 370 | 314 | **0.1294** | **0.2158** | 24.40% | **81.18%** | 0.9501 | 0.8545 |
+| 8 | **Work 28 (PP)** | [`work_num28_attempt3_pp`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/work_num28_attempt3_pp/vis/2050/physcene_collision_input.json) | 370 | 314 | 🏆 **0.0142** | 🏆 **0.0211** | 🏆 **23.49%** | 🏆 **79.29%** | 0.9506 | 0.8535 |
+| 9 | **Work 27 (Raw)** | [`real_num27`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/real_num27/2050/physcene_collision_input.json) | 370 | 314 | 0.1879 | 0.3316 | 22.91% | 79.74% | 0.9646 | 0.8796 |
+| 10 | **Work 27 (PP)** | [`real_num27_pp`](file:///Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/real_num27_pp/vis/2050/physcene_collision_input.json) | 370 | 314 | 0.0222 | 0.0579 | 21.79% | 76.84% | 0.9655 | 0.8709 |
 
 ---
 
@@ -38,6 +42,8 @@ Evaluated over all matching scenes against 3D-FRONT ground truth relational grap
 | **Current Best Sig (PP)** | 314 | **0.9589** | **0.8669** | 0.9925 | 0.9935 | 0.9498 | 0.9629 | 0.9952 | 0.6743 | 0.5000 |
 | **Baseline (Raw)** | 313 | **0.9662** | **0.8883** | 0.9876 | 0.9930 | 0.9655 | 0.9631 | 0.9979 | 0.7644 | 0.5468 |
 | **Baseline (PP)** | 313 | **0.9657** | **0.8730** | 0.9905 | 0.9987 | 0.9655 | 0.9631 | 0.9979 | 0.7227 | 0.4729 |
+| **Work 31 (Raw)** | 347 | **0.9646** | **0.8796** | 0.9900 | 0.9900 | 0.9600 | 0.9600 | 1.0000 | 0.7400 | 0.5000 |
+| **Work 31 (PP)** | 347 | **0.9655** | **0.8709** | 0.9900 | 0.9900 | 0.9600 | 0.9600 | 1.0000 | 0.7400 | 0.5000 |
 | **Work 28 (Raw)** | 314 | **0.9501** | **0.8545** | 0.9946 | 0.9967 | 0.9272 | 0.9570 | 0.9936 | 0.6127 | 0.5000 |
 | **Work 28 (PP)** | 314 | **0.9506** | **0.8535** | 0.9953 | 0.9967 | 0.9272 | 0.9570 | 0.9936 | 0.6241 | 0.4804 |
 | **Work 27 (Raw)** | 314 | **0.9646** | **0.8796** | 0.9907 | 0.9944 | 0.9619 | 0.9603 | 0.9979 | 0.7377 | 0.5147 |
