@@ -76,7 +76,7 @@ layout_branch:
           components:
             center_penalty:
               enabled: true
-              weight: 0.5
+              weight: 1
               sigma: 0.5
               
             pathfinding:
@@ -87,7 +87,7 @@ layout_branch:
               
             edge_gaussian:
               enabled: true
-              weight: 0.5
+              weight: 1
               robot_width_real: 0.35
               robot_hight_real: 1.5
               sigma_scale: 0.5
