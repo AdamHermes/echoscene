@@ -139,6 +139,11 @@ def export_echoscene_sidecar(modelArgs, test_dataset, data, dec_objs, dec_triple
     print("structured scene exported:", export_path)
     return export_path
 
+def _to_float(v):
+    if hasattr(v, 'detach'):
+        return float(v.detach().cpu().item())
+    return float(v) if v is not None else 0.0
+
 def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
     import os
     if 'collision_stats' in data_dict and data_dict['collision_stats'] is not None:
@@ -147,14 +152,14 @@ def log_collision_stats(data_dict, scan_id, store_path, prefix=""):
             applied_steps = [s for s in stats_summary['step_stats'] if s.get('applied')]
             last_step = applied_steps[-1] if len(applied_steps) > 0 else stats_summary['step_stats'][-1]
             
-            col_loss = last_step.get('collision_loss', 0.0)
-            room_loss = last_step.get('room_outer_loss', 0.0)
-            walk_loss = last_step.get('walkable_loss', 0.0)
-            cp_loss = last_step.get('walkable_center_penalty', 0.0)
-            pf_loss = last_step.get('walkable_pathfinding', 0.0)
-            c1_loss = last_step.get('walkable_c1_heatmap', 0.0)
-            c2_loss = last_step.get('walkable_c2_repulsion', 0.0)
-            rel_loss = last_step.get('relational_loss', 0.0)
+            col_loss = _to_float(last_step.get('collision_loss', 0.0))
+            room_loss = _to_float(last_step.get('room_outer_loss', 0.0))
+            walk_loss = _to_float(last_step.get('walkable_loss', 0.0))
+            cp_loss = _to_float(last_step.get('walkable_center_penalty', 0.0))
+            pf_loss = _to_float(last_step.get('walkable_pathfinding', 0.0))
+            c1_loss = _to_float(last_step.get('walkable_c1_heatmap', 0.0))
+            c2_loss = _to_float(last_step.get('walkable_c2_repulsion', 0.0))
+            rel_loss = _to_float(last_step.get('relational_loss', 0.0))
             
             comp_parts = []
             if cp_loss > 0:
@@ -459,14 +464,14 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
                     if 'step_stats' in stats_summary and len(stats_summary['step_stats']) > 0:
                         applied_steps = [s for s in stats_summary['step_stats'] if s.get('applied')]
                         last_step = applied_steps[-1] if len(applied_steps) > 0 else stats_summary['step_stats'][-1]
-                        c_loss = last_step.get('collision_loss', 0.0)
-                        r_loss = last_step.get('room_outer_loss', 0.0)
-                        w_loss = last_step.get('walkable_loss', 0.0)
-                        rel_l = last_step.get('relational_loss', 0.0)
-                        cp_l = last_step.get('walkable_center_penalty', 0.0)
-                        pf_l = last_step.get('walkable_pathfinding', 0.0)
-                        c1_l = last_step.get('walkable_c1_heatmap', 0.0)
-                        c2_l = last_step.get('walkable_c2_repulsion', 0.0)
+                        c_loss = _to_float(last_step.get('collision_loss', 0.0))
+                        r_loss = _to_float(last_step.get('room_outer_loss', 0.0))
+                        w_loss = _to_float(last_step.get('walkable_loss', 0.0))
+                        rel_l = _to_float(last_step.get('relational_loss', 0.0))
+                        cp_l = _to_float(last_step.get('walkable_center_penalty', 0.0))
+                        pf_l = _to_float(last_step.get('walkable_pathfinding', 0.0))
+                        c1_l = _to_float(last_step.get('walkable_c1_heatmap', 0.0))
+                        c2_l = _to_float(last_step.get('walkable_c2_repulsion', 0.0))
                         
                         comp_parts = []
                         if cp_l > 0: comp_parts.append(f"Center Penalty: {cp_l:.4f}")

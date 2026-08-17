@@ -635,7 +635,7 @@ class GaussianDiffusion:
                 predicate_names=None, objectness=objectness, 
                 margin=margin, close_threshold=close_th, stand_threshold=stand_th
             )
-            rel_raw_val = float(rel_val.detach().item()) if isinstance(rel_val, torch.Tensor) else float(rel_val)
+            rel_raw_val = rel_val.detach() if isinstance(rel_val, torch.Tensor) else float(rel_val)
             relational_loss = rel_val * rel_w
 
         components_cfg = cfg_get(walkable_cfg, 'components', None) if walkable_cfg else None
@@ -655,7 +655,7 @@ class GaussianDiffusion:
                     cp_w = float(cfg_get(cp_cfg, 'weight', 1.0))
                     sigma = float(cfg_get(cp_cfg, 'sigma', 0.5))
                     cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness, sigma=sigma)
-                    c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
+                    c_center_loss = cp_val.detach() if isinstance(cp_val, torch.Tensor) else float(cp_val)
                     walkable_loss = walkable_loss + cp_val * cp_w
 
                 # 2. Pathfinding Sub-Component
@@ -668,7 +668,7 @@ class GaussianDiffusion:
                         denorm_boxes, floor_plan, objectness=objectness,
                         robot_width_real=rw, robot_hight_real=rh
                     )
-                    c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
+                    c_path_loss = pf_val.detach() if isinstance(pf_val, torch.Tensor) else float(pf_val)
                     walkable_loss = walkable_loss + pf_val * pf_w
 
                 # 3. Edge-Gaussian Sub-Component
@@ -686,8 +686,8 @@ class GaussianDiffusion:
                         sigma_scale=sigma_scale, heatmap_weight=hm_w, repulsion_weight=rep_w,
                         return_components=True, verbose=False
                     )
-                    c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
-                    c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+                    c1_loss = comp_dict['c1_floor_heatmap'].detach() if isinstance(comp_dict['c1_floor_heatmap'], torch.Tensor) else float(comp_dict['c1_floor_heatmap'])
+                    c2_loss = comp_dict['c2_pairwise_repulsion'].detach() if isinstance(comp_dict['c2_pairwise_repulsion'], torch.Tensor) else float(comp_dict['c2_pairwise_repulsion'])
                     walkable_loss = walkable_loss + eg_val * eg_w
             else:
                 # --- LEGACY SINGLE TYPE FALLBACK ---
@@ -704,18 +704,18 @@ class GaussianDiffusion:
                         sigma_scale=sigma_scale, heatmap_weight=heatmap_weight, repulsion_weight=repulsion_weight,
                         return_components=True, verbose=False
                     )
-                    c1_loss = float(comp_dict['c1_floor_heatmap'].detach().item())
-                    c2_loss = float(comp_dict['c2_pairwise_repulsion'].detach().item())
+                    c1_loss = comp_dict['c1_floor_heatmap'].detach() if isinstance(comp_dict['c1_floor_heatmap'], torch.Tensor) else float(comp_dict['c1_floor_heatmap'])
+                    c2_loss = comp_dict['c2_pairwise_repulsion'].detach() if isinstance(comp_dict['c2_pairwise_repulsion'], torch.Tensor) else float(comp_dict['c2_pairwise_repulsion'])
                 elif walkable_type == 'center_penalty':
                     cp_val = compute_center_penalty_loss(denorm_boxes, objectness=objectness)
-                    c_center_loss = float(cp_val.detach().item()) if isinstance(cp_val, torch.Tensor) else float(cp_val)
+                    c_center_loss = cp_val.detach() if isinstance(cp_val, torch.Tensor) else float(cp_val)
                     walkable_loss = cp_val
                 else:
                     pf_val = compute_pathfinding_walkable_loss(
                         denorm_boxes, floor_plan, objectness=objectness,
                         robot_width_real=robot_width_real, robot_hight_real=robot_hight_real
                     )
-                    c_path_loss = float(pf_val.detach().item()) if isinstance(pf_val, torch.Tensor) else float(pf_val)
+                    c_path_loss = pf_val.detach() if isinstance(pf_val, torch.Tensor) else float(pf_val)
                     walkable_loss = pf_val
         
         # Combine total guidance loss
@@ -760,18 +760,18 @@ class GaussianDiffusion:
         step_stats.update({
             'applied': True,
             'guidance_strength': strength,
-            'collision_loss': float(collision_loss.detach().item()) if collision_loss is not None else 0.0,
-            'room_outer_loss': float(room_outer_loss.detach().item()) if isinstance(room_outer_loss, torch.Tensor) else float(room_outer_loss),
-            'walkable_loss': float(walkable_loss.detach().item()) if isinstance(walkable_loss, torch.Tensor) else float(walkable_loss),
+            'collision_loss': collision_loss.detach() if collision_loss is not None else 0.0,
+            'room_outer_loss': room_outer_loss.detach() if isinstance(room_outer_loss, torch.Tensor) else float(room_outer_loss),
+            'walkable_loss': walkable_loss.detach() if isinstance(walkable_loss, torch.Tensor) else float(walkable_loss),
             'relational_loss': rel_raw_val,
             'walkable_center_penalty': c_center_loss,
             'walkable_pathfinding': c_path_loss,
             'walkable_c1_heatmap': c1_loss,
             'walkable_c2_repulsion': c2_loss,
-            'variance_scale_mean': float(model_variance.mean().detach().item()),
-            'variance_scale_max': float(model_variance.max().detach().item()),
-            'grad_norm_mean': float(grad_norm.mean().detach().item()),
-            'grad_norm_max': float(grad_norm.max().detach().item()),
+            'variance_scale_mean': model_variance.mean().detach(),
+            'variance_scale_max': model_variance.max().detach(),
+            'grad_norm_mean': grad_norm.mean().detach(),
+            'grad_norm_max': grad_norm.max().detach(),
         })
         return guided_mean.detach(), step_stats
 
@@ -793,19 +793,24 @@ class GaussianDiffusion:
         if rel_start_ratio is not None:
             summary['relational_start_ratio'] = float(rel_start_ratio)
 
+        def _to_float(v):
+            if isinstance(v, torch.Tensor):
+                return float(v.detach().cpu().item())
+            return float(v) if v is not None else 0.0
+
         applied_stats = [stat for stat in step_stats if stat.get('applied')]
         if applied_stats:
-            summary['avg_guided_scene_iou'] = float(np.mean([stat.get('avg_scene_iou', 0.0) for stat in applied_stats]))
-            summary['avg_guided_scene_penetration'] = float(np.mean([stat.get('avg_scene_penetration', 0.0) for stat in applied_stats]))
-            summary['avg_guided_collision_loss'] = float(np.mean([stat.get('collision_loss', 0.0) for stat in applied_stats]))
-            summary['avg_guided_room_outer_loss'] = float(np.mean([stat.get('room_outer_loss', 0.0) for stat in applied_stats]))
-            summary['avg_guided_walkable_loss'] = float(np.mean([stat.get('walkable_loss', 0.0) for stat in applied_stats]))
-            summary['avg_guided_center_penalty'] = float(np.mean([stat.get('walkable_center_penalty', 0.0) for stat in applied_stats]))
-            summary['avg_guided_c1_heatmap'] = float(np.mean([stat.get('walkable_c1_heatmap', 0.0) for stat in applied_stats]))
-            summary['avg_guided_c2_repulsion'] = float(np.mean([stat.get('walkable_c2_repulsion', 0.0) for stat in applied_stats]))
-            summary['avg_guided_relational_loss'] = float(np.mean([stat.get('relational_loss', 0.0) for stat in applied_stats]))
-            summary['avg_guided_grad_norm'] = float(np.mean([stat.get('grad_norm_mean', 0.0) for stat in applied_stats]))
-            summary['avg_guided_variance_scale'] = float(np.mean([stat.get('variance_scale_mean', 0.0) for stat in applied_stats]))
+            summary['avg_guided_scene_iou'] = float(np.mean([_to_float(stat.get('avg_scene_iou', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_scene_penetration'] = float(np.mean([_to_float(stat.get('avg_scene_penetration', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_collision_loss'] = float(np.mean([_to_float(stat.get('collision_loss', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_room_outer_loss'] = float(np.mean([_to_float(stat.get('room_outer_loss', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_walkable_loss'] = float(np.mean([_to_float(stat.get('walkable_loss', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_center_penalty'] = float(np.mean([_to_float(stat.get('walkable_center_penalty', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_c1_heatmap'] = float(np.mean([_to_float(stat.get('walkable_c1_heatmap', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_c2_repulsion'] = float(np.mean([_to_float(stat.get('walkable_c2_repulsion', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_relational_loss'] = float(np.mean([_to_float(stat.get('relational_loss', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_grad_norm'] = float(np.mean([_to_float(stat.get('grad_norm_mean', 0.0)) for stat in applied_stats]))
+            summary['avg_guided_variance_scale'] = float(np.mean([_to_float(stat.get('variance_scale_mean', 0.0)) for stat in applied_stats]))
         else:
             summary['avg_guided_scene_iou'] = 0.0
             summary['avg_guided_scene_penetration'] = 0.0
