@@ -20,7 +20,24 @@ def is_clear(x, z, furniture_boxes, l, w):
         return False
     return True
 
-def evaluate_navigation(scenes_dir):
+
+def save_results(results, save_path):
+    total_objects_evaluated = sum(scene['total_objects'] for scene in results.values())
+    total_objects_accessible = sum(scene['accessible_objects'] for scene in results.values())
+    avg_accessibility = total_objects_accessible / total_objects_evaluated if total_objects_evaluated > 0 else 0
+    with open(save_path, 'w') as f:
+        json.dump({
+            "summary": {
+                "instance_count": len(results),
+                "total_objects_evaluated": total_objects_evaluated,
+                "total_objects_accessible": total_objects_accessible,
+                "average_accessibility_rate": avg_accessibility
+            },
+            "scenes": results
+        }, f, indent=2)
+    return total_objects_evaluated, total_objects_accessible, avg_accessibility
+
+def evaluate_navigation(scenes_dir, resume=False):
     json_files = [f for f in os.listdir(scenes_dir) if f.endswith('.json') and not f.startswith('walkability_') and not f.startswith('navigation_')]
     
     if not json_files:
@@ -29,14 +46,19 @@ def evaluate_navigation(scenes_dir):
 
     controller = Controller(agentMode="default", visibilityDistance=1.5, scene="Procedural", gridSize=0.25)
     
+    save_path = os.path.join(scenes_dir, "navigation_results.json")
     results = {}
-    total_objects_evaluated = 0
-    total_objects_accessible = 0
+    if resume and os.path.exists(save_path):
+        with open(save_path, 'r') as f:
+            results = json.load(f).get("scenes", {})
+        print(f"Resuming from checkpoint: {len(results)} scenes already evaluated.")
 
     print(f"Found {len(json_files)} scenes to evaluate for Navigation Accessibility.")
     
     for filename in json_files:
         scene_name = filename.replace('.json', '')
+        if scene_name in results:
+            continue
         file_path = os.path.join(scenes_dir, filename)
         
         with open(file_path, 'r') as f:
@@ -104,25 +126,11 @@ def evaluate_navigation(scenes_dir):
                 "accessible_objects": scene_accessible,
                 "accessibility_rate": scene_accessible / scene_objects
             }
-            total_objects_evaluated += scene_objects
-            total_objects_accessible += scene_accessible
+            save_results(results, save_path)
             
     controller.stop()
     
-    avg_accessibility = total_objects_accessible / total_objects_evaluated if total_objects_evaluated > 0 else 0
-    
-    # Save results
-    save_path = os.path.join(scenes_dir, "navigation_results.json")
-    with open(save_path, 'w') as f:
-        json.dump({
-            "summary": {
-                "instance_count": len(results),
-                "total_objects_evaluated": total_objects_evaluated,
-                "total_objects_accessible": total_objects_accessible,
-                "average_accessibility_rate": avg_accessibility
-            },
-            "scenes": results
-        }, f, indent=2)
+    total_objects_evaluated, total_objects_accessible, avg_accessibility = save_results(results, save_path)
         
     print(f"\nNavigation Evaluation Complete for {scenes_dir}! Total rooms evaluated: {len(results)}")
     print(f"Overall Accessibility Rate: {avg_accessibility * 100:.2f}% ({total_objects_accessible}/{total_objects_evaluated} objects)")
@@ -131,6 +139,7 @@ def evaluate_navigation(scenes_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate Navigation/Accessibility for ProcTHOR JSON scenes.")
     parser.add_argument("--scenes_dir", type=str, required=True, help="Directory containing the converted JSON files")
+    parser.add_argument("--resume", action="store_true", help="Resume from an existing navigation_results.json checkpoint")
     args = parser.parse_args()
     
-    evaluate_navigation(args.scenes_dir)
+    evaluate_navigation(args.scenes_dir, resume=args.resume)

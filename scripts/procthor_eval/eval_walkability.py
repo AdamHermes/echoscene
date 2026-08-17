@@ -73,9 +73,22 @@ def calculate_walkability(scene_json_path, controller):
         return 0, 0, true_total_area, 0
 
 
+def save_results(results, results_path):
+    avg_score = sum(res['walkability_score'] for res in results.values()) / len(results) if results else 0
+    with open(results_path, 'w') as f:
+        json.dump({
+            "summary": {
+                "instance_count": len(results),
+                "average_walkability": avg_score
+            },
+            "scenes": results
+        }, f, indent=2)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate Walkability for ProcTHOR JSON scenes.")
     parser.add_argument("--scenes_dir", type=str, required=True, help="Directory containing the converted JSON files")
+    parser.add_argument("--resume", action="store_true", help="Resume from an existing walkability_results.json checkpoint")
     args = parser.parse_args()
     
     scenes_dir = args.scenes_dir
@@ -97,12 +110,19 @@ if __name__ == "__main__":
         gridSize=0.25
     )
     
+    results_path = os.path.join(scenes_dir, "walkability_results.json")
     results = {}
+    if args.resume and os.path.exists(results_path):
+        with open(results_path, 'r') as f:
+            results = json.load(f).get("scenes", {})
+        print(f"Resuming from checkpoint: {len(results)} scenes already evaluated.")
     
     for scene_file in scene_files:
         if scene_file.endswith("walkability_results.json"):
             continue
         scene_name = os.path.basename(scene_file).replace('.json', '')
+        if scene_name in results:
+            continue
         print(f"\nEvaluating Walkability for: {scene_name}")
         
         score, walkable, total, points = calculate_walkability(scene_file, controller)
@@ -113,24 +133,12 @@ if __name__ == "__main__":
             'total_area': total,
             'navigable_points': points
         }
+        save_results(results, results_path)
         
         print(f"Score: {score:.2%} ({walkable:.2f}m² / {total:.2f}m², Points: {points})")
         
     controller.stop()
     
-    # Save results
-    avg_score = sum([res['walkability_score'] for res in results.values()]) / len(results) if results else 0
-    final_output = {
-        "summary": {
-            "instance_count": len(results),
-            "average_walkability": avg_score
-        },
-        "scenes": results
-    }
-    
-    results_path = os.path.join(scenes_dir, "walkability_results.json")
-    with open(results_path, 'w') as f:
-        json.dump(final_output, f, indent=2)
+    save_results(results, results_path)
         
     print(f"\nEvaluation complete! Total rooms evaluated: {len(results)}. Results saved to {results_path}")
-
