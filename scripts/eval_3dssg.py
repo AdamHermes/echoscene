@@ -55,6 +55,8 @@ def evaluate_3dssg():
 
     vocab['object_name_to_idx'] = classes
     vocab['object_idx_to_name'] = classes_r
+    vocab['object_name_to_idx_grained'] = classes
+    vocab['object_idx_to_name_grained'] = classes_r
     vocab['pred_name_to_idx'] = relationships
     vocab['pred_idx_to_name'] = relationships_r
 
