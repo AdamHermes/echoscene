@@ -22,6 +22,7 @@ pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.co
 
 python scripts/eval_3dssg.py --json_path "data\my_scene.json" --dataset "FRONT" --exp "models\my_model" --room_type "bedroom" --epoch "150"             
 
+python eval_3dssg.py --json_dir ../test3DSSG/adapted_scenes --start_idx 0 --max_samples 2 --exp ../released_full_model --dataset ../FRONT --epoch 2050 --room_type all --render_type echoscene --gen_shape True --save_3d True
 
 gdown --id 13p_1wUHH0G0sEHzViXmF7RVuO6WGeb_5
 apt install unzip
@@ -29,7 +30,16 @@ unzip FRONT.zip
 
 cd scripts
 python train_3dfront.py --exp ../checkpoints --room_type all --dataset ../FRONT --residual True --network_type echoscene --with_SDF True --with_CLIP True --batchSize 64 --workers 8 --loadmodel False --nepoch 100 --large False --use_scene_rels True
-
+    python eval_3dssg.py \                                    
+      --json_path ../test3DSSG/adapted_0988ea72-eb32-2e61-    
+  8344-99e2283c2728.json \                                    
+      --exp ../released_full_model \                          
+      --dataset ../FRONT \                                    
+      --epoch 2050 \                                          
+      --room_type livingroom \                                
+      --render_type echoscene \                               
+      --gen_shape True \                                      
+      --save_3d True 
 # You can use --max_samples to limit the number of rooms evaluated (e.g. --max_samples 5).
 # You can use --start_idx to skip the first N rooms (e.g. --start_idx 20).
 # Example command evaluating only 13 samples starting from the 174th:
