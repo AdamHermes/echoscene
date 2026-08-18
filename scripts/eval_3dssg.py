@@ -74,7 +74,7 @@ def evaluate_3dssg():
     diff_opt = modelArgs['diff_yaml']
     diff_cfg = OmegaConf.load(diff_opt)
     # the model expects a train_stats_file for normalization
-    diff_cfg.layout_branch.diffusion_kwargs.train_stats_file = os.path.join(args.dataset, f'boxes_centered_stats_{args.room_type}_trainval.txt')
+    diff_cfg.layout_branch.diffusion_kwargs.train_stats_file = os.path.join(args.dataset, f'centered_bounds_{args.room_type}_trainval.txt')
     diff_cfg.layout_branch.denoiser_kwargs.using_clip = modelArgs['with_CLIP']
     
     model = SGDiff(type=modelArgs['network_type'], diff_opt=diff_cfg, vocab=vocab, 
