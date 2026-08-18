@@ -251,7 +251,37 @@ def evaluate_3dssg():
 
         # Physcene JSON Export
         try:
-            from eval_3dfront import build_physcene_json_entry
+            def build_physcene_json_entry(dec_objs, boxes_pred_den, angles_pred, obj_classes, scan_id):
+                n_classes   = len(obj_classes)
+                N           = dec_objs.shape[0]
+                sizes_np = boxes_pred_den[:, 0:3].cpu().numpy()
+                trans_np = boxes_pred_den[:, 3:6].cpu().numpy()
+                angles_deg = angles_pred.cpu().numpy()
+                angles_rad = angles_deg / 180.0 * np.pi
+                class_idx  = dec_objs.cpu().numpy().astype(int)
+                one_hot    = np.zeros((N, n_classes + 1), dtype=np.float32)
+                for i, idx in enumerate(class_idx):
+                    label = obj_classes[int(idx)].strip('\n')
+                    if label in ['_scene_', 'floor']:
+                        one_hot[i, n_classes] = 1.0
+                    else:
+                        one_hot[i, idx] = 1.0
+                objectness = np.zeros((N, 1), dtype=np.float32)
+                for i, idx in enumerate(class_idx):
+                    label = obj_classes[int(idx)].strip('\n')
+                    if label not in ['_scene_', 'floor']:
+                        objectness[i, 0] = 1.0
+                objfeats = np.zeros((N, 32), dtype=np.float32)
+                return {
+                    "class_labels": one_hot.tolist(),
+                    "translations": trans_np.tolist(),
+                    "sizes":        sizes_np.tolist(),
+                    "angles":       angles_rad.tolist(),
+                    "objfeats_32":  objfeats.tolist(),
+                    "objectness":   objectness.tolist(),
+                    "scene_id":     scan_id,
+                }
+                
             physcene_entry = build_physcene_json_entry(
                 dec_objs=dec_objs,
                 boxes_pred_den=boxes_pred_den,
