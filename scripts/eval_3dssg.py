@@ -37,28 +37,37 @@ def evaluate_3dssg():
     modelArgs['store_path'] = os.path.join(args.exp, "vis_3dssg", args.epoch)
     os.makedirs(modelArgs['store_path'], exist_ok=True)
     
-    # 1. Manually Load Vocab
+    # 1. Load Vocab matching ThreedFrontDatasetSceneGraph logic
     vocab = {}
-    classes = {}
-    classes_r = {}
     with open(os.path.join(args.dataset, f'classes_{args.room_type}.txt'), "r") as f:
-        for i, line in enumerate(f):
-            classes[line.strip('\n')] = i
-    classes_r = {v: k for k, v in classes.items()}
-
-    relationships = {}
-    relationships_r = {}
+        vocab['object_idx_to_name'] = f.readlines()
     with open(os.path.join(args.dataset, 'relationships.txt'), "r") as f:
-        for i, line in enumerate(f):
-            relationships[line.strip('\n')] = i
-    relationships_r = {v: k for k, v in relationships.items()}
+        vocab['pred_idx_to_name'] = ['in\n'] + f.readlines()
+
+    vocab['object_idx_to_name_grained'] = vocab['object_idx_to_name']
+    
+    mapping_path = os.path.join(args.dataset, "mapping.json")
+    if os.path.exists(mapping_path):
+        with open(mapping_path, "r") as f:
+            mapping = json.load(f)
+        grained_classes = dict(zip(sorted([voc.strip('\n') for voc in vocab['object_idx_to_name']]), range(len(vocab['object_idx_to_name']))))
+        vocab['object_idx_to_name'] = [mapping[voc.strip('\n')]+'\n' for voc in vocab['object_idx_to_name']]
+        classes = dict(zip(sorted(list(set([voc.strip('\n') for voc in vocab['object_idx_to_name']]))), range(len(list(set(vocab['object_idx_to_name']))))))
+    else:
+        grained_classes = dict(zip(sorted([voc.strip('\n') for voc in vocab['object_idx_to_name']]), range(len(vocab['object_idx_to_name']))))
+        classes = grained_classes
 
     vocab['object_name_to_idx'] = classes
-    vocab['object_idx_to_name'] = classes_r
-    vocab['object_name_to_idx_grained'] = classes
-    vocab['object_idx_to_name_grained'] = classes_r
+    vocab['object_name_to_idx_grained'] = grained_classes
+    
+    pred_idx_to_name_list = vocab['pred_idx_to_name']
+    # Create relationships dict matching ThreedFrontDatasetSceneGraph logic
+    # In the dataset class, it reads lines, strips \n and maps to 1..N. But we just need a valid dict
+    relationships = dict(zip([voc.strip('\n') for voc in pred_idx_to_name_list], range(len(pred_idx_to_name_list))))
     vocab['pred_name_to_idx'] = relationships
-    vocab['pred_idx_to_name'] = relationships_r
+
+    classes_r = {v: k for k, v in classes.items()}
+    relationships_r = {v: k for k, v in relationships.items()}
 
     # 2. Load Model
     print("Loading Model...")
