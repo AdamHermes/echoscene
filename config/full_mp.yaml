@@ -67,9 +67,9 @@ layout_branch:
           metric: aabb
           ignore_labels: ["scene", "floor"]
         room_outer:
-          weight: 0.0
+          weight: 10.0
         walkable:
-          enabled: true
+          enabled: false
           weight: 1.0 # Global scale factor for walkable guidance
           
           # Modular sub-components configured to match real_current_best behavior:
