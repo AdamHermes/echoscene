@@ -57,7 +57,7 @@ layout_branch:
       clip_to_bounds: true
       constraints:
         collision:
-          enabled: false
+          enabled: true
           strength: 20.0
           weight: 10.0
           iou_threshold: 0.02
@@ -67,7 +67,7 @@ layout_branch:
           metric: aabb
           ignore_labels: ["scene", "floor"]
         room_outer:
-          weight: 10.0
+          weight: 0.0
         walkable:
           enabled: true
           weight: 1.0 # Global scale factor for walkable guidance
