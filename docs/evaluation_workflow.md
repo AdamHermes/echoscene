@@ -11,7 +11,60 @@ All commands are run from the `echoscene/` repo root unless stated otherwise.
 cd /Users/lehoangan/Documents/GitHub/ROOM/echoscene
 ```
 
+## Where the Works Live (SSD is the ACTIVE working folder)
+
+- **ACTIVE working folder**: `/Volumes/ExternalSSD/current_works/` — all new works,
+  extractions, eval artifacts, and result files are created here. Point every
+  `--json` / `--scenes_dir` / `--out_dir` at this path. In the commands below,
+  substitute `current_works/…` with `/Volumes/ExternalSSD/current_works/…`.
+- **Legacy internal copy**: `echoscene/current_works/` (inside the repo) — kept for
+  reference only; do **not** create new works there. A few historical dirs
+  (`baseline_52`, `baseline_pp_52`, `current_best_SIGG`) exist only internally.
+- The scripts themselves (`scripts/…`), `docs/`, and the `FRONT/` dataset still live
+  in the repo — run scripts from the repo root, but read/write work data on the SSD.
+- **Directory mapping** between the two locations is tracked in `docs/mapping.txt`.
+  When a work moves or gets a duplicate, update its entry there.
+- Rules: one work lives in exactly one place at a time (SSD authoritative if both
+  exist); diff before deleting leftovers; never modify original zips on either volume.
+
 ## Overview of the Pipeline
+
+### Two dataset scales — two Excel sheets
+
+There are **two evaluation scales**, logged in **different sheets** of
+`SceneGraph Experiement Log.xlsx`:
+
+| Scale | Scenes | Excel sheet | Where the data comes from |
+|---|---|---|---|
+| **Full run** | 370 (all test rooms) | `ColObj Score` | `current_works/work_XX/…` zips |
+| **Small test** | 52 (fixed subset) | `SmallTests` | dedicated 52-scene runs, or the **first 52 scenes of a full run** |
+
+**The 52-scene small test** (`--smalltest` flag in `eval_3dfront.py`: start_idx=0,
+max_samples=52 → 20 bedrooms + 12 livingrooms + 20 diningrooms per the canonical
+`test_rooms_list` order) is a **fixed, always-identical subset** — the *same* 52
+scenes every time. Two situations feed the `SmallTests` sheet:
+
+1. **Dedicated 52-scene run** — generated with `--smalltest` (e.g.
+   `current_works/baseline_52/`, `current_works/SIG_walkv3_52/`). The JSON directly
+   contains those 52 scenes.
+2. **Subset taken from a full 370 run** — some larger runs have their first 52
+   scenes (in canonical `test_rooms_list` order) carved out and evaluated on the
+   same 52 scenes, so they are comparable with the dedicated runs.
+
+> **Comparability note:** because the full-run JSON is already sorted in canonical
+> order, "first 52 scenes of a full run" = "the 52 smalltest scenes" — the subsets
+> align scene-for-scene. Never compare a `SmallTests` row against a `ColObj Score`
+> row as if they were the same benchmark: 52-scene numbers (especially ColScene,
+> walkability, navigability) are not comparable to 370-scene numbers.
+
+To evaluate a small test, run the exact same Steps 1–6 below but on the 52-scene JSON
+(either the dedicated run's JSON, or slice the first 52 entries of a full-run JSON —
+do **not** modify the original file, write the slice to a new file), and write the
+results to the `SmallTests` sheet instead of `ColObj Score`. The `SmallTests` sheet
+has the same column layout minus the Trial Number column (Trial Name is C1); mark
+the scale in Method Note (e.g. `52 Rooms`).
+
+### Variants
 
 For every new work you produce **two variants** and evaluate both:
 
@@ -397,6 +450,8 @@ instances concurrently on one machine is fine.
 ## Common Pitfalls Checklist
 
 - [ ] Never modify/delete/re-zip original data — extract & work only in created folders
+- [ ] New works go in `/Volumes/ExternalSSD/current_works/` (the active working
+      folder); `echoscene/current_works/` is legacy — no new works there
 - [ ] `eval_collision.py` without `--max_rooms 0` silently evaluates only 190 scenes
 - [ ] Old `procthor_scenes` dirs from a stale converter → always regenerate fresh
 - [ ] RAW dir containing PP content (overwrite accident) → `md5` one scene file to check
@@ -405,4 +460,7 @@ instances concurrently on one machine is fine.
 - [ ] Multi-part zips → confirm part JSONs sum to 370 scenes with no overlap
 - [ ] Multi-part works → all metrics (incl. Total Accuracy / Means of Means) run on
       the **merged** JSON, never on a part JSON
+- [ ] 52-scene small tests → results go to the `SmallTests` sheet, never mix with
+      370-scene numbers from `ColObj Score`; the 52 scenes are always the same fixed
+      subset (first 52 in canonical order)
 - [ ] Excel cells written as fractions (0–1), Arial 11, RAW row above PP row

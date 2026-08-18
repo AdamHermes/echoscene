@@ -1,0 +1,87 @@
+Mapping: works on the EXTERNAL SSD vs their internal (local repo) copies.
+
+ACTIVE working folder (as of Aug 2026):
+  /Volumes/ExternalSSD/current_works/
+  -> All new works, extractions, eval artifacts, and results are created HERE.
+  -> Run all workflow commands against this path, e.g.:
+     python3 scripts/eval_collision.py --json /Volumes/ExternalSSD/current_works/work_XX/2050/physcene_collision_input.json --max_rooms 0
+
+Legacy / internal copy (kept for reference, DO NOT write new works here):
+  /Users/lehoangan/Documents/GitHub/ROOM/echoscene/current_works/
+  -> Historical works (baseline_52, baseline_pp_52, current_best_SIGG live only here).
+  -> The repo's scripts/, docs/, FRONT/ etc. still live in /Users/lehoangan/Documents/GitHub/ROOM/echoscene/ — run scripts from there, point --json/--scenes_dir at the SSD.
+
+Rules:
+- One work lives in exactly ONE place at a time. New work starts and stays on the SSD.
+- If a work exists on both (leftovers from before the switch), the SSD copy is
+  authoritative. Diff before deleting any internal duplicate.
+- Internal-only dirs not yet on SSD: baseline_52, baseline_pp_52, current_best_SIGG.
+- Never modify/delete/re-zip original zips on either volume.
+
+Mapping log (work : location : notes):
+ (all works listed below live on the SSD unless marked internal-only)
+
+============================================================================
+ WORK-TO-EXCEL MAPPING  (format: path : sheet : trial name)
+ paths relative to /Volumes/ExternalSSD/current_works/ unless absolute
+============================================================================
+
+--- sheet: ColObj Score (370-scene benchmark) ---
+work_34 : ColObj Score : work34
+work_34 : ColObj Score : work34 + PP          (2050/physcene_collision_resolved.json)
+work_33 : ColObj Score : work33
+work_33 : ColObj Score : work33 + PP
+work_32 : ColObj Score : work32
+work_32 : ColObj Score : work32 + PP
+work_31 : ColObj Score : work31
+work_31 : ColObj Score : work31 + PP
+work_30 : ColObj Score : work30
+work_30 : ColObj Score : work30 + PP
+SIG_walkv3 : ColObj Score : SIGG_walkv3        (trial 29)
+SIG_walkv3_pp : ColObj Score : SIGG_walkv3 + PP
+real_num27 : ColObj Score : work27
+real_num27_pp : ColObj Score : work27 + PP
+work_num28_attempt3 : ColObj Score : work28    (parts merged in 2050/)
+work_num28_attempt3_pp : ColObj Score : work28 + PP
+/Users/lehoangan/Documents/GitHub/ROOM/echoscene/baseline : ColObj Score : baseline
+/Users/lehoangan/Documents/GitHub/ROOM/echoscene/baseline_post_processed : ColObj Score : baseline + pp
+current_best_SIGG/complete_released_full_model.zip : ColObj Score : current_best_SIGG (trial 3, CONFIRMED by user; method: echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_gausv1)
+  - RAW row   -> complete_released_full_model/vis/2050/physcene_collision_input.json
+  - + pp row  -> complete_released_full_model/vis/2050/physcene_collision_resolved.json
+  - NOTE: JSON contains 371 scenes ('Bedroom-13858' appears TWICE - duplicate);
+    contains all canonical 52 smalltest scenes but NOT in canonical order,
+    so it is NOT directly sliceable for SmallTests (use --max_rooms/limit carefully
+    after dedup + sorting)
+(n/a — FRONT ground truth) : ColObj Score : GROUND TRUTH / GROUND TRUTH + PP
+
+--- sheet: SmallTests (52-scene fixed subset) ---
+baseline_52 : SmallTests : baseline
+baseline_pp_52 : SmallTests : baseline + pp
+current_best_SIGG/complete_released_full_model.zip (first 52) : SmallTests : SIG / SIG + pp   ? (UNVERIFIED - zip JSON is 371 scenes incl. 1 duplicate, NOT canonically ordered; also SmallTests 'SIG' is described as plain 'echoscene (released full model)' without guidance, which may be a different run than current_best_SIGG's gausv1 guidance - needs user confirmation)
+SIG_0.95 : SmallTests : SIG Best 0.95
+SIG_0.95_pp : SmallTests : SIG Best 0.95 + pp
+SIG_obb : SmallTests : SIG Best obb            (INCOMPLETE: vis_folder_bedroom.zip & vis_folder_dining.zip are IDENTICAL duplicates both holding the 20 DiningRoom scenes; vis_folder_living.zip = 12 living; the 20 Bedroom scenes are MISSING from all zips - unique coverage = 32/52)
+SIG_obb_pp : SmallTests : SIG Best obb + pp        (same gap as SIG_obb)
+SIG_int5 : SmallTests : SIG Best 5
+SIG_int5_pp : SmallTests : SIG Best 5 + pp
+SIG_walkv3_52 : SmallTests : SIG Best walkability v3
+SIG_walkv3_pp_52 : SmallTests : SIG Best walkability v3 + pp
+SIG_walkv3_no_gausv1 : SmallTests : SIG Best walkability v3_no_gausv1
+SIG_walkv3_no_gausv1_pp : SmallTests : SIG Best walkability v3_no_gausv1 + pp
+SIG_no_walk : SmallTests : SIG Best no_walk
+SIG_no_walk_pp : SmallTests : SIG Best no_walk + pp
+SIG_rerun : SmallTests : SIG rerun
+SIG_rerun_pp : SmallTests : SIG rerun + pp
+SIG_relationv2_no_walk : SmallTests : SIG relationv2_no_walk
+SIG_relationv2__no_walk_pp : SmallTests : SIG relationv2_no_walk + pp   (double underscore in folder name)
+SIG_relationv2 : SmallTests : SIG relationv2
+SIG_relationv2_pp : SmallTests : SIG relationv2 + pp
+SIG_walkv2 : SmallTests : SIG walkv2
+SIG_walkv2_pp : SmallTests : SIG walkv2 + pp
+
+--- not mapped to any Excel row (experiments / intermediates) ---
+work_num27, work_num27_attempt2 (small partial runs)
+work_num27_attempt3_pp (PP artifacts only, no JSON)
+real_current_best_95, real_current_best_obb (EMPTY folders)
+work_32_fast, work_relational_1, work_relational_2 (test runs)
+to_be_merged (chunk folders, 15 scenes)
