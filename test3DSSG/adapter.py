@@ -31,12 +31,12 @@ REL_MAPPING = {
     "right": "right",
     "front": "front",
     "behind": "behind",
-    "standing on": "supported by",
-    "close by": "adjacent",
-    "supported by": "supported by",
-    "attached to": "adjacent",
-    "hanging on": "adjacent",
-    "lying on": "supported by"
+    "standing on": "standing on",
+    "close by": "close by",
+    "supported by": "standing on",
+    "attached to": "close by",
+    "hanging on": "close by",
+    "lying on": "standing on"
 }
 
 def create_echoscene_adapter(objects_file, rels_file, scan_id, output_file):
