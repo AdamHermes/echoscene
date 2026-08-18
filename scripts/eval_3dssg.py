@@ -248,7 +248,33 @@ def evaluate_3dssg():
                 layout_guidance=None
             )
             print(f"Structured scene exported to: {export_path}")
-        
+
+        # Physcene JSON Export
+        try:
+            from eval_3dfront import build_physcene_json_entry
+            physcene_entry = build_physcene_json_entry(
+                dec_objs=dec_objs,
+                boxes_pred_den=boxes_pred_den,
+                angles_pred=angles_pred,
+                obj_classes=classes_r,
+                scan_id=scan_id
+            )
+            physcene_out_path = os.path.join(modelArgs['store_path'], "physcene_collision_input_merged.json")
+            physcene_data = {}
+            if os.path.exists(physcene_out_path):
+                try:
+                    with open(physcene_out_path, 'r') as pf:
+                        physcene_data = json.load(pf)
+                except Exception:
+                    pass
+            physcene_data[scan_id] = physcene_entry
+            with open(physcene_out_path, 'w') as pf:
+                json.dump(physcene_data, pf, indent=4)
+            print(f"Appended scene {scan_id} to {physcene_out_path}")
+        except Exception as e:
+            print(f"Failed to append to physcene json: {e}")
+
 if __name__ == "__main__":
     evaluate_3dssg()
+
 
