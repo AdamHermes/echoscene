@@ -1,0 +1,258 @@
+{
+    "scene_id": "adapted_3dssg_b1d87fb4-e72e-2c8c-9ddc-75cf44f9984c",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "3",
+            "class_label": "tv",
+            "original_label": "tv"
+        },
+        {
+            "id": "7",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "18",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "19",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "20",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "21",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "22",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "23",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "33",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "3",
+            "right",
+            "33"
+        ],
+        [
+            "3",
+            "front",
+            "33"
+        ],
+        [
+            "7",
+            "close by",
+            "18"
+        ],
+        [
+            "7",
+            "behind",
+            "18"
+        ],
+        [
+            "7",
+            "left",
+            "19"
+        ],
+        [
+            "7",
+            "close by",
+            "20"
+        ],
+        [
+            "7",
+            "left",
+            "20"
+        ],
+        [
+            "7",
+            "right",
+            "21"
+        ],
+        [
+            "7",
+            "right",
+            "23"
+        ],
+        [
+            "7",
+            "close by",
+            "23"
+        ],
+        [
+            "18",
+            "front",
+            "7"
+        ],
+        [
+            "18",
+            "close by",
+            "7"
+        ],
+        [
+            "18",
+            "close by",
+            "19"
+        ],
+        [
+            "18",
+            "close by",
+            "20"
+        ],
+        [
+            "18",
+            "right",
+            "21"
+        ],
+        [
+            "18",
+            "close by",
+            "23"
+        ],
+        [
+            "19",
+            "right",
+            "7"
+        ],
+        [
+            "19",
+            "close by",
+            "18"
+        ],
+        [
+            "19",
+            "right",
+            "20"
+        ],
+        [
+            "19",
+            "front",
+            "20"
+        ],
+        [
+            "19",
+            "front",
+            "21"
+        ],
+        [
+            "20",
+            "right",
+            "7"
+        ],
+        [
+            "20",
+            "close by",
+            "7"
+        ],
+        [
+            "20",
+            "close by",
+            "18"
+        ],
+        [
+            "20",
+            "behind",
+            "19"
+        ],
+        [
+            "20",
+            "left",
+            "19"
+        ],
+        [
+            "20",
+            "behind",
+            "21"
+        ],
+        [
+            "20",
+            "right",
+            "23"
+        ],
+        [
+            "21",
+            "left",
+            "7"
+        ],
+        [
+            "21",
+            "left",
+            "18"
+        ],
+        [
+            "21",
+            "behind",
+            "19"
+        ],
+        [
+            "21",
+            "front",
+            "20"
+        ],
+        [
+            "21",
+            "left",
+            "23"
+        ],
+        [
+            "23",
+            "close by",
+            "7"
+        ],
+        [
+            "23",
+            "left",
+            "7"
+        ],
+        [
+            "23",
+            "close by",
+            "18"
+        ],
+        [
+            "23",
+            "left",
+            "20"
+        ],
+        [
+            "23",
+            "right",
+            "21"
+        ],
+        [
+            "33",
+            "behind",
+            "3"
+        ],
+        [
+            "33",
+            "left",
+            "3"
+        ]
+    ]
+}

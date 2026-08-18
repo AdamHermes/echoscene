@@ -1,0 +1,133 @@
+{
+    "scene_id": "adapted_3dssg_c7895f6f-339c-2d13-830a-81f71c3bfb78",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "3",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "15",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "16",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "18",
+            "class_label": "shelf",
+            "original_label": "bookshelf"
+        },
+        {
+            "id": "29",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "front",
+            "3"
+        ],
+        [
+            "2",
+            "close by",
+            "3"
+        ],
+        [
+            "2",
+            "left",
+            "3"
+        ],
+        [
+            "2",
+            "right",
+            "15"
+        ],
+        [
+            "2",
+            "right",
+            "16"
+        ],
+        [
+            "3",
+            "right",
+            "2"
+        ],
+        [
+            "3",
+            "close by",
+            "2"
+        ],
+        [
+            "3",
+            "behind",
+            "2"
+        ],
+        [
+            "3",
+            "right",
+            "15"
+        ],
+        [
+            "3",
+            "right",
+            "16"
+        ],
+        [
+            "15",
+            "left",
+            "2"
+        ],
+        [
+            "15",
+            "left",
+            "3"
+        ],
+        [
+            "15",
+            "front",
+            "16"
+        ],
+        [
+            "15",
+            "left",
+            "16"
+        ],
+        [
+            "16",
+            "left",
+            "2"
+        ],
+        [
+            "16",
+            "left",
+            "3"
+        ],
+        [
+            "16",
+            "right",
+            "15"
+        ],
+        [
+            "16",
+            "behind",
+            "15"
+        ]
+    ]
+}

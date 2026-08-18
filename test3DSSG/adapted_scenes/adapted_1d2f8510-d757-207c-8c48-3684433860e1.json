@@ -1,0 +1,88 @@
+{
+    "scene_id": "adapted_3dssg_1d2f8510-d757-207c-8c48-3684433860e1",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "8",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "9",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "13",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "16",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "22",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "23",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        }
+    ],
+    "edges": [
+        [
+            "22",
+            "close by",
+            "9"
+        ],
+        [
+            "9",
+            "close by",
+            "16"
+        ],
+        [
+            "9",
+            "right",
+            "23"
+        ],
+        [
+            "9",
+            "behind",
+            "23"
+        ],
+        [
+            "16",
+            "close by",
+            "9"
+        ],
+        [
+            "16",
+            "right",
+            "23"
+        ],
+        [
+            "23",
+            "front",
+            "9"
+        ],
+        [
+            "23",
+            "left",
+            "9"
+        ],
+        [
+            "23",
+            "left",
+            "16"
+        ]
+    ]
+}

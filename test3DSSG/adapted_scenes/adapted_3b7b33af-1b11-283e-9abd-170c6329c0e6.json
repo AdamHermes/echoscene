@@ -1,0 +1,228 @@
+{
+    "scene_id": "adapted_3dssg_3b7b33af-1b11-283e-9abd-170c6329c0e6",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "4",
+            "class_label": "tv",
+            "original_label": "tv"
+        },
+        {
+            "id": "7",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "8",
+            "class_label": "nightstand",
+            "original_label": "nightstand"
+        },
+        {
+            "id": "9",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "10",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "17",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "20",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "28",
+            "class_label": "nightstand",
+            "original_label": "nightstand"
+        }
+    ],
+    "edges": [
+        [
+            "4",
+            "standing on",
+            "17"
+        ],
+        [
+            "7",
+            "right",
+            "8"
+        ],
+        [
+            "7",
+            "close by",
+            "8"
+        ],
+        [
+            "7",
+            "behind",
+            "9"
+        ],
+        [
+            "7",
+            "close by",
+            "10"
+        ],
+        [
+            "7",
+            "close by",
+            "17"
+        ],
+        [
+            "7",
+            "left",
+            "17"
+        ],
+        [
+            "7",
+            "close by",
+            "28"
+        ],
+        [
+            "8",
+            "close by",
+            "7"
+        ],
+        [
+            "8",
+            "left",
+            "7"
+        ],
+        [
+            "8",
+            "behind",
+            "10"
+        ],
+        [
+            "8",
+            "left",
+            "28"
+        ],
+        [
+            "9",
+            "front",
+            "7"
+        ],
+        [
+            "9",
+            "close by",
+            "10"
+        ],
+        [
+            "9",
+            "left",
+            "17"
+        ],
+        [
+            "9",
+            "right",
+            "28"
+        ],
+        [
+            "10",
+            "close by",
+            "7"
+        ],
+        [
+            "10",
+            "front",
+            "8"
+        ],
+        [
+            "10",
+            "close by",
+            "9"
+        ],
+        [
+            "10",
+            "front",
+            "17"
+        ],
+        [
+            "10",
+            "left",
+            "17"
+        ],
+        [
+            "10",
+            "right",
+            "28"
+        ],
+        [
+            "10",
+            "close by",
+            "28"
+        ],
+        [
+            "17",
+            "right",
+            "7"
+        ],
+        [
+            "17",
+            "close by",
+            "7"
+        ],
+        [
+            "17",
+            "right",
+            "9"
+        ],
+        [
+            "17",
+            "right",
+            "10"
+        ],
+        [
+            "17",
+            "behind",
+            "10"
+        ],
+        [
+            "17",
+            "right",
+            "28"
+        ],
+        [
+            "28",
+            "close by",
+            "7"
+        ],
+        [
+            "28",
+            "right",
+            "8"
+        ],
+        [
+            "28",
+            "left",
+            "9"
+        ],
+        [
+            "28",
+            "close by",
+            "10"
+        ],
+        [
+            "28",
+            "left",
+            "10"
+        ],
+        [
+            "28",
+            "left",
+            "17"
+        ]
+    ]
+}

@@ -1,0 +1,228 @@
+{
+    "scene_id": "adapted_3dssg_5341b7c7-8a66-2cdd-86f4-c9dadf37c419",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "130",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "7",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "9",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "10",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "24",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "5",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "32",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "99",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "100",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "102",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "40",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        }
+    ],
+    "edges": [
+        [
+            "7",
+            "front",
+            "9"
+        ],
+        [
+            "7",
+            "left",
+            "10"
+        ],
+        [
+            "7",
+            "front",
+            "24"
+        ],
+        [
+            "7",
+            "left",
+            "24"
+        ],
+        [
+            "7",
+            "right",
+            "5"
+        ],
+        [
+            "7",
+            "left",
+            "40"
+        ],
+        [
+            "9",
+            "behind",
+            "7"
+        ],
+        [
+            "9",
+            "right",
+            "10"
+        ],
+        [
+            "9",
+            "right",
+            "24"
+        ],
+        [
+            "9",
+            "behind",
+            "24"
+        ],
+        [
+            "9",
+            "front",
+            "5"
+        ],
+        [
+            "10",
+            "right",
+            "7"
+        ],
+        [
+            "10",
+            "left",
+            "9"
+        ],
+        [
+            "10",
+            "close by",
+            "24"
+        ],
+        [
+            "10",
+            "left",
+            "24"
+        ],
+        [
+            "10",
+            "right",
+            "40"
+        ],
+        [
+            "24",
+            "right",
+            "7"
+        ],
+        [
+            "24",
+            "behind",
+            "7"
+        ],
+        [
+            "24",
+            "front",
+            "9"
+        ],
+        [
+            "24",
+            "left",
+            "9"
+        ],
+        [
+            "24",
+            "right",
+            "10"
+        ],
+        [
+            "24",
+            "close by",
+            "10"
+        ],
+        [
+            "24",
+            "front",
+            "5"
+        ],
+        [
+            "24",
+            "right",
+            "40"
+        ],
+        [
+            "5",
+            "left",
+            "7"
+        ],
+        [
+            "5",
+            "behind",
+            "9"
+        ],
+        [
+            "5",
+            "behind",
+            "24"
+        ],
+        [
+            "5",
+            "left",
+            "40"
+        ],
+        [
+            "40",
+            "right",
+            "7"
+        ],
+        [
+            "40",
+            "left",
+            "10"
+        ],
+        [
+            "40",
+            "left",
+            "24"
+        ],
+        [
+            "40",
+            "right",
+            "5"
+        ]
+    ]
+}

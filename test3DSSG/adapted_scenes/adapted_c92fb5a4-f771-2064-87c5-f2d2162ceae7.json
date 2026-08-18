@@ -1,0 +1,22 @@
+{
+    "scene_id": "adapted_3dssg_c92fb5a4-f771-2064-87c5-f2d2162ceae7",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "4",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "21",
+            "class_label": "desk",
+            "original_label": "desk"
+        }
+    ],
+    "edges": []
+}

@@ -1,0 +1,47 @@
+{
+    "scene_id": "adapted_3dssg_5630cfdc-12bf-2860-87b7-c7eab95718be",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "3",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "4",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "5",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "7",
+            "class_label": "nightstand",
+            "original_label": "nightstand"
+        },
+        {
+            "id": "8",
+            "class_label": "nightstand",
+            "original_label": "nightstand"
+        },
+        {
+            "id": "15",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "27",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": []
+}

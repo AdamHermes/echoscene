@@ -1,0 +1,133 @@
+{
+    "scene_id": "adapted_3dssg_13124cc0-cec3-27a6-84bd-1f56cb6d11a8",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "7",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "8",
+            "class_label": "nightstand",
+            "original_label": "nightstand"
+        },
+        {
+            "id": "11",
+            "class_label": "desk",
+            "original_label": "desk"
+        },
+        {
+            "id": "12",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "7",
+            "right",
+            "8"
+        ],
+        [
+            "7",
+            "close by",
+            "8"
+        ],
+        [
+            "7",
+            "front",
+            "11"
+        ],
+        [
+            "7",
+            "close by",
+            "11"
+        ],
+        [
+            "7",
+            "left",
+            "11"
+        ],
+        [
+            "7",
+            "close by",
+            "12"
+        ],
+        [
+            "7",
+            "left",
+            "12"
+        ],
+        [
+            "8",
+            "close by",
+            "7"
+        ],
+        [
+            "8",
+            "left",
+            "7"
+        ],
+        [
+            "11",
+            "right",
+            "7"
+        ],
+        [
+            "11",
+            "close by",
+            "7"
+        ],
+        [
+            "11",
+            "behind",
+            "7"
+        ],
+        [
+            "11",
+            "right",
+            "12"
+        ],
+        [
+            "11",
+            "close by",
+            "12"
+        ],
+        [
+            "11",
+            "behind",
+            "12"
+        ],
+        [
+            "12",
+            "right",
+            "7"
+        ],
+        [
+            "12",
+            "close by",
+            "7"
+        ],
+        [
+            "12",
+            "front",
+            "11"
+        ],
+        [
+            "12",
+            "close by",
+            "11"
+        ],
+        [
+            "12",
+            "left",
+            "11"
+        ]
+    ]
+}

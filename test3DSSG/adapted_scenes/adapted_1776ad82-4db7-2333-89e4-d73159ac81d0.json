@@ -1,0 +1,128 @@
+{
+    "scene_id": "adapted_3dssg_1776ad82-4db7-2333-89e4-d73159ac81d0",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "4",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "5",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "6",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "7",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "8",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "4",
+            "close by",
+            "5"
+        ],
+        [
+            "4",
+            "left",
+            "5"
+        ],
+        [
+            "4",
+            "close by",
+            "6"
+        ],
+        [
+            "4",
+            "right",
+            "8"
+        ],
+        [
+            "4",
+            "close by",
+            "8"
+        ],
+        [
+            "5",
+            "right",
+            "4"
+        ],
+        [
+            "5",
+            "close by",
+            "4"
+        ],
+        [
+            "5",
+            "right",
+            "6"
+        ],
+        [
+            "5",
+            "behind",
+            "6"
+        ],
+        [
+            "5",
+            "behind",
+            "8"
+        ],
+        [
+            "6",
+            "close by",
+            "4"
+        ],
+        [
+            "6",
+            "front",
+            "5"
+        ],
+        [
+            "6",
+            "left",
+            "5"
+        ],
+        [
+            "6",
+            "right",
+            "8"
+        ],
+        [
+            "8",
+            "close by",
+            "4"
+        ],
+        [
+            "8",
+            "left",
+            "4"
+        ],
+        [
+            "8",
+            "front",
+            "5"
+        ],
+        [
+            "8",
+            "left",
+            "6"
+        ]
+    ]
+}

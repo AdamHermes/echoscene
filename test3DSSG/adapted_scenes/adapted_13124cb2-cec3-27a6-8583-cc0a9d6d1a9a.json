@@ -1,0 +1,118 @@
+{
+    "scene_id": "adapted_3dssg_13124cb2-cec3-27a6-8583-cc0a9d6d1a9a",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "1",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "4",
+            "class_label": "shelf",
+            "original_label": "bookshelf"
+        },
+        {
+            "id": "9",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "10",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "27",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "28",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "32",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "1",
+            "close by",
+            "27"
+        ],
+        [
+            "1",
+            "left",
+            "27"
+        ],
+        [
+            "1",
+            "right",
+            "28"
+        ],
+        [
+            "1",
+            "behind",
+            "28"
+        ],
+        [
+            "4",
+            "front",
+            "9"
+        ],
+        [
+            "9",
+            "behind",
+            "4"
+        ],
+        [
+            "9",
+            "behind",
+            "10"
+        ],
+        [
+            "10",
+            "front",
+            "9"
+        ],
+        [
+            "27",
+            "right",
+            "1"
+        ],
+        [
+            "27",
+            "close by",
+            "1"
+        ],
+        [
+            "27",
+            "right",
+            "28"
+        ],
+        [
+            "28",
+            "front",
+            "1"
+        ],
+        [
+            "28",
+            "left",
+            "1"
+        ],
+        [
+            "28",
+            "left",
+            "27"
+        ]
+    ]
+}

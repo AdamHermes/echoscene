@@ -1,0 +1,17 @@
+{
+    "scene_id": "adapted_3dssg_77941462-cfdf-29cb-85a6-eb23498f9206",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "7",
+            "class_label": "table",
+            "original_label": "dining table"
+        }
+    ],
+    "edges": []
+}

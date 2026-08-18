@@ -1,0 +1,168 @@
+{
+    "scene_id": "adapted_3dssg_0988ea72-eb32-2e61-8344-99e2283c2728",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "31",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "32",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "33",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "34",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "35",
+            "class_label": "table",
+            "original_label": "dining table"
+        }
+    ],
+    "edges": [
+        [
+            "31",
+            "right",
+            "33"
+        ],
+        [
+            "31",
+            "behind",
+            "33"
+        ],
+        [
+            "31",
+            "right",
+            "34"
+        ],
+        [
+            "31",
+            "close by",
+            "34"
+        ],
+        [
+            "31",
+            "front",
+            "34"
+        ],
+        [
+            "31",
+            "right",
+            "35"
+        ],
+        [
+            "31",
+            "close by",
+            "35"
+        ],
+        [
+            "33",
+            "front",
+            "31"
+        ],
+        [
+            "33",
+            "left",
+            "31"
+        ],
+        [
+            "33",
+            "close by",
+            "34"
+        ],
+        [
+            "33",
+            "left",
+            "34"
+        ],
+        [
+            "33",
+            "close by",
+            "35"
+        ],
+        [
+            "33",
+            "left",
+            "35"
+        ],
+        [
+            "34",
+            "behind",
+            "31"
+        ],
+        [
+            "34",
+            "close by",
+            "31"
+        ],
+        [
+            "34",
+            "left",
+            "31"
+        ],
+        [
+            "34",
+            "right",
+            "33"
+        ],
+        [
+            "34",
+            "close by",
+            "33"
+        ],
+        [
+            "34",
+            "close by",
+            "35"
+        ],
+        [
+            "34",
+            "behind",
+            "35"
+        ],
+        [
+            "35",
+            "close by",
+            "31"
+        ],
+        [
+            "35",
+            "left",
+            "31"
+        ],
+        [
+            "35",
+            "right",
+            "33"
+        ],
+        [
+            "35",
+            "close by",
+            "33"
+        ],
+        [
+            "35",
+            "front",
+            "34"
+        ],
+        [
+            "35",
+            "close by",
+            "34"
+        ]
+    ]
+}

@@ -1,0 +1,118 @@
+{
+    "scene_id": "adapted_3dssg_0cac7604-8d6f-2d13-8e39-784396ee3b8c",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "4",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "5",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "6",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "9",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "29",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "4",
+            "close by",
+            "5"
+        ],
+        [
+            "4",
+            "left",
+            "5"
+        ],
+        [
+            "4",
+            "close by",
+            "6"
+        ],
+        [
+            "5",
+            "right",
+            "4"
+        ],
+        [
+            "5",
+            "close by",
+            "4"
+        ],
+        [
+            "5",
+            "right",
+            "6"
+        ],
+        [
+            "5",
+            "close by",
+            "6"
+        ],
+        [
+            "5",
+            "front",
+            "6"
+        ],
+        [
+            "6",
+            "close by",
+            "4"
+        ],
+        [
+            "6",
+            "behind",
+            "5"
+        ],
+        [
+            "6",
+            "close by",
+            "5"
+        ],
+        [
+            "6",
+            "left",
+            "5"
+        ],
+        [
+            "9",
+            "right",
+            "29"
+        ],
+        [
+            "9",
+            "close by",
+            "29"
+        ],
+        [
+            "29",
+            "close by",
+            "9"
+        ],
+        [
+            "29",
+            "left",
+            "9"
+        ]
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "scene_id": "adapted_3dssg_751a55a3-fe61-2c3b-8d1b-daad80d1af30",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "22",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "24",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "25",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "33",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "24",
+            "right",
+            "25"
+        ],
+        [
+            "25",
+            "left",
+            "24"
+        ]
+    ]
+}

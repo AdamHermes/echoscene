@@ -1,0 +1,118 @@
+{
+    "scene_id": "adapted_3dssg_1e0ccbe6-9783-2bd7-8d51-ca9e9226bf35",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "sofa",
+            "original_label": "sofa"
+        },
+        {
+            "id": "10",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "11",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "16",
+            "class_label": "cabinet",
+            "original_label": "tv stand"
+        },
+        {
+            "id": "17",
+            "class_label": "tv",
+            "original_label": "tv"
+        },
+        {
+            "id": "18",
+            "class_label": "desk",
+            "original_label": "desk"
+        },
+        {
+            "id": "50",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "17",
+            "standing on",
+            "16"
+        ],
+        [
+            "50",
+            "standing on",
+            "18"
+        ],
+        [
+            "2",
+            "right",
+            "10"
+        ],
+        [
+            "2",
+            "close by",
+            "10"
+        ],
+        [
+            "2",
+            "behind",
+            "18"
+        ],
+        [
+            "10",
+            "close by",
+            "2"
+        ],
+        [
+            "10",
+            "left",
+            "2"
+        ],
+        [
+            "10",
+            "left",
+            "18"
+        ],
+        [
+            "16",
+            "right",
+            "18"
+        ],
+        [
+            "16",
+            "close by",
+            "18"
+        ],
+        [
+            "18",
+            "front",
+            "2"
+        ],
+        [
+            "18",
+            "right",
+            "10"
+        ],
+        [
+            "18",
+            "close by",
+            "16"
+        ],
+        [
+            "18",
+            "left",
+            "16"
+        ]
+    ]
+}

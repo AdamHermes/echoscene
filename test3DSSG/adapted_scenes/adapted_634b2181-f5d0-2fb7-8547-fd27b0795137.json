@@ -1,0 +1,38 @@
+{
+    "scene_id": "adapted_3dssg_634b2181-f5d0-2fb7-8547-fd27b0795137",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "8",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "12",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "16",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "8",
+            "front",
+            "16"
+        ],
+        [
+            "16",
+            "behind",
+            "8"
+        ]
+    ]
+}

@@ -1,0 +1,233 @@
+{
+    "scene_id": "adapted_3dssg_0958224a-e2c2-2de1-950b-a53ea2cb660d",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "11",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "12",
+            "class_label": "desk",
+            "original_label": "desk"
+        },
+        {
+            "id": "15",
+            "class_label": "desk",
+            "original_label": "desk"
+        },
+        {
+            "id": "26",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "28",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "29",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "11",
+            "front",
+            "12"
+        ],
+        [
+            "11",
+            "close by",
+            "12"
+        ],
+        [
+            "11",
+            "left",
+            "12"
+        ],
+        [
+            "11",
+            "close by",
+            "26"
+        ],
+        [
+            "11",
+            "left",
+            "26"
+        ],
+        [
+            "11",
+            "left",
+            "29"
+        ],
+        [
+            "12",
+            "right",
+            "11"
+        ],
+        [
+            "12",
+            "close by",
+            "11"
+        ],
+        [
+            "12",
+            "behind",
+            "11"
+        ],
+        [
+            "12",
+            "left",
+            "15"
+        ],
+        [
+            "12",
+            "close by",
+            "26"
+        ],
+        [
+            "12",
+            "left",
+            "28"
+        ],
+        [
+            "12",
+            "close by",
+            "29"
+        ],
+        [
+            "15",
+            "right",
+            "12"
+        ],
+        [
+            "15",
+            "right",
+            "26"
+        ],
+        [
+            "15",
+            "front",
+            "28"
+        ],
+        [
+            "15",
+            "right",
+            "29"
+        ],
+        [
+            "15",
+            "behind",
+            "29"
+        ],
+        [
+            "26",
+            "right",
+            "11"
+        ],
+        [
+            "26",
+            "close by",
+            "11"
+        ],
+        [
+            "26",
+            "close by",
+            "12"
+        ],
+        [
+            "26",
+            "left",
+            "15"
+        ],
+        [
+            "26",
+            "front",
+            "28"
+        ],
+        [
+            "26",
+            "left",
+            "28"
+        ],
+        [
+            "26",
+            "close by",
+            "29"
+        ],
+        [
+            "28",
+            "right",
+            "12"
+        ],
+        [
+            "28",
+            "behind",
+            "15"
+        ],
+        [
+            "28",
+            "right",
+            "26"
+        ],
+        [
+            "28",
+            "behind",
+            "26"
+        ],
+        [
+            "28",
+            "right",
+            "29"
+        ],
+        [
+            "28",
+            "behind",
+            "29"
+        ],
+        [
+            "29",
+            "right",
+            "11"
+        ],
+        [
+            "29",
+            "close by",
+            "12"
+        ],
+        [
+            "29",
+            "front",
+            "15"
+        ],
+        [
+            "29",
+            "left",
+            "15"
+        ],
+        [
+            "29",
+            "close by",
+            "26"
+        ],
+        [
+            "29",
+            "front",
+            "28"
+        ],
+        [
+            "29",
+            "left",
+            "28"
+        ]
+    ]
+}

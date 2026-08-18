@@ -1,0 +1,112 @@
+{
+    "scene_id": "adapted_3dssg_13af338a-7397-2e54-86f3-19f6e51eae75",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "3",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "4",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "5",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "6",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "8",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "9",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "10",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "11",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "12",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "13",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "14",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "15",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "16",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "17",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "18",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "19",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "20",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "22",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "28",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": []
+}

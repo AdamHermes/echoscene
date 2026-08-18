@@ -1,0 +1,113 @@
+{
+    "scene_id": "adapted_3dssg_bcb0fe1b-4f39-2c70-9f8c-2256ea9752ab",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "3",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "8",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "13",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "16",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "18",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "21",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "3",
+            "left",
+            "8"
+        ],
+        [
+            "8",
+            "right",
+            "3"
+        ],
+        [
+            "13",
+            "right",
+            "16"
+        ],
+        [
+            "13",
+            "close by",
+            "16"
+        ],
+        [
+            "13",
+            "behind",
+            "16"
+        ],
+        [
+            "13",
+            "close by",
+            "18"
+        ],
+        [
+            "13",
+            "left",
+            "18"
+        ],
+        [
+            "16",
+            "front",
+            "13"
+        ],
+        [
+            "16",
+            "close by",
+            "13"
+        ],
+        [
+            "16",
+            "left",
+            "13"
+        ],
+        [
+            "16",
+            "left",
+            "18"
+        ],
+        [
+            "18",
+            "right",
+            "13"
+        ],
+        [
+            "18",
+            "close by",
+            "13"
+        ],
+        [
+            "18",
+            "right",
+            "16"
+        ]
+    ]
+}

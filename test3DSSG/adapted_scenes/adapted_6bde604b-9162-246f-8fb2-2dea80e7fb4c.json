@@ -1,0 +1,253 @@
+{
+    "scene_id": "adapted_3dssg_6bde604b-9162-246f-8fb2-2dea80e7fb4c",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "3",
+            "class_label": "sofa",
+            "original_label": "couch"
+        },
+        {
+            "id": "5",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "6",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "7",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "8",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "9",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "10",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "11",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "12",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "13",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "14",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "17",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "19",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "20",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "21",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "22",
+            "class_label": "chair",
+            "original_label": "stool"
+        }
+    ],
+    "edges": [
+        [
+            "3",
+            "left",
+            "6"
+        ],
+        [
+            "3",
+            "close by",
+            "14"
+        ],
+        [
+            "6",
+            "right",
+            "3"
+        ],
+        [
+            "6",
+            "behind",
+            "7"
+        ],
+        [
+            "6",
+            "left",
+            "7"
+        ],
+        [
+            "7",
+            "front",
+            "6"
+        ],
+        [
+            "7",
+            "right",
+            "6"
+        ],
+        [
+            "7",
+            "behind",
+            "8"
+        ],
+        [
+            "7",
+            "left",
+            "8"
+        ],
+        [
+            "7",
+            "left",
+            "20"
+        ],
+        [
+            "7",
+            "left",
+            "21"
+        ],
+        [
+            "8",
+            "front",
+            "7"
+        ],
+        [
+            "8",
+            "right",
+            "7"
+        ],
+        [
+            "8",
+            "right",
+            "17"
+        ],
+        [
+            "8",
+            "right",
+            "21"
+        ],
+        [
+            "14",
+            "close by",
+            "3"
+        ],
+        [
+            "14",
+            "front",
+            "20"
+        ],
+        [
+            "14",
+            "front",
+            "21"
+        ],
+        [
+            "17",
+            "left",
+            "8"
+        ],
+        [
+            "17",
+            "left",
+            "20"
+        ],
+        [
+            "17",
+            "left",
+            "21"
+        ],
+        [
+            "20",
+            "right",
+            "7"
+        ],
+        [
+            "20",
+            "behind",
+            "14"
+        ],
+        [
+            "20",
+            "right",
+            "17"
+        ],
+        [
+            "20",
+            "right",
+            "21"
+        ],
+        [
+            "20",
+            "front",
+            "21"
+        ],
+        [
+            "21",
+            "right",
+            "7"
+        ],
+        [
+            "21",
+            "left",
+            "8"
+        ],
+        [
+            "21",
+            "behind",
+            "14"
+        ],
+        [
+            "21",
+            "right",
+            "17"
+        ],
+        [
+            "21",
+            "behind",
+            "20"
+        ],
+        [
+            "21",
+            "left",
+            "20"
+        ]
+    ]
+}

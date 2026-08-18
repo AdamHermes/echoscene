@@ -1,0 +1,108 @@
+{
+    "scene_id": "adapted_3dssg_ea318260-0a4c-2749-9389-4c16c782c4b1",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "sofa",
+            "original_label": "sofa"
+        },
+        {
+            "id": "7",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "15",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "17",
+            "class_label": "tv",
+            "original_label": "tv"
+        },
+        {
+            "id": "20",
+            "class_label": "cabinet",
+            "original_label": "tv stand"
+        },
+        {
+            "id": "33",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "17",
+            "standing on",
+            "20"
+        ],
+        [
+            "2",
+            "behind",
+            "7"
+        ],
+        [
+            "2",
+            "front",
+            "15"
+        ],
+        [
+            "2",
+            "left",
+            "15"
+        ],
+        [
+            "7",
+            "front",
+            "2"
+        ],
+        [
+            "7",
+            "front",
+            "20"
+        ],
+        [
+            "15",
+            "right",
+            "2"
+        ],
+        [
+            "15",
+            "behind",
+            "2"
+        ],
+        [
+            "15",
+            "behind",
+            "20"
+        ],
+        [
+            "15",
+            "left",
+            "20"
+        ],
+        [
+            "20",
+            "behind",
+            "7"
+        ],
+        [
+            "20",
+            "front",
+            "15"
+        ],
+        [
+            "20",
+            "right",
+            "15"
+        ]
+    ]
+}

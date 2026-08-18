@@ -1,0 +1,98 @@
+{
+    "scene_id": "adapted_3dssg_19f1a897-a988-2bf8-8f8d-f3b64da81c2a",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "14",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "15",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "40",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "56",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "57",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "14",
+            "behind",
+            "15"
+        ],
+        [
+            "14",
+            "left",
+            "15"
+        ],
+        [
+            "15",
+            "front",
+            "14"
+        ],
+        [
+            "15",
+            "right",
+            "14"
+        ],
+        [
+            "15",
+            "behind",
+            "40"
+        ],
+        [
+            "15",
+            "left",
+            "40"
+        ],
+        [
+            "40",
+            "front",
+            "15"
+        ],
+        [
+            "40",
+            "right",
+            "15"
+        ],
+        [
+            "56",
+            "right",
+            "57"
+        ],
+        [
+            "56",
+            "behind",
+            "57"
+        ],
+        [
+            "57",
+            "front",
+            "56"
+        ],
+        [
+            "57",
+            "left",
+            "56"
+        ]
+    ]
+}

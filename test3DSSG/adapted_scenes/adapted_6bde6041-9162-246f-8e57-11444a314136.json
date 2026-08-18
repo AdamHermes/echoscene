@@ -1,0 +1,243 @@
+{
+    "scene_id": "adapted_3dssg_6bde6041-9162-246f-8e57-11444a314136",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "3",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "4",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "6",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "8",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "9",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "10",
+            "class_label": "chair",
+            "original_label": "stool"
+        }
+    ],
+    "edges": [
+        [
+            "3",
+            "left",
+            "4"
+        ],
+        [
+            "3",
+            "left",
+            "6"
+        ],
+        [
+            "3",
+            "front",
+            "8"
+        ],
+        [
+            "3",
+            "front",
+            "9"
+        ],
+        [
+            "3",
+            "behind",
+            "10"
+        ],
+        [
+            "3",
+            "left",
+            "10"
+        ],
+        [
+            "4",
+            "right",
+            "3"
+        ],
+        [
+            "4",
+            "front",
+            "6"
+        ],
+        [
+            "4",
+            "left",
+            "6"
+        ],
+        [
+            "4",
+            "front",
+            "8"
+        ],
+        [
+            "4",
+            "behind",
+            "9"
+        ],
+        [
+            "4",
+            "left",
+            "9"
+        ],
+        [
+            "4",
+            "left",
+            "10"
+        ],
+        [
+            "6",
+            "right",
+            "3"
+        ],
+        [
+            "6",
+            "right",
+            "4"
+        ],
+        [
+            "6",
+            "behind",
+            "4"
+        ],
+        [
+            "6",
+            "behind",
+            "8"
+        ],
+        [
+            "6",
+            "left",
+            "8"
+        ],
+        [
+            "6",
+            "left",
+            "9"
+        ],
+        [
+            "6",
+            "left",
+            "10"
+        ],
+        [
+            "8",
+            "behind",
+            "3"
+        ],
+        [
+            "8",
+            "behind",
+            "4"
+        ],
+        [
+            "8",
+            "front",
+            "6"
+        ],
+        [
+            "8",
+            "right",
+            "6"
+        ],
+        [
+            "8",
+            "right",
+            "9"
+        ],
+        [
+            "8",
+            "behind",
+            "9"
+        ],
+        [
+            "8",
+            "right",
+            "10"
+        ],
+        [
+            "9",
+            "behind",
+            "3"
+        ],
+        [
+            "9",
+            "front",
+            "4"
+        ],
+        [
+            "9",
+            "right",
+            "4"
+        ],
+        [
+            "9",
+            "right",
+            "6"
+        ],
+        [
+            "9",
+            "front",
+            "8"
+        ],
+        [
+            "9",
+            "left",
+            "8"
+        ],
+        [
+            "9",
+            "right",
+            "10"
+        ],
+        [
+            "10",
+            "front",
+            "3"
+        ],
+        [
+            "10",
+            "right",
+            "3"
+        ],
+        [
+            "10",
+            "right",
+            "4"
+        ],
+        [
+            "10",
+            "right",
+            "6"
+        ],
+        [
+            "10",
+            "left",
+            "8"
+        ],
+        [
+            "10",
+            "left",
+            "9"
+        ]
+    ]
+}

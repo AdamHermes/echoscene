@@ -1,0 +1,123 @@
+{
+    "scene_id": "adapted_3dssg_6bde609f-9162-246f-8c79-3b26507f2ffd",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "7",
+            "class_label": "sofa",
+            "original_label": "sofa"
+        },
+        {
+            "id": "8",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "9",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "10",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "11",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "19",
+            "class_label": "chair",
+            "original_label": "armchair"
+        }
+    ],
+    "edges": [
+        [
+            "7",
+            "close by",
+            "8"
+        ],
+        [
+            "7",
+            "right",
+            "10"
+        ],
+        [
+            "8",
+            "close by",
+            "7"
+        ],
+        [
+            "8",
+            "left",
+            "9"
+        ],
+        [
+            "8",
+            "right",
+            "10"
+        ],
+        [
+            "8",
+            "left",
+            "11"
+        ],
+        [
+            "9",
+            "right",
+            "8"
+        ],
+        [
+            "9",
+            "left",
+            "11"
+        ],
+        [
+            "10",
+            "left",
+            "7"
+        ],
+        [
+            "10",
+            "left",
+            "8"
+        ],
+        [
+            "10",
+            "behind",
+            "11"
+        ],
+        [
+            "10",
+            "right",
+            "19"
+        ],
+        [
+            "11",
+            "right",
+            "8"
+        ],
+        [
+            "11",
+            "right",
+            "9"
+        ],
+        [
+            "11",
+            "front",
+            "10"
+        ],
+        [
+            "19",
+            "left",
+            "10"
+        ]
+    ]
+}

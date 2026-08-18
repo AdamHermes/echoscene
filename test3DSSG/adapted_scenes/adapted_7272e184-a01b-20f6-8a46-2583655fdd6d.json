@@ -1,0 +1,42 @@
+{
+    "scene_id": "adapted_3dssg_7272e184-a01b-20f6-8a46-2583655fdd6d",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "3",
+            "class_label": "nightstand",
+            "original_label": "nightstand"
+        },
+        {
+            "id": "10",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "14",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "91",
+            "class_label": "nightstand",
+            "original_label": "nightstand"
+        },
+        {
+            "id": "28",
+            "class_label": "chair",
+            "original_label": "bench"
+        }
+    ],
+    "edges": []
+}

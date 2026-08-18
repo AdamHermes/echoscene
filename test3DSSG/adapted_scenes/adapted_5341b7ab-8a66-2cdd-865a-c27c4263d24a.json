@@ -1,0 +1,17 @@
+{
+    "scene_id": "adapted_3dssg_5341b7ab-8a66-2cdd-865a-c27c4263d24a",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "sofa",
+            "original_label": "couch"
+        }
+    ],
+    "edges": []
+}

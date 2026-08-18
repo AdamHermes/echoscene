@@ -1,0 +1,43 @@
+{
+    "scene_id": "adapted_3dssg_4acaebba-6c10-2a2a-8650-34c2f160db99",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "3",
+            "class_label": "nightstand",
+            "original_label": "nightstand"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "close by",
+            "3"
+        ],
+        [
+            "2",
+            "behind",
+            "3"
+        ],
+        [
+            "3",
+            "front",
+            "2"
+        ],
+        [
+            "3",
+            "close by",
+            "2"
+        ]
+    ]
+}

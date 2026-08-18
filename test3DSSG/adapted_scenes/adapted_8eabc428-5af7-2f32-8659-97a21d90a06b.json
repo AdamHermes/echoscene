@@ -1,0 +1,58 @@
+{
+    "scene_id": "adapted_3dssg_8eabc428-5af7-2f32-8659-97a21d90a06b",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "18",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "32",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "left",
+            "18"
+        ],
+        [
+            "18",
+            "right",
+            "2"
+        ],
+        [
+            "18",
+            "front",
+            "32"
+        ],
+        [
+            "18",
+            "close by",
+            "32"
+        ],
+        [
+            "32",
+            "close by",
+            "18"
+        ],
+        [
+            "32",
+            "behind",
+            "18"
+        ]
+    ]
+}

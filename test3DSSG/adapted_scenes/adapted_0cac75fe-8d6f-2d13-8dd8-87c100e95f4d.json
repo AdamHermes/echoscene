@@ -1,0 +1,118 @@
+{
+    "scene_id": "adapted_3dssg_0cac75fe-8d6f-2d13-8dd8-87c100e95f4d",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "3",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "4",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "15",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "17",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "right",
+            "3"
+        ],
+        [
+            "2",
+            "behind",
+            "3"
+        ],
+        [
+            "2",
+            "right",
+            "4"
+        ],
+        [
+            "2",
+            "close by",
+            "4"
+        ],
+        [
+            "2",
+            "front",
+            "17"
+        ],
+        [
+            "2",
+            "left",
+            "17"
+        ],
+        [
+            "3",
+            "front",
+            "2"
+        ],
+        [
+            "3",
+            "left",
+            "2"
+        ],
+        [
+            "4",
+            "close by",
+            "2"
+        ],
+        [
+            "4",
+            "left",
+            "2"
+        ],
+        [
+            "4",
+            "front",
+            "17"
+        ],
+        [
+            "4",
+            "left",
+            "17"
+        ],
+        [
+            "17",
+            "right",
+            "2"
+        ],
+        [
+            "17",
+            "behind",
+            "2"
+        ],
+        [
+            "17",
+            "right",
+            "4"
+        ],
+        [
+            "17",
+            "behind",
+            "4"
+        ]
+    ]
+}

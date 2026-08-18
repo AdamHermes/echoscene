@@ -1,0 +1,133 @@
+{
+    "scene_id": "adapted_3dssg_77361fbc-d054-2a22-8bd1-20da69ee28dc",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "3",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "4",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "5",
+            "class_label": "table",
+            "original_label": "table"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "front",
+            "3"
+        ],
+        [
+            "2",
+            "front",
+            "4"
+        ],
+        [
+            "2",
+            "right",
+            "5"
+        ],
+        [
+            "2",
+            "front",
+            "5"
+        ],
+        [
+            "3",
+            "behind",
+            "2"
+        ],
+        [
+            "3",
+            "right",
+            "4"
+        ],
+        [
+            "3",
+            "behind",
+            "4"
+        ],
+        [
+            "3",
+            "right",
+            "5"
+        ],
+        [
+            "4",
+            "behind",
+            "2"
+        ],
+        [
+            "4",
+            "front",
+            "3"
+        ],
+        [
+            "4",
+            "left",
+            "3"
+        ],
+        [
+            "4",
+            "front",
+            "5"
+        ],
+        [
+            "4",
+            "close by",
+            "5"
+        ],
+        [
+            "4",
+            "left",
+            "5"
+        ],
+        [
+            "5",
+            "behind",
+            "2"
+        ],
+        [
+            "5",
+            "left",
+            "2"
+        ],
+        [
+            "5",
+            "left",
+            "3"
+        ],
+        [
+            "5",
+            "right",
+            "4"
+        ],
+        [
+            "5",
+            "close by",
+            "4"
+        ],
+        [
+            "5",
+            "behind",
+            "4"
+        ]
+    ]
+}

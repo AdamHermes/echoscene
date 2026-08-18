@@ -1,0 +1,48 @@
+{
+    "scene_id": "adapted_3dssg_bcb0fe2d-4f39-2c70-9d1a-49a4a6868d7d",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "7",
+            "class_label": "sofa",
+            "original_label": "sofa"
+        },
+        {
+            "id": "13",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "14",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "15",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "26",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "7",
+            "front",
+            "15"
+        ],
+        [
+            "15",
+            "behind",
+            "7"
+        ]
+    ]
+}

@@ -1,0 +1,37 @@
+{
+    "scene_id": "adapted_3dssg_a644cb8c-0ee5-2f66-9d13-f4539a6caaec",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "3",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "4",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "5",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "7",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "8",
+            "class_label": "table",
+            "original_label": "table"
+        }
+    ],
+    "edges": []
+}

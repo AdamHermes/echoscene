@@ -1,0 +1,138 @@
+{
+    "scene_id": "adapted_3dssg_19f1a892-a988-2bf8-8c91-0705cf396888",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "5",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "10",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "23",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "27",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "55",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "56",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "63",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "64",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "90",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "480",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "behind",
+            "5"
+        ],
+        [
+            "2",
+            "right",
+            "10"
+        ],
+        [
+            "2",
+            "front",
+            "27"
+        ],
+        [
+            "5",
+            "front",
+            "2"
+        ],
+        [
+            "5",
+            "front",
+            "10"
+        ],
+        [
+            "5",
+            "left",
+            "27"
+        ],
+        [
+            "10",
+            "left",
+            "2"
+        ],
+        [
+            "10",
+            "behind",
+            "5"
+        ],
+        [
+            "10",
+            "close by",
+            "27"
+        ],
+        [
+            "10",
+            "left",
+            "27"
+        ],
+        [
+            "27",
+            "behind",
+            "2"
+        ],
+        [
+            "27",
+            "right",
+            "5"
+        ],
+        [
+            "27",
+            "right",
+            "10"
+        ],
+        [
+            "27",
+            "close by",
+            "10"
+        ]
+    ]
+}

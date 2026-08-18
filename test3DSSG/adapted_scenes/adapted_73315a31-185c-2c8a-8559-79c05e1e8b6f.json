@@ -1,0 +1,32 @@
+{
+    "scene_id": "adapted_3dssg_73315a31-185c-2c8a-8559-79c05e1e8b6f",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "1",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "4",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "8",
+            "class_label": "tv",
+            "original_label": "tv"
+        },
+        {
+            "id": "21",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": []
+}

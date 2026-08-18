@@ -1,0 +1,42 @@
+{
+    "scene_id": "adapted_3dssg_6a360531-fa53-2915-9515-06ad6ab3c61a",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "4",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "7",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "3",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "23",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "100",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "26",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": []
+}

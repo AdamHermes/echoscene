@@ -1,0 +1,22 @@
+{
+    "scene_id": "adapted_3dssg_38770cab-86d7-27b8-85cd-d55727c4697b",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "sofa",
+            "original_label": "couch"
+        },
+        {
+            "id": "16",
+            "class_label": "cabinet",
+            "original_label": "tv stand"
+        }
+    ],
+    "edges": []
+}

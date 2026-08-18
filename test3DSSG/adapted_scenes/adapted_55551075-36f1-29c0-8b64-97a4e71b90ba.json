@@ -1,0 +1,22 @@
+{
+    "scene_id": "adapted_3dssg_55551075-36f1-29c0-8b64-97a4e71b90ba",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "10",
+            "class_label": "desk",
+            "original_label": "desk"
+        },
+        {
+            "id": "20",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": []
+}

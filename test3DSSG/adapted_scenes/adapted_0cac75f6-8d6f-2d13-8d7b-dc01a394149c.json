@@ -1,0 +1,123 @@
+{
+    "scene_id": "adapted_3dssg_0cac75f6-8d6f-2d13-8d7b-dc01a394149c",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "8",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "16",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "17",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "18",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "22",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "24",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "16",
+            "right",
+            "17"
+        ],
+        [
+            "16",
+            "close by",
+            "17"
+        ],
+        [
+            "16",
+            "front",
+            "17"
+        ],
+        [
+            "16",
+            "behind",
+            "18"
+        ],
+        [
+            "16",
+            "close by",
+            "18"
+        ],
+        [
+            "16",
+            "left",
+            "18"
+        ],
+        [
+            "17",
+            "behind",
+            "16"
+        ],
+        [
+            "17",
+            "close by",
+            "16"
+        ],
+        [
+            "17",
+            "left",
+            "16"
+        ],
+        [
+            "17",
+            "behind",
+            "18"
+        ],
+        [
+            "17",
+            "left",
+            "18"
+        ],
+        [
+            "18",
+            "front",
+            "16"
+        ],
+        [
+            "18",
+            "right",
+            "16"
+        ],
+        [
+            "18",
+            "close by",
+            "16"
+        ],
+        [
+            "18",
+            "front",
+            "17"
+        ],
+        [
+            "18",
+            "right",
+            "17"
+        ]
+    ]
+}

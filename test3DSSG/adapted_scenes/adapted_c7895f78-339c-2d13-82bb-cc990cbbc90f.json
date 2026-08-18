@@ -1,0 +1,143 @@
+{
+    "scene_id": "adapted_3dssg_c7895f78-339c-2d13-82bb-cc990cbbc90f",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "6",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "7",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "8",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "10",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "6",
+            "right",
+            "7"
+        ],
+        [
+            "6",
+            "behind",
+            "7"
+        ],
+        [
+            "6",
+            "front",
+            "8"
+        ],
+        [
+            "6",
+            "left",
+            "8"
+        ],
+        [
+            "6",
+            "front",
+            "10"
+        ],
+        [
+            "6",
+            "left",
+            "10"
+        ],
+        [
+            "7",
+            "front",
+            "6"
+        ],
+        [
+            "7",
+            "left",
+            "6"
+        ],
+        [
+            "7",
+            "front",
+            "8"
+        ],
+        [
+            "7",
+            "left",
+            "8"
+        ],
+        [
+            "7",
+            "front",
+            "10"
+        ],
+        [
+            "7",
+            "left",
+            "10"
+        ],
+        [
+            "8",
+            "right",
+            "6"
+        ],
+        [
+            "8",
+            "behind",
+            "6"
+        ],
+        [
+            "8",
+            "right",
+            "7"
+        ],
+        [
+            "8",
+            "behind",
+            "7"
+        ],
+        [
+            "8",
+            "behind",
+            "10"
+        ],
+        [
+            "10",
+            "right",
+            "6"
+        ],
+        [
+            "10",
+            "behind",
+            "6"
+        ],
+        [
+            "10",
+            "right",
+            "7"
+        ],
+        [
+            "10",
+            "behind",
+            "7"
+        ],
+        [
+            "10",
+            "front",
+            "8"
+        ]
+    ]
+}

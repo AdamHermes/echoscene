@@ -1,0 +1,168 @@
+{
+    "scene_id": "adapted_3dssg_8eabc46d-5af7-2f32-85bd-f957e754c064",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "1",
+            "class_label": "desk",
+            "original_label": "desk"
+        },
+        {
+            "id": "3",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "4",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "5",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "7",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "10",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "22",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "34",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "56",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "57",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "58",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "68",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "86",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "10",
+            "standing on",
+            "1"
+        ],
+        [
+            "57",
+            "standing on",
+            "10"
+        ],
+        [
+            "58",
+            "standing on",
+            "10"
+        ],
+        [
+            "68",
+            "standing on",
+            "4"
+        ],
+        [
+            "5",
+            "close by",
+            "7"
+        ],
+        [
+            "5",
+            "left",
+            "7"
+        ],
+        [
+            "5",
+            "behind",
+            "34"
+        ],
+        [
+            "5",
+            "left",
+            "34"
+        ],
+        [
+            "7",
+            "right",
+            "5"
+        ],
+        [
+            "7",
+            "close by",
+            "5"
+        ],
+        [
+            "7",
+            "close by",
+            "34"
+        ],
+        [
+            "7",
+            "left",
+            "34"
+        ],
+        [
+            "34",
+            "front",
+            "5"
+        ],
+        [
+            "34",
+            "right",
+            "5"
+        ],
+        [
+            "34",
+            "right",
+            "7"
+        ],
+        [
+            "34",
+            "close by",
+            "7"
+        ],
+        [
+            "57",
+            "right",
+            "58"
+        ],
+        [
+            "58",
+            "left",
+            "57"
+        ]
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "scene_id": "adapted_3dssg_e2847ff5-a506-2b60-8767-25c70c889de3",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "28",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": []
+}

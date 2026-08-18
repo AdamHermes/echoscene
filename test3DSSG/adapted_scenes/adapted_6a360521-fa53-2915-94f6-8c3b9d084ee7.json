@@ -1,0 +1,158 @@
+{
+    "scene_id": "adapted_3dssg_6a360521-fa53-2915-94f6-8c3b9d084ee7",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "4",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "9",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "15",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "16",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "23",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "25",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "28",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "29",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "32",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "33",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "35",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "46",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "47",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "48",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "behind",
+            "9"
+        ],
+        [
+            "2",
+            "left",
+            "9"
+        ],
+        [
+            "9",
+            "front",
+            "2"
+        ],
+        [
+            "9",
+            "right",
+            "2"
+        ],
+        [
+            "15",
+            "right",
+            "16"
+        ],
+        [
+            "15",
+            "behind",
+            "16"
+        ],
+        [
+            "15",
+            "behind",
+            "28"
+        ],
+        [
+            "16",
+            "front",
+            "15"
+        ],
+        [
+            "16",
+            "left",
+            "15"
+        ],
+        [
+            "16",
+            "left",
+            "28"
+        ],
+        [
+            "28",
+            "front",
+            "15"
+        ],
+        [
+            "28",
+            "right",
+            "16"
+        ],
+        [
+            "33",
+            "front",
+            "35"
+        ],
+        [
+            "35",
+            "behind",
+            "33"
+        ]
+    ]
+}

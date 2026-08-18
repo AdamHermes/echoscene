@@ -1,0 +1,113 @@
+{
+    "scene_id": "adapted_3dssg_b1cf9968-9fdd-2189-97dd-d5f0d48bf70a",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "6",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "7",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "12",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "20",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "21",
+            "class_label": "desk",
+            "original_label": "desk"
+        },
+        {
+            "id": "28",
+            "class_label": "table",
+            "original_label": "table"
+        }
+    ],
+    "edges": [
+        [
+            "6",
+            "left",
+            "28"
+        ],
+        [
+            "7",
+            "front",
+            "21"
+        ],
+        [
+            "7",
+            "left",
+            "21"
+        ],
+        [
+            "7",
+            "left",
+            "28"
+        ],
+        [
+            "12",
+            "front",
+            "28"
+        ],
+        [
+            "12",
+            "left",
+            "28"
+        ],
+        [
+            "21",
+            "right",
+            "7"
+        ],
+        [
+            "21",
+            "behind",
+            "7"
+        ],
+        [
+            "21",
+            "right",
+            "28"
+        ],
+        [
+            "28",
+            "right",
+            "6"
+        ],
+        [
+            "28",
+            "right",
+            "7"
+        ],
+        [
+            "28",
+            "right",
+            "12"
+        ],
+        [
+            "28",
+            "behind",
+            "12"
+        ],
+        [
+            "28",
+            "left",
+            "21"
+        ]
+    ]
+}

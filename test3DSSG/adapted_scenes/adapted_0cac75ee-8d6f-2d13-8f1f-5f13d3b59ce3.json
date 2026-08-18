@@ -1,0 +1,218 @@
+{
+    "scene_id": "adapted_3dssg_0cac75ee-8d6f-2d13-8f1f-5f13d3b59ce3",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "sofa",
+            "original_label": "sofa"
+        },
+        {
+            "id": "10",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "13",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "14",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "15",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "front",
+            "13"
+        ],
+        [
+            "2",
+            "close by",
+            "13"
+        ],
+        [
+            "2",
+            "left",
+            "13"
+        ],
+        [
+            "2",
+            "left",
+            "14"
+        ],
+        [
+            "2",
+            "left",
+            "15"
+        ],
+        [
+            "10",
+            "behind",
+            "13"
+        ],
+        [
+            "10",
+            "left",
+            "13"
+        ],
+        [
+            "10",
+            "behind",
+            "14"
+        ],
+        [
+            "10",
+            "left",
+            "14"
+        ],
+        [
+            "10",
+            "behind",
+            "15"
+        ],
+        [
+            "10",
+            "left",
+            "15"
+        ],
+        [
+            "13",
+            "right",
+            "2"
+        ],
+        [
+            "13",
+            "close by",
+            "2"
+        ],
+        [
+            "13",
+            "behind",
+            "2"
+        ],
+        [
+            "13",
+            "front",
+            "10"
+        ],
+        [
+            "13",
+            "right",
+            "10"
+        ],
+        [
+            "13",
+            "close by",
+            "14"
+        ],
+        [
+            "13",
+            "left",
+            "14"
+        ],
+        [
+            "13",
+            "front",
+            "15"
+        ],
+        [
+            "13",
+            "close by",
+            "15"
+        ],
+        [
+            "14",
+            "right",
+            "2"
+        ],
+        [
+            "14",
+            "front",
+            "10"
+        ],
+        [
+            "14",
+            "right",
+            "10"
+        ],
+        [
+            "14",
+            "right",
+            "13"
+        ],
+        [
+            "14",
+            "close by",
+            "13"
+        ],
+        [
+            "14",
+            "right",
+            "15"
+        ],
+        [
+            "14",
+            "close by",
+            "15"
+        ],
+        [
+            "14",
+            "front",
+            "15"
+        ],
+        [
+            "15",
+            "right",
+            "2"
+        ],
+        [
+            "15",
+            "front",
+            "10"
+        ],
+        [
+            "15",
+            "right",
+            "10"
+        ],
+        [
+            "15",
+            "close by",
+            "13"
+        ],
+        [
+            "15",
+            "behind",
+            "13"
+        ],
+        [
+            "15",
+            "behind",
+            "14"
+        ],
+        [
+            "15",
+            "close by",
+            "14"
+        ],
+        [
+            "15",
+            "left",
+            "14"
+        ]
+    ]
+}

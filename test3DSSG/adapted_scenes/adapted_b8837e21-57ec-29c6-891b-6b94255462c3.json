@@ -1,0 +1,158 @@
+{
+    "scene_id": "adapted_3dssg_b8837e21-57ec-29c6-891b-6b94255462c3",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "4",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "5",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "7",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "8",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "18",
+            "class_label": "chair",
+            "original_label": "armchair"
+        }
+    ],
+    "edges": [
+        [
+            "4",
+            "right",
+            "5"
+        ],
+        [
+            "4",
+            "close by",
+            "5"
+        ],
+        [
+            "4",
+            "front",
+            "18"
+        ],
+        [
+            "5",
+            "close by",
+            "4"
+        ],
+        [
+            "5",
+            "left",
+            "4"
+        ],
+        [
+            "5",
+            "right",
+            "7"
+        ],
+        [
+            "5",
+            "right",
+            "8"
+        ],
+        [
+            "5",
+            "front",
+            "18"
+        ],
+        [
+            "7",
+            "left",
+            "5"
+        ],
+        [
+            "7",
+            "right",
+            "8"
+        ],
+        [
+            "7",
+            "close by",
+            "8"
+        ],
+        [
+            "7",
+            "right",
+            "18"
+        ],
+        [
+            "7",
+            "front",
+            "18"
+        ],
+        [
+            "8",
+            "left",
+            "5"
+        ],
+        [
+            "8",
+            "close by",
+            "7"
+        ],
+        [
+            "8",
+            "left",
+            "7"
+        ],
+        [
+            "8",
+            "right",
+            "18"
+        ],
+        [
+            "8",
+            "front",
+            "18"
+        ],
+        [
+            "18",
+            "behind",
+            "4"
+        ],
+        [
+            "18",
+            "behind",
+            "5"
+        ],
+        [
+            "18",
+            "behind",
+            "7"
+        ],
+        [
+            "18",
+            "left",
+            "7"
+        ],
+        [
+            "18",
+            "behind",
+            "8"
+        ],
+        [
+            "18",
+            "left",
+            "8"
+        ]
+    ]
+}

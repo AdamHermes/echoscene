@@ -1,0 +1,138 @@
+{
+    "scene_id": "adapted_3dssg_c7895f50-339c-2d13-828c-1d01eab90a00",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "13",
+            "class_label": "table",
+            "original_label": "dining table"
+        },
+        {
+            "id": "15",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "17",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "18",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "24",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "13",
+            "front",
+            "15"
+        ],
+        [
+            "13",
+            "close by",
+            "15"
+        ],
+        [
+            "13",
+            "close by",
+            "17"
+        ],
+        [
+            "13",
+            "behind",
+            "17"
+        ],
+        [
+            "13",
+            "close by",
+            "18"
+        ],
+        [
+            "13",
+            "left",
+            "18"
+        ],
+        [
+            "15",
+            "close by",
+            "13"
+        ],
+        [
+            "15",
+            "behind",
+            "13"
+        ],
+        [
+            "15",
+            "close by",
+            "18"
+        ],
+        [
+            "15",
+            "left",
+            "18"
+        ],
+        [
+            "17",
+            "front",
+            "13"
+        ],
+        [
+            "17",
+            "close by",
+            "13"
+        ],
+        [
+            "17",
+            "front",
+            "18"
+        ],
+        [
+            "17",
+            "left",
+            "18"
+        ],
+        [
+            "18",
+            "right",
+            "13"
+        ],
+        [
+            "18",
+            "close by",
+            "13"
+        ],
+        [
+            "18",
+            "right",
+            "15"
+        ],
+        [
+            "18",
+            "close by",
+            "15"
+        ],
+        [
+            "18",
+            "right",
+            "17"
+        ],
+        [
+            "18",
+            "behind",
+            "17"
+        ]
+    ]
+}

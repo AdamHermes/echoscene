@@ -1,0 +1,138 @@
+{
+    "scene_id": "adapted_3dssg_a0905fdb-66f7-2272-9fc5-7c0008d5e87b",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "2",
+            "class_label": "sofa",
+            "original_label": "sofa"
+        },
+        {
+            "id": "5",
+            "class_label": "chair",
+            "original_label": "armchair"
+        },
+        {
+            "id": "9",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "14",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "46",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "51",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "52",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "53",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "54",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "2",
+            "front",
+            "5"
+        ],
+        [
+            "2",
+            "right",
+            "14"
+        ],
+        [
+            "2",
+            "front",
+            "14"
+        ],
+        [
+            "5",
+            "behind",
+            "2"
+        ],
+        [
+            "9",
+            "right",
+            "46"
+        ],
+        [
+            "9",
+            "front",
+            "46"
+        ],
+        [
+            "14",
+            "behind",
+            "2"
+        ],
+        [
+            "14",
+            "left",
+            "2"
+        ],
+        [
+            "46",
+            "behind",
+            "9"
+        ],
+        [
+            "46",
+            "left",
+            "9"
+        ],
+        [
+            "52",
+            "behind",
+            "54"
+        ],
+        [
+            "53",
+            "right",
+            "54"
+        ],
+        [
+            "53",
+            "behind",
+            "54"
+        ],
+        [
+            "54",
+            "front",
+            "52"
+        ],
+        [
+            "54",
+            "front",
+            "53"
+        ],
+        [
+            "54",
+            "left",
+            "53"
+        ]
+    ]
+}

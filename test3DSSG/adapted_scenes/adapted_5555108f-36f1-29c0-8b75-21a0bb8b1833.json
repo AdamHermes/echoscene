@@ -1,0 +1,143 @@
+{
+    "scene_id": "adapted_3dssg_5555108f-36f1-29c0-8b75-21a0bb8b1833",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "19",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "20",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "22",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "23",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "24",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "25",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "26",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "29",
+            "class_label": "chair",
+            "original_label": "chair"
+        }
+    ],
+    "edges": [
+        [
+            "19",
+            "right",
+            "22"
+        ],
+        [
+            "19",
+            "close by",
+            "22"
+        ],
+        [
+            "19",
+            "close by",
+            "24"
+        ],
+        [
+            "19",
+            "left",
+            "24"
+        ],
+        [
+            "19",
+            "right",
+            "26"
+        ],
+        [
+            "22",
+            "close by",
+            "19"
+        ],
+        [
+            "22",
+            "left",
+            "19"
+        ],
+        [
+            "22",
+            "right",
+            "26"
+        ],
+        [
+            "23",
+            "left",
+            "24"
+        ],
+        [
+            "23",
+            "behind",
+            "26"
+        ],
+        [
+            "24",
+            "right",
+            "19"
+        ],
+        [
+            "24",
+            "close by",
+            "19"
+        ],
+        [
+            "24",
+            "right",
+            "23"
+        ],
+        [
+            "24",
+            "front",
+            "26"
+        ],
+        [
+            "26",
+            "left",
+            "19"
+        ],
+        [
+            "26",
+            "left",
+            "22"
+        ],
+        [
+            "26",
+            "front",
+            "23"
+        ],
+        [
+            "26",
+            "behind",
+            "24"
+        ]
+    ]
+}

@@ -1,0 +1,113 @@
+{
+    "scene_id": "adapted_3dssg_d7d40d79-7a5d-2b36-9740-15f8e687b25c",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "7",
+            "class_label": "cabinet",
+            "original_label": "wardrobe"
+        },
+        {
+            "id": "12",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "15",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "19",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "41",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "48",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "7",
+            "front",
+            "12"
+        ],
+        [
+            "7",
+            "close by",
+            "12"
+        ],
+        [
+            "7",
+            "left",
+            "15"
+        ],
+        [
+            "12",
+            "close by",
+            "7"
+        ],
+        [
+            "12",
+            "behind",
+            "7"
+        ],
+        [
+            "12",
+            "close by",
+            "15"
+        ],
+        [
+            "12",
+            "left",
+            "15"
+        ],
+        [
+            "12",
+            "left",
+            "19"
+        ],
+        [
+            "15",
+            "right",
+            "7"
+        ],
+        [
+            "15",
+            "right",
+            "12"
+        ],
+        [
+            "15",
+            "close by",
+            "12"
+        ],
+        [
+            "15",
+            "left",
+            "19"
+        ],
+        [
+            "19",
+            "right",
+            "12"
+        ],
+        [
+            "19",
+            "right",
+            "15"
+        ]
+    ]
+}

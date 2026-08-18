@@ -1,0 +1,92 @@
+{
+    "scene_id": "adapted_3dssg_c7895f2f-339c-2d13-8388-28e95af958de",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "6",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "18",
+            "class_label": "sofa",
+            "original_label": "couch"
+        },
+        {
+            "id": "32",
+            "class_label": "table",
+            "original_label": "coffee table"
+        },
+        {
+            "id": "33",
+            "class_label": "cabinet",
+            "original_label": "tv stand"
+        },
+        {
+            "id": "34",
+            "class_label": "tv",
+            "original_label": "tv"
+        },
+        {
+            "id": "35",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "39",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "40",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "41",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "43",
+            "class_label": "shelf",
+            "original_label": "bookshelf"
+        },
+        {
+            "id": "46",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "48",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "49",
+            "class_label": "table",
+            "original_label": "dining table"
+        },
+        {
+            "id": "50",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "51",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "54",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": []
+}

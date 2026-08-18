@@ -1,0 +1,128 @@
+{
+    "scene_id": "adapted_3dssg_a0905fdd-66f7-2272-9cdb-89360888ea67",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "64",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "66",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "67",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "36",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "69",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "17",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "14",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "16",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "65",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "66",
+            "right",
+            "69"
+        ],
+        [
+            "66",
+            "close by",
+            "69"
+        ],
+        [
+            "66",
+            "front",
+            "69"
+        ],
+        [
+            "66",
+            "left",
+            "17"
+        ],
+        [
+            "69",
+            "behind",
+            "66"
+        ],
+        [
+            "69",
+            "close by",
+            "66"
+        ],
+        [
+            "69",
+            "left",
+            "66"
+        ],
+        [
+            "69",
+            "left",
+            "17"
+        ],
+        [
+            "17",
+            "right",
+            "66"
+        ],
+        [
+            "17",
+            "right",
+            "69"
+        ],
+        [
+            "17",
+            "right",
+            "16"
+        ],
+        [
+            "17",
+            "close by",
+            "16"
+        ],
+        [
+            "16",
+            "close by",
+            "17"
+        ],
+        [
+            "16",
+            "left",
+            "17"
+        ]
+    ]
+}

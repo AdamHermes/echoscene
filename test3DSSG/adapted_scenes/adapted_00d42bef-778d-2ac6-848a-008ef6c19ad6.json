@@ -1,0 +1,37 @@
+{
+    "scene_id": "adapted_3dssg_00d42bef-778d-2ac6-848a-008ef6c19ad6",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "4",
+            "class_label": "bed",
+            "original_label": "bed"
+        },
+        {
+            "id": "40",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "16",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "25",
+            "class_label": "tv",
+            "original_label": "tv"
+        },
+        {
+            "id": "26",
+            "class_label": "table",
+            "original_label": "table"
+        }
+    ],
+    "edges": []
+}

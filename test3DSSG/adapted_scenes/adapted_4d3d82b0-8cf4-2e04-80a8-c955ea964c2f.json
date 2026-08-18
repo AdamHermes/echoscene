@@ -1,0 +1,108 @@
+{
+    "scene_id": "adapted_3dssg_4d3d82b0-8cf4-2e04-80a8-c955ea964c2f",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "18",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "19",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "20",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "18",
+            "right",
+            "19"
+        ],
+        [
+            "18",
+            "close by",
+            "19"
+        ],
+        [
+            "18",
+            "behind",
+            "19"
+        ],
+        [
+            "18",
+            "right",
+            "20"
+        ],
+        [
+            "18",
+            "behind",
+            "20"
+        ],
+        [
+            "19",
+            "front",
+            "18"
+        ],
+        [
+            "19",
+            "close by",
+            "18"
+        ],
+        [
+            "19",
+            "left",
+            "18"
+        ],
+        [
+            "19",
+            "right",
+            "20"
+        ],
+        [
+            "19",
+            "close by",
+            "20"
+        ],
+        [
+            "19",
+            "behind",
+            "20"
+        ],
+        [
+            "20",
+            "front",
+            "18"
+        ],
+        [
+            "20",
+            "left",
+            "18"
+        ],
+        [
+            "20",
+            "front",
+            "19"
+        ],
+        [
+            "20",
+            "close by",
+            "19"
+        ],
+        [
+            "20",
+            "left",
+            "19"
+        ]
+    ]
+}

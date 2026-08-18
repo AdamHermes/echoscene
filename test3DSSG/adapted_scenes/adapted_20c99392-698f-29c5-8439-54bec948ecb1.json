@@ -1,0 +1,678 @@
+{
+    "scene_id": "adapted_3dssg_20c99392-698f-29c5-8439-54bec948ecb1",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "4",
+            "class_label": "sofa",
+            "original_label": "couch"
+        },
+        {
+            "id": "6",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "15",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "19",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "20",
+            "class_label": "tv",
+            "original_label": "tv"
+        },
+        {
+            "id": "23",
+            "class_label": "cabinet",
+            "original_label": "tv stand"
+        },
+        {
+            "id": "24",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "27",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "28",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "32",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "33",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "41",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "53",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "62",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "63",
+            "class_label": "chair",
+            "original_label": "chair"
+        },
+        {
+            "id": "64",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "65",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "67",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        },
+        {
+            "id": "68",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "72",
+            "class_label": "lamp",
+            "original_label": "lamp"
+        }
+    ],
+    "edges": [
+        [
+            "67",
+            "standing on",
+            "23"
+        ],
+        [
+            "4",
+            "close by",
+            "15"
+        ],
+        [
+            "4",
+            "behind",
+            "15"
+        ],
+        [
+            "4",
+            "right",
+            "23"
+        ],
+        [
+            "4",
+            "front",
+            "32"
+        ],
+        [
+            "6",
+            "left",
+            "23"
+        ],
+        [
+            "6",
+            "close by",
+            "24"
+        ],
+        [
+            "6",
+            "left",
+            "24"
+        ],
+        [
+            "6",
+            "right",
+            "27"
+        ],
+        [
+            "6",
+            "close by",
+            "27"
+        ],
+        [
+            "6",
+            "front",
+            "27"
+        ],
+        [
+            "6",
+            "behind",
+            "28"
+        ],
+        [
+            "6",
+            "close by",
+            "28"
+        ],
+        [
+            "6",
+            "left",
+            "28"
+        ],
+        [
+            "6",
+            "right",
+            "33"
+        ],
+        [
+            "6",
+            "close by",
+            "33"
+        ],
+        [
+            "6",
+            "close by",
+            "62"
+        ],
+        [
+            "6",
+            "close by",
+            "63"
+        ],
+        [
+            "15",
+            "front",
+            "4"
+        ],
+        [
+            "15",
+            "close by",
+            "4"
+        ],
+        [
+            "15",
+            "right",
+            "23"
+        ],
+        [
+            "15",
+            "front",
+            "27"
+        ],
+        [
+            "20",
+            "right",
+            "68"
+        ],
+        [
+            "20",
+            "behind",
+            "68"
+        ],
+        [
+            "23",
+            "left",
+            "4"
+        ],
+        [
+            "23",
+            "right",
+            "6"
+        ],
+        [
+            "23",
+            "left",
+            "15"
+        ],
+        [
+            "23",
+            "right",
+            "24"
+        ],
+        [
+            "23",
+            "right",
+            "27"
+        ],
+        [
+            "23",
+            "front",
+            "32"
+        ],
+        [
+            "23",
+            "right",
+            "33"
+        ],
+        [
+            "23",
+            "right",
+            "53"
+        ],
+        [
+            "23",
+            "right",
+            "62"
+        ],
+        [
+            "23",
+            "right",
+            "63"
+        ],
+        [
+            "24",
+            "right",
+            "6"
+        ],
+        [
+            "24",
+            "close by",
+            "6"
+        ],
+        [
+            "24",
+            "left",
+            "23"
+        ],
+        [
+            "24",
+            "right",
+            "27"
+        ],
+        [
+            "24",
+            "left",
+            "28"
+        ],
+        [
+            "24",
+            "right",
+            "33"
+        ],
+        [
+            "24",
+            "right",
+            "53"
+        ],
+        [
+            "24",
+            "right",
+            "62"
+        ],
+        [
+            "24",
+            "front",
+            "62"
+        ],
+        [
+            "24",
+            "right",
+            "63"
+        ],
+        [
+            "24",
+            "close by",
+            "63"
+        ],
+        [
+            "24",
+            "front",
+            "63"
+        ],
+        [
+            "27",
+            "behind",
+            "6"
+        ],
+        [
+            "27",
+            "close by",
+            "6"
+        ],
+        [
+            "27",
+            "left",
+            "6"
+        ],
+        [
+            "27",
+            "behind",
+            "15"
+        ],
+        [
+            "27",
+            "left",
+            "23"
+        ],
+        [
+            "27",
+            "left",
+            "24"
+        ],
+        [
+            "27",
+            "left",
+            "28"
+        ],
+        [
+            "27",
+            "left",
+            "53"
+        ],
+        [
+            "27",
+            "close by",
+            "62"
+        ],
+        [
+            "27",
+            "left",
+            "62"
+        ],
+        [
+            "27",
+            "left",
+            "63"
+        ],
+        [
+            "28",
+            "front",
+            "6"
+        ],
+        [
+            "28",
+            "right",
+            "6"
+        ],
+        [
+            "28",
+            "close by",
+            "6"
+        ],
+        [
+            "28",
+            "right",
+            "24"
+        ],
+        [
+            "28",
+            "right",
+            "27"
+        ],
+        [
+            "28",
+            "right",
+            "33"
+        ],
+        [
+            "28",
+            "front",
+            "33"
+        ],
+        [
+            "28",
+            "right",
+            "53"
+        ],
+        [
+            "28",
+            "right",
+            "62"
+        ],
+        [
+            "28",
+            "right",
+            "63"
+        ],
+        [
+            "32",
+            "behind",
+            "4"
+        ],
+        [
+            "32",
+            "behind",
+            "23"
+        ],
+        [
+            "33",
+            "close by",
+            "6"
+        ],
+        [
+            "33",
+            "left",
+            "6"
+        ],
+        [
+            "33",
+            "left",
+            "23"
+        ],
+        [
+            "33",
+            "left",
+            "24"
+        ],
+        [
+            "33",
+            "behind",
+            "28"
+        ],
+        [
+            "33",
+            "left",
+            "28"
+        ],
+        [
+            "33",
+            "behind",
+            "53"
+        ],
+        [
+            "33",
+            "left",
+            "53"
+        ],
+        [
+            "33",
+            "front",
+            "62"
+        ],
+        [
+            "33",
+            "close by",
+            "62"
+        ],
+        [
+            "33",
+            "left",
+            "62"
+        ],
+        [
+            "33",
+            "left",
+            "63"
+        ],
+        [
+            "53",
+            "left",
+            "23"
+        ],
+        [
+            "53",
+            "left",
+            "24"
+        ],
+        [
+            "53",
+            "right",
+            "27"
+        ],
+        [
+            "53",
+            "left",
+            "28"
+        ],
+        [
+            "53",
+            "front",
+            "33"
+        ],
+        [
+            "53",
+            "right",
+            "33"
+        ],
+        [
+            "53",
+            "right",
+            "62"
+        ],
+        [
+            "53",
+            "left",
+            "63"
+        ],
+        [
+            "62",
+            "close by",
+            "6"
+        ],
+        [
+            "62",
+            "left",
+            "23"
+        ],
+        [
+            "62",
+            "behind",
+            "24"
+        ],
+        [
+            "62",
+            "left",
+            "24"
+        ],
+        [
+            "62",
+            "right",
+            "27"
+        ],
+        [
+            "62",
+            "close by",
+            "27"
+        ],
+        [
+            "62",
+            "left",
+            "28"
+        ],
+        [
+            "62",
+            "right",
+            "33"
+        ],
+        [
+            "62",
+            "close by",
+            "33"
+        ],
+        [
+            "62",
+            "behind",
+            "33"
+        ],
+        [
+            "62",
+            "left",
+            "53"
+        ],
+        [
+            "62",
+            "left",
+            "63"
+        ],
+        [
+            "63",
+            "close by",
+            "6"
+        ],
+        [
+            "63",
+            "left",
+            "23"
+        ],
+        [
+            "63",
+            "behind",
+            "24"
+        ],
+        [
+            "63",
+            "close by",
+            "24"
+        ],
+        [
+            "63",
+            "left",
+            "24"
+        ],
+        [
+            "63",
+            "right",
+            "27"
+        ],
+        [
+            "63",
+            "left",
+            "28"
+        ],
+        [
+            "63",
+            "right",
+            "33"
+        ],
+        [
+            "63",
+            "right",
+            "53"
+        ],
+        [
+            "63",
+            "right",
+            "62"
+        ],
+        [
+            "68",
+            "front",
+            "20"
+        ],
+        [
+            "68",
+            "left",
+            "20"
+        ]
+    ]
+}

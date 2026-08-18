@@ -1,0 +1,17 @@
+{
+    "scene_id": "adapted_3dssg_b1d87fb2-e72e-2c8c-9f82-ce7e4b3808e2",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "11",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        }
+    ],
+    "edges": []
+}

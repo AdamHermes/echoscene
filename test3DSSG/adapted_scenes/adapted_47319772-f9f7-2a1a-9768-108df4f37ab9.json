@@ -1,0 +1,118 @@
+{
+    "scene_id": "adapted_3dssg_47319772-f9f7-2a1a-9768-108df4f37ab9",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "9",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "10",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "15",
+            "class_label": "table",
+            "original_label": "table"
+        },
+        {
+            "id": "16",
+            "class_label": "chair",
+            "original_label": "stool"
+        },
+        {
+            "id": "17",
+            "class_label": "chair",
+            "original_label": "bench"
+        }
+    ],
+    "edges": [
+        [
+            "9",
+            "front",
+            "10"
+        ],
+        [
+            "9",
+            "close by",
+            "10"
+        ],
+        [
+            "9",
+            "left",
+            "10"
+        ],
+        [
+            "9",
+            "right",
+            "15"
+        ],
+        [
+            "9",
+            "close by",
+            "15"
+        ],
+        [
+            "9",
+            "right",
+            "16"
+        ],
+        [
+            "10",
+            "right",
+            "9"
+        ],
+        [
+            "10",
+            "close by",
+            "9"
+        ],
+        [
+            "10",
+            "behind",
+            "9"
+        ],
+        [
+            "10",
+            "right",
+            "15"
+        ],
+        [
+            "15",
+            "close by",
+            "9"
+        ],
+        [
+            "15",
+            "left",
+            "9"
+        ],
+        [
+            "15",
+            "left",
+            "10"
+        ],
+        [
+            "15",
+            "close by",
+            "16"
+        ],
+        [
+            "16",
+            "left",
+            "9"
+        ],
+        [
+            "16",
+            "close by",
+            "15"
+        ]
+    ]
+}

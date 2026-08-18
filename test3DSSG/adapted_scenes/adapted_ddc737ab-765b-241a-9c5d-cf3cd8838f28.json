@@ -1,0 +1,123 @@
+{
+    "scene_id": "adapted_3dssg_ddc737ab-765b-241a-9c5d-cf3cd8838f28",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "3",
+            "class_label": "chair",
+            "original_label": "bench"
+        },
+        {
+            "id": "34",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "16",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "20",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        }
+    ],
+    "edges": [
+        [
+            "3",
+            "left",
+            "34"
+        ],
+        [
+            "3",
+            "behind",
+            "16"
+        ],
+        [
+            "3",
+            "left",
+            "16"
+        ],
+        [
+            "3",
+            "left",
+            "20"
+        ],
+        [
+            "34",
+            "right",
+            "3"
+        ],
+        [
+            "34",
+            "right",
+            "16"
+        ],
+        [
+            "34",
+            "close by",
+            "16"
+        ],
+        [
+            "34",
+            "right",
+            "20"
+        ],
+        [
+            "16",
+            "right",
+            "3"
+        ],
+        [
+            "16",
+            "front",
+            "3"
+        ],
+        [
+            "16",
+            "close by",
+            "34"
+        ],
+        [
+            "16",
+            "left",
+            "34"
+        ],
+        [
+            "16",
+            "right",
+            "20"
+        ],
+        [
+            "16",
+            "behind",
+            "20"
+        ],
+        [
+            "20",
+            "right",
+            "3"
+        ],
+        [
+            "20",
+            "left",
+            "34"
+        ],
+        [
+            "20",
+            "front",
+            "16"
+        ],
+        [
+            "20",
+            "left",
+            "16"
+        ]
+    ]
+}

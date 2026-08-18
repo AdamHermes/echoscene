@@ -1,0 +1,113 @@
+{
+    "scene_id": "adapted_3dssg_feefd90b-9d00-2ce5-8119-b936443cc39b",
+    "room_type": "all",
+    "room_size": [
+        6.0,
+        3.0,
+        5.0
+    ],
+    "nodes": [
+        {
+            "id": "15",
+            "class_label": "cabinet",
+            "original_label": "cabinet"
+        },
+        {
+            "id": "19",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "20",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        },
+        {
+            "id": "25",
+            "class_label": "shelf",
+            "original_label": "shelf"
+        }
+    ],
+    "edges": [
+        [
+            "15",
+            "front",
+            "19"
+        ],
+        [
+            "19",
+            "behind",
+            "15"
+        ],
+        [
+            "19",
+            "right",
+            "20"
+        ],
+        [
+            "19",
+            "front",
+            "20"
+        ],
+        [
+            "19",
+            "right",
+            "25"
+        ],
+        [
+            "19",
+            "close by",
+            "25"
+        ],
+        [
+            "19",
+            "behind",
+            "25"
+        ],
+        [
+            "20",
+            "behind",
+            "19"
+        ],
+        [
+            "20",
+            "left",
+            "19"
+        ],
+        [
+            "20",
+            "behind",
+            "25"
+        ],
+        [
+            "20",
+            "left",
+            "25"
+        ],
+        [
+            "25",
+            "front",
+            "19"
+        ],
+        [
+            "25",
+            "close by",
+            "19"
+        ],
+        [
+            "25",
+            "left",
+            "19"
+        ],
+        [
+            "25",
+            "front",
+            "20"
+        ],
+        [
+            "25",
+            "right",
+            "20"
+        ]
+    ]
+}
