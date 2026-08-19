@@ -200,12 +200,17 @@ print('no duplicates, count OK')
   `*_echoscene.glb` in the combined `echoscene/` folder (copy GLBs from all parts into
   one folder first).
 
-If a part zip is **missing its JSON** (happened with work_32 part 1), options are:
-re-download/re-export the zip, or as a last resort reconstruct the missing scenes from
-`debug_bbox.txt` (which covers all scenes) — but note the reconstruction lacks proper
-`class_labels` indices needed by collision eval, so a real JSON is strongly preferred.
-See `merge_json_instructions.md` and `merge_script.md` for the older chunk-folder
-merging tooling.
+If a part zip is **missing its JSON** (e.g. partial runs or missing export),
+you can reconstruct the exact `physcene_collision_input.json` directly from `debug_bbox.txt`
+using `scripts/reconstruct_json_from_debug_bbox.py`:
+
+```bash
+python scripts/reconstruct_json_from_debug_bbox.py \
+    --debug_bbox /Volumes/ExternalSSD/current_works/work_XX/extracted/2050/debug_bbox.txt \
+    --out_json   /Volumes/ExternalSSD/current_works/work_XX/2050/physcene_collision_input.json
+```
+This script properly reconstructs all 15-class one-hot encodings, sizes, translations,
+radian yaw angles, and objectness masks matching the official schema. See `docs/reconstruct_json_instructions.md`.
 
 ### How merging relates to Total Accuracy / Means of Means
 
