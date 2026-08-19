@@ -27,8 +27,14 @@ Mapping log (work : location : notes):
 ============================================================================
 
 --- sheet: ColObj Score (370-scene benchmark) ---
+work_37 : ColObj Score : work37               (added Aug 19; partial run 256 scenes [0..255], JSON reconstructed from debug_bbox.txt via scripts/reconstruct_json_from_debug_bbox.py, PP generated via resolve_collision_json.py)
+work_37 : ColObj Score : work37 + PP
+work_36 : ColObj Score : work36               (added Aug 19; single zip vis_2050.zip, 370 scenes, PP generated via resolve_collision_json.py)
+work_36 : ColObj Score : work36 + PP
 work_34 : ColObj Score : work34
 work_34 : ColObj Score : work34 + PP          (2050/physcene_collision_resolved.json)
+work_35 : ColObj Score : work35               (added Aug 18; single zip vis_2050.zip, 370 scenes, no resolved JSON in zip - PP generated via resolve_collision_json.py; artifacts in rerun_all/work_35_RAW|PP)
+work_35 : ColObj Score : work35 + PP
 work_33 : ColObj Score : work33
 work_33 : ColObj Score : work33 + PP
 work_32 : ColObj Score : work32
@@ -48,16 +54,19 @@ work_num28_attempt3_pp : ColObj Score : work28 + PP
 current_best_SIGG/complete_released_full_model.zip : ColObj Score : current_best_SIGG (trial 3, CONFIRMED by user; method: echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_gausv1)
   - RAW row   -> complete_released_full_model/vis/2050/physcene_collision_input.json
   - + pp row  -> complete_released_full_model/vis/2050/physcene_collision_resolved.json
-  - NOTE: JSON contains 371 scenes ('Bedroom-13858' appears TWICE - duplicate);
-    contains all canonical 52 smalltest scenes but NOT in canonical order,
-    so it is NOT directly sliceable for SmallTests (use --max_rooms/limit carefully
-    after dedup + sorting)
+  - NOTE: JSON contains 371 scenes ('Bedroom-13858' appears TWICE - duplicate, entries DIFFER);
+    resolved JSON is already deduped (370). Deduped RAW = input minus first Bedroom-13858
+    occurrence (index 160). Used rerun_all/current_best_SIGG_RAW|PP (see Aug 18 rerun below).
 (n/a — FRONT ground truth) : ColObj Score : GROUND TRUTH / GROUND TRUTH + PP
 
 --- sheet: SmallTests (52-scene fixed subset) ---
 baseline_52 : SmallTests : baseline
 baseline_pp_52 : SmallTests : baseline + pp
 current_best_SIGG/complete_released_full_model.zip (first 52) : SmallTests : SIG / SIG + pp   ? (UNVERIFIED - zip JSON is 371 scenes incl. 1 duplicate, NOT canonically ordered; also SmallTests 'SIG' is described as plain 'echoscene (released full model)' without guidance, which may be a different run than current_best_SIGG's gausv1 guidance - needs user confirmation)
+  - RESOLVED Aug 18: SmallTests 'SIG' = plain echoscene released full model, reconstructed
+    from SSD to_be_merged/released_full_model_* chunk JSONs (16 parts, 370 unique scenes,
+    canonical order verified == test_rooms_list_utf8.txt). Canonical 52 = [0:20]+[112:124]+[195:215]
+    (verified identical set+order to baseline_52). Lives at rerun_all/SIG_RAW|PP.
 SIG_0.95 : SmallTests : SIG Best 0.95
 SIG_0.95_pp : SmallTests : SIG Best 0.95 + pp
 SIG_obb : SmallTests : SIG Best obb            (INCOMPLETE: vis_folder_bedroom.zip & vis_folder_dining.zip are IDENTICAL duplicates both holding the 20 DiningRoom scenes; vis_folder_living.zip = 12 living; the 20 Bedroom scenes are MISSING from all zips - unique coverage = 32/52)
@@ -85,3 +94,20 @@ work_num27_attempt3_pp (PP artifacts only, no JSON)
 real_current_best_95, real_current_best_obb (EMPTY folders)
 work_32_fast, work_relational_1, work_relational_2 (test runs)
 to_be_merged (chunk folders, 15 scenes)
+
+============================================================================
+ Aug 18 FULL RERUN (all metrics, current converter) — artifacts in
+ /Volumes/ExternalSSD/current_works/rerun_all/{WORK}_{RAW|PP}/
+ each: 2050/physcene_collision_{input|resolved}.json,
+       procthor_scenes_fresh/, walkability_results.json, navigation_results.json
+============================================================================
+ - ColObj Score rows updated: R2-3 current_best_SIGG, R12-13 SIGG_walkv3,
+   R14-15 work30, R16-17 work31. Rows 4-5 baseline, 8-9 work28, 10-11 work27,
+   18-23 work32/33/34 were already fresh (rerun same day, kept).
+ - SmallTests rows 2-25 ALL updated (RAW + PP for all 12 works).
+ - SIG_obb evaluated on the 32 unique available scenes only (20 dining + 12 living);
+   Excel Result Note marks this. Bedroom 20 scenes still missing from zips.
+ - SIG_walkv3 (370) needed: resolve_collision_json for PP; its RAW walk timed out at
+   323/370 (AI2-THOR) -> resumed with --resume to 370.
+ - Patched eval_walkability.py + eval_navigation.py to skip '._*' AppleDouble files
+   (macOS sidecar crash). Run: python3 scripts/...eval_*.py --scenes_dir ...
