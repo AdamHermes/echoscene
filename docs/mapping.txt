@@ -27,7 +27,7 @@ Mapping log (work : location : notes):
 ============================================================================
 
 --- sheet: ColObj Score (370-scene benchmark) ---
-work_37 : ColObj Score : work37               (added Aug 19; partial run 256 scenes [0..255], JSON reconstructed from debug_bbox.txt via scripts/reconstruct_json_from_debug_bbox.py, PP generated via resolve_collision_json.py)
+work_37 : ColObj Score : work37               (added Aug 19; full 370 scenes merged from vis_2050_0_255.zip [reconstructed from debug_bbox.txt] + vis_2050_255_end.zip, PP generated via resolve_collision_json.py)
 work_37 : ColObj Score : work37 + PP
 work_36 : ColObj Score : work36               (added Aug 19; single zip vis_2050.zip, 370 scenes, PP generated via resolve_collision_json.py)
 work_36 : ColObj Score : work36 + PP
