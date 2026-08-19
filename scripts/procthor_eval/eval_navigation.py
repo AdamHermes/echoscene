@@ -38,7 +38,7 @@ def save_results(results, save_path):
     return total_objects_evaluated, total_objects_accessible, avg_accessibility
 
 def evaluate_navigation(scenes_dir, resume=False):
-    json_files = [f for f in os.listdir(scenes_dir) if f.endswith('.json') and not f.startswith('walkability_') and not f.startswith('navigation_')]
+    json_files = [f for f in os.listdir(scenes_dir) if f.endswith('.json') and not f.startswith('._') and not f.startswith('walkability_') and not f.startswith('navigation_')]
     
     if not json_files:
         print(f"No JSON scene files found in {scenes_dir}")
