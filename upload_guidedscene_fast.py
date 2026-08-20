@@ -16,18 +16,11 @@ if not os.path.exists(LOCAL_DIR):
 
 api = HfApi()
 
-# High-priority new folders generated after the initial upload
+# High-priority new folders generated after the previous upload
 NEW_FOLDERS = [
-    "current_best_SIGG",
-    "work_32_fast",
-    "rerun_all",
-    "work_30",
-    "work_31",
-    "work_32",
-    "work_33",
-    "work_34",
-    "work_35",
-    "work_36",
+    "work_37",
+    "work_38",
+    "work_39",
 ]
 
 # Discover any other subfolders on SSD
