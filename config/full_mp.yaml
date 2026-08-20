@@ -69,7 +69,7 @@ layout_branch:
         room_outer:
           weight: 10.0
         walkable:
-          enabled: false
+          enabled: true
           weight: 1.0 # Global scale factor for walkable guidance
           
           # Modular sub-components configured to match real_current_best behavior:
@@ -86,7 +86,7 @@ layout_branch:
               robot_hight_real: 1.5
               
             edge_gaussian:
-              enabled: true
+              enabled: false
               weight: 1
               robot_width_real: 0.35
               robot_hight_real: 1.5
