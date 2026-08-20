@@ -27,6 +27,8 @@ Mapping log (work : location : notes):
 ============================================================================
 
 --- sheet: ColObj Score (370-scene benchmark) ---
+work_41 : ColObj Score : work41               (added Aug 20; single zip vis_2050.zip, 370 scenes, PP generated via resolve_collision_json.py)
+work_41 : ColObj Score : work41 + PP
 work_40 : ColObj Score : work40               (added Aug 20; single zip vis_2050.zip, 370 scenes, PP generated via resolve_collision_json.py)
 work_40 : ColObj Score : work40 + PP
 work_39 : ColObj Score : work39               (added Aug 20; single zip vis_2050.zip, 370 scenes, PP generated via resolve_collision_json.py)

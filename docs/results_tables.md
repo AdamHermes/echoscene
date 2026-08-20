@@ -48,6 +48,8 @@ Mirror of the `ColObj Score` and `SmallTests` sheets from `SceneGraph Experiemen
 | 39 | work39 + PP | echoscene (method not filled in sheet) | — | 0.0100 | 0.0324 | 0.2126 | 0.8177 | 0.9237 | 0.8251 | 0.9945 | 0.9972 | 0.8499 | 0.9635 | 0.9516 | 0.5577 | 0.4612 |
 | 40 | work40 | echoscene (method not filled in sheet) | — | 0.0283 | 0.0811 | 0.2558 | 0.7951 | 0.9313 | 0.8403 | 0.9969 | 0.9995 | 0.8738 | 0.9640 | 0.9693 | 0.5053 | 0.5733 |
 | 40 | work40 + PP | echoscene (method not filled in sheet) | — | 0.0050 | 0.0135 | 0.2236 | 0.7747 | 0.9306 | 0.8307 | 0.9928 | 0.9963 | 0.8738 | 0.9640 | 0.9693 | 0.5446 | 0.4741 |
+| 41 | work41 | echoscene (method not filled in sheet) | — | 0.1913 | 0.4000 | 0.2221 | 0.6608 | 0.9692 | 0.8998 | 0.9871 | 0.9968 | 0.9662 | 0.9678 | 0.9952 | 0.7952 | 0.5905 |
+| 41 | work41 + PP | echoscene (method not filled in sheet) | — | 0.0129 | 0.0378 | 0.2178 | 0.6492 | 0.9688 | 0.8940 | 0.9896 | 0.9978 | 0.9662 | 0.9678 | 0.9952 | 0.7723 | 0.5690 |
 
 ---
 

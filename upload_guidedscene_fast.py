@@ -18,7 +18,7 @@ api = HfApi()
 
 # High-priority new folders generated after the previous upload
 NEW_FOLDERS = [
-    "work_40",
+    "work_41",
 ]
 
 # Discover any other subfolders on SSD
