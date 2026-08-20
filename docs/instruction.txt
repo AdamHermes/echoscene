@@ -22,7 +22,7 @@ pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.co
 
 python scripts/eval_3dssg.py --json_path "data\my_scene.json" --dataset "FRONT" --exp "models\my_model" --room_type "bedroom" --epoch "150"             
 
-python eval_3dssg.py --json_dir ../test3DSSG/adapted_scenes --start_idx 0 --max_samples 2 --exp ../released_full_model --dataset ../FRONT --epoch 2050 --room_type all --render_type echoscene --gen_shape True --save_3d True
+python eval_3dssg.py --json_dir ../test3DSSG/adapted_scenes --start_idx 20 --max_samples 20 --exp ../released_full_model --dataset ../FRONT --epoch 2050 --room_type all --render_type echoscene --gen_shape True --save_3d True
 
 gdown --id 13p_1wUHH0G0sEHzViXmF7RVuO6WGeb_5
 apt install unzip
