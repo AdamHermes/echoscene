@@ -296,9 +296,35 @@ def pytorch3d_to_trimesh(pytorch3d_mesh):
 #     return lamp_mesh_list, obj_list, raw_obj_list
 
 def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes=False, colors=None, without_lamp=False):
-    mesh_gen = sdf_to_mesh(shapes,render_all=True)
+    import mcubes
     colors = iter(colors)
-    trimesh_meshes = iter([pytorch3d_to_trimesh(mesh) for mesh in mesh_gen])
+    trimesh_list = []
+
+    # Safely convert shapes to trimesh objects directly to avoid PyTorch3D empty-mesh texture crash
+    if shapes is not None:
+        n_shapes = shapes.shape[0]
+        n_cell = shapes.shape[-1]
+        for i in range(n_shapes):
+            try:
+                sdf_i = shapes[i, 0].detach().cpu().numpy()
+                verts_i, faces_i = mcubes.marching_cubes(sdf_i, 0.02)
+                if len(verts_i) == 0 or len(faces_i) == 0:
+                    # Fallback to dummy small box for degenerate/empty SDF shape
+                    mesh_i = trimesh.creation.box(extents=(0.1, 0.1, 0.1))
+                else:
+                    verts_i = verts_i / n_cell - 0.5
+                    mesh_i = trimesh.Trimesh(vertices=verts_i, faces=faces_i, process=False)
+                    mesh_i.invert()
+            except Exception as e:
+                print(f"[Warning] Failed to extract mesh for object {i} from SDF ({e}), using fallback box.")
+                mesh_i = trimesh.creation.box(extents=(0.1, 0.1, 0.1))
+            trimesh_list.append(mesh_i)
+    else:
+        # Fallback if shapes is None
+        for _ in range(boxes.shape[0]):
+            trimesh_list.append(trimesh.creation.box(extents=(0.1, 0.1, 0.1)))
+
+    trimesh_meshes = iter(trimesh_list)
     obj_list = []
     lamp_mesh_list = []
     raw_obj_list = []

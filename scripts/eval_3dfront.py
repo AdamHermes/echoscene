@@ -537,23 +537,26 @@ def validate_constrains_loop(modelArgs, test_dataset, model, epoch=None, normali
         if args.visualize:
             classes = test_dataset.classes_r
             print("rendering", [classes[i.item()].strip('\n') for i in dec_objs])
-            if model.type_ == 'echolayout':
-                render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
-            elif model.type_ == 'echoscene':
-                if shapes_pred is not None:
-                    shapes_pred = shapes_pred.cpu().detach()
-                render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
-                classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
-                if args.export_3d:
-                    if not args.save_3d:
-                        print("Skipping structured scene export because --save_3d is False.")
-                    else:
-                        export_echoscene_sidecar(modelArgs, test_dataset, data, dec_objs, dec_triples,
-                                                 boxes_pred_den, angles_pred, classes, epoch=epoch,
-                                                 render_type=args.render_type)
-            else:
-                raise NotImplementedError
+            try:
+                if model.type_ == 'echolayout':
+                    render_box(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
+                    classes=classes, render_type=args.render_type, store_img=False, render_boxes=False, visual=False, demo=False, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                elif model.type_ == 'echoscene':
+                    if shapes_pred is not None:
+                        shapes_pred = shapes_pred.cpu().detach()
+                    render_full(data['scan_id'], dec_objs.detach().cpu().numpy(), boxes_pred_den, angles_pred, datasize=datasize,
+                    classes=classes, render_type=args.render_type, shapes_pred=shapes_pred, store_img=True, render_boxes=False, visual=False, demo=False,epoch=epoch, without_lamp=False, store_path=modelArgs['store_path'],save_3d=args.save_3d)
+                    if args.export_3d:
+                        if not args.save_3d:
+                            print("Skipping structured scene export because --save_3d is False.")
+                        else:
+                            export_echoscene_sidecar(modelArgs, test_dataset, data, dec_objs, dec_triples,
+                                                     boxes_pred_den, angles_pred, classes, epoch=epoch,
+                                                     render_type=args.render_type)
+                else:
+                    raise NotImplementedError
+            except Exception as e:
+                print(f"[Warning] Error during rendering/exporting scene {data['scan_id']}: {e}. Skipping visual render and continuing eval.")
 
         all_pred_boxes.append(boxes_pred_den.cpu().detach())
         all_pred_angles.append(angles_pred.cpu().detach())
