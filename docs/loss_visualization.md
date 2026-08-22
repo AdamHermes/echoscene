@@ -10,32 +10,29 @@ This document provides a guide for generating, interpreting, and re-running loss
 |---|---|---|
 | **Outer Loss** | `{scene_id}_outer_loss.png` | Highlights object bounding boxes that extend past floor plan / room boundary walls (red filled L1 distance overlap). |
 | **Collision Loss** | `{scene_id}_collision_loss.png` | Highlights intersecting furniture pairs (red filled 3D IoU overlap regions). |
-| **Multi-Component Walkable Loss** | `{scene_id}_walkable_loss.png` | **2×2 Multi-Panel Breakdown** detailing all 4 sub-components of Walkable Guidance Loss. |
-| **Relational Guidance Loss** | `{scene_id}_relational_loss.png` | **2-Panel Figure**: (A) 2D Spatial Scene Graph Diagram + (B) Relation Scorecard Table. |
+| **Edge-Gaussian Walkable Loss** | `{scene_id}_walkable_loss.png` / `{scene_id}_walkable_loss_edge_gaussian.png` | Standalone figure showing pure 2D continuous Edge-Gaussian density field radiating from object boundaries across the floor. |
+| **Object Gaussian Walkable Loss** | `{scene_id}_walkable_loss_object_gaussian.png` | Standalone figure showing oriented 2D Gaussian density fields centered at each object bounding box location (`gausv1`). |
+| **Center Penalty Walkable Loss** | `{scene_id}_walkable_loss_center_penalty.png` | Standalone figure showing pure radial Gaussian density field centered at room origin $(0, 0)$. |
+| **Pathfinding Walkable Loss** | `{scene_id}_walkable_loss_pathfinding.png` | Standalone figure showing 2D free-space reachability map. |
+| **Relational Guidance Loss** | `{scene_id}_relational_loss.png` | Standalone 2D Spatial Scene Graph Diagram showing directional spatial constraints on room layout. |
 
 ---
 
-## 2. Walkable Guidance Loss (Multi-Component Breakdown)
+## 2. Walkable Guidance Loss (Standalone Individual Visualizations)
 
-Walkable Guidance Loss ensures that generated rooms are physically navigable by humans/robots. The combined figure (`{scene_id}_walkable_loss.png`) features a 2×2 grid layout visualizing each sub-component:
+Each loss component is rendered in its own dedicated, standalone image without visual clutter (no dot-connecting lines or extraneous circles):
 
-1. **(A) Component 1: Reachability & Dijkstra Pathfinding**
-   - Renders 256×256 floor grid eroded by agent width ($0.35\text{m}$).
-   - Color-codes connected walkable islands (green, teal, yellow, purple).
-   - If disconnected islands exist, executes Dijkstra shortest path algorithm connecting disconnected regions through blocked space, displaying the path in **cyan/yellow** with path step penalty boxes.
+1. **Edge-Gaussian Walkable Loss (`{scene_id}_walkable_loss.png` / `{scene_id}_walkable_loss_edge_gaussian.png`)**
+   - Continuous 2D Edge-Gaussian sum radiating directly from rotated rectangular OBB edges onto the room floor plane.
+   - Smooth density map indicating how furniture proximity impacts walkable floor clearance.
 
-2. **(B) Component 2: Room Center Penalty**
-   - Radial Gaussian heatmap ($e^{-(x^2+z^2)/\sigma}$) centered at room origin $(0, 0)$ with $\sigma=0.5$.
-   - Concentric distance rings ($0.5\text{m}, 1.0\text{m}, 1.5\text{m}$) and red origin-to-furniture distance vectors.
+2. **Center Penalty Walkable Loss (`{scene_id}_walkable_loss_center_penalty.png`)**
+   - Pure radial Gaussian heatmap ($e^{-(x^2+z^2)/\sigma}$) centered at room origin $(0, 0)$ with $\sigma=0.5$.
    - Pushes central furniture outward to keep the room center open.
 
-3. **(C) Component 3a: Floor Edge-Gaussian Heatmap**
-   - Continuous 2D Edge-Gaussian sum radiating from rotated rectangular OBB edges onto the room floor plane.
-   - Density map indicating how furniture edges reduce walkable floor clearance.
-
-4. **(D) Component 3b: Pairwise OBB Edge Repulsion**
-   - Individual filled 2D Edge-Gaussian fields for each ground-level object.
-   - **Cyan/Red pairwise repulsion links** connecting furniture pairs whose edge influence zones overlap ($G_i(x_j, z_j) > 0.02$), annotated with exact penalty badges.
+3. **Pathfinding Walkable Loss (`{scene_id}_walkable_loss_pathfinding.png`)**
+   - Renders floor grid eroded by agent width ($0.35\text{m}$).
+   - Color-codes connected walkable free-space components.
 
 ---
 
@@ -43,19 +40,9 @@ Walkable Guidance Loss ensures that generated rooms are physically navigable by 
 
 Relational Guidance Loss actively steers objects during diffusion sampling to satisfy scene graph spatial relations (`left`, `right`, `front`, `behind`, `close by`, `standing on`, `above`). The figure (`{scene_id}_relational_loss.png`) features:
 
-1. **(A) 2D Spatial Scene Graph Diagram**:
-   - Room floorplan and object OBBs with labels.
-   - **Green solid arrows**: Satisfied spatial relations ($\text{loss} = 0$).
-   - **Red/Orange dashed arrows**: Violated spatial relations ($\text{loss} > 0$) with penalty callout badges.
-   - **Proximity dotted circles**: Distance rings for `close by` relations ($\le 0.45\text{m}$).
-
-2. **(B) Relational Guidance Loss Scorecard & Detailed Table**:
-   - Top summary card displaying **Total Relational Guidance Loss**, average loss per relation, and percentage of satisfied vs. violated constraints.
-   - Detailed breakdown table listing:
-     - `Subject` $\to$ `Predicate` $\to$ `Object`
-     - Measured metric vs. target threshold (e.g. $z_s - z_o = +1.85\text{m} \ge +0.05\text{m}$)
-     - Status (`OK` Green / `VIOLATED` Red)
-     - Computed loss value.
+- Room floorplan and object OBBs with labels.
+- **Green solid arrows**: Satisfied spatial relations ($\text{loss} = 0$).
+- **Red dashed arrows**: Violated spatial relations ($\text{loss} > 0$) with penalty callout badges.
 
 ---
 
