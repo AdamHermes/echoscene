@@ -20,6 +20,8 @@ api = HfApi()
 NEW_FOLDERS = [
     "work_42",
     "work_42_2",
+    "work_43",
+    "baseline_missing",
 ]
 
 # Discover any other subfolders on SSD

@@ -16,8 +16,8 @@ Mirror of the `ColObj Score` and `SmallTests` sheets from `SceneGraph Experiemen
 |---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 3 | current_best_SIGG | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_gausv1 | interval: 1 start_ratio: 0.9 grad_clip: 10.1 strength: 20.0 | 0.1762 | 0.3784 | 0.2421 | 0.6374 | 0.9560 | 0.8687 | 0.9891 | 0.9901 | 0.9470 | 0.9618 | 0.9909 | 0.6806 | 0.5216 |
 | 3 | current_best_SIGG + pp | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_gausv1 | interval: 1 start_ratio: 0.9 grad_clip: 10.1 strength: 20.0 | 0.0179 | 0.0568 | 0.2355 | 0.6385 | 0.9560 | 0.8641 | 0.9918 | 0.9913 | 0.9470 | 0.9618 | 0.9909 | 0.6658 | 0.5000 |
-| 1 | baseline | echoscene | — | 0.2573 | 0.4688 | 0.2512 | 0.6455 | 0.9641 | 0.8827 | 0.9847 | 0.9933 | 0.9657 | 0.9619 | 0.9947 | 0.7504 | 0.5281 |
-| 2 | baseline + pp | echoscene | — | 0.0214 | 0.0623 | 0.2355 | 0.6236 | 0.9638 | 0.8702 | 0.9877 | 0.9985 | 0.9657 | 0.9619 | 0.9947 | 0.7157 | 0.4675 |
+| 1 | baseline | echoscene | — | 0.2550 | 0.4676 | 0.2506 | 0.6430 | 0.9636 | 0.8820 | 0.9851 | 0.9935 | 0.9629 | 0.9623 | 0.9947 | 0.7494 | 0.5259 |
+| 2 | baseline + pp | echoscene | — | 0.0179 | 0.0541 | 0.2358 | 0.6219 | 0.9633 | 0.8693 | 0.9881 | 0.9985 | 0.9629 | 0.9623 | 0.9947 | 0.7133 | 0.4655 |
 | — | GROUND TRUTH | GROUND TRUTH | GROUND TRUTH | 0.4189 | 0.7081 | 0.3192 | 0.8573 | — | — | — | — | — | — | — | — | — |
 | — | GROUND TRUTH + PP | GROUND TRUTH | GROUND TRUTH | — | — | 0.3042 | 0.8297 | — | — | — | — | — | — | — | — | — |
 | 28 | work28 | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix0.5-0.5 | interval: 1 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 | 0.1294 | 0.2158 | 0.2185 | 0.7090 | 0.9501 | 0.8545 | 0.9946 | 0.9967 | 0.9272 | 0.9570 | 0.9936 | 0.6127 | 0.5000 |
