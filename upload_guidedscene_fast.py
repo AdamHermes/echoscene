@@ -22,6 +22,7 @@ NEW_FOLDERS = [
     "work_43",
     "baseline_missing",
     "baseline_full",
+    "work_27_2",
 ]
 
 # Discover any other subfolders on SSD
@@ -37,16 +38,13 @@ for f in all_subfolders:
         queue.append(f)
 
 print(f"🚀 Starting accelerated per-folder sync to '{REPO_ID}' ({len(queue)} folders in queue)...")
-print(f"⚡ HF_HUB_ENABLE_HF_TRANSFER is ACTIVE.\n")
+print(f"⚡ HF_HUB_ENABLE_HF_TRANSFER is {'ACTIVE' if os.environ.get('HF_HUB_ENABLE_HF_TRANSFER') == '1' else 'INACTIVE'}.\n")
 
 ignore_patterns = [
-    "*.DS_Store",
-    ".*",
     "._*",
-    "*/.*",
-    "*/._*",
-    "*$RECYCLE.BIN*",
-    "*.Spotlight*",
+    "*.DS_Store",
+    ".git*",
+    "*.Spotlight-V100*",
     "*.TemporaryItems*",
     "*.Trashes*",
     "*.fseventsd*"
@@ -71,21 +69,29 @@ for idx, folder in enumerate(queue, 1):
     print(f"\n📤 [{idx}/{len(queue)}] Uploading '{folder}' ({len(local_files)} files, {total_sz_mb:.1f} MB)...")
     start_time = time.time()
     
-    try:
-        commit_info = api.upload_folder(
-            folder_path=folder_path,
-            repo_id=REPO_ID,
-            repo_type=REPO_TYPE,
-            path_in_repo=f"current_works/{folder}",
-            commit_message=f"Upload {folder} ({len(local_files)} files, {total_sz_mb:.1f} MB)",
-            ignore_patterns=ignore_patterns
-        )
-        elapsed = time.time() - start_time
-        speed_mbps = (total_sz_mb / elapsed) if elapsed > 0 else 0
-        print(f"  ✅ '{folder}' uploaded successfully in {elapsed:.1f}s (~{speed_mbps:.2f} MB/s)!")
-    except Exception as e:
-        print(f"  ❌ Error uploading '{folder}': {e}")
-        continue
+    max_retries = 10
+    for attempt in range(1, max_retries + 1):
+        try:
+            commit_info = api.upload_folder(
+                folder_path=folder_path,
+                repo_id=REPO_ID,
+                repo_type=REPO_TYPE,
+                path_in_repo=f"current_works/{folder}",
+                commit_message=f"Upload {folder} ({len(local_files)} files, {total_sz_mb:.1f} MB)",
+                ignore_patterns=ignore_patterns
+            )
+            elapsed = time.time() - start_time
+            speed_mbps = (total_sz_mb / elapsed) if elapsed > 0 else 0
+            print(f"  ✅ '{folder}' uploaded successfully in {elapsed:.1f}s (~{speed_mbps:.2f} MB/s)!")
+            break
+        except Exception as e:
+            print(f"  ⚠️  Attempt {attempt}/{max_retries} for '{folder}' encountered: {e}")
+            if attempt < max_retries:
+                wait_s = min(10 * attempt, 60)
+                print(f"  ⏳ Retrying '{folder}' in {wait_s}s...")
+                time.sleep(wait_s)
+            else:
+                print(f"  ❌ Max retries reached for '{folder}'. Moving on.")
 
 total_elapsed = time.time() - total_start
 print("\n" + "=" * 70)

@@ -86,7 +86,7 @@ layout_branch:
               robot_hight_real: 1.5
               
             edge_gaussian:
-              enabled: true
+              enabled: false
               weight: 1
               robot_width_real: 0.35
               robot_hight_real: 1.5
