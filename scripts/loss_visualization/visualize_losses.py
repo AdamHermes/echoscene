@@ -503,20 +503,21 @@ def visualize_pathfinding_loss(objects, bounds, out_path, robot_width_real=0.35,
     fig.savefig(out_path, dpi=150, bbox_inches='tight', pad_inches=0.0, format=ext)
     plt.close(fig)
 
-def visualize_relational_loss(objects, bounds, out_path, triples=None, predicate_names=None, margin=0.05, close_threshold=0.45, stand_threshold=0.04, show_text=False):
+def visualize_relational_loss(objects, bounds, out_path, triples=None, predicate_names=None, margin=0.05, close_threshold=0.45, stand_threshold=0.04, show_text=True):
     """
-    Visualize Relational Guidance Loss as a clean standalone 2D diagram.
-    Highlights violated spatial relationships with bold red/crimson constraint arrows and markers.
-    No title text, no labels, no scale bar.
+    Visualize Relational Guidance Loss as an informative 2D diagram.
+    Highlights violated spatial relationships with red/crimson constraint links,
+    predicate callout badges, object labels, and a summary header.
     """
     fig, ax = plt.subplots(figsize=(8, 8))
-    setup_plot(ax, "Relational Guidance Loss" if show_text else None, bounds)
-    plot_base_objects(ax, objects, fade_floor=False, show_labels=show_text)
+    setup_plot(ax, None, bounds)
+    plot_base_objects(ax, objects, fade_floor=False, show_labels=False)
     
     obj_by_id = {o["id"]: o for o in objects}
-    spatial_preds = {'left': 1, 'right': 2, 'front': 3, 'behind': 4, 'close by': 5, 'above': 6, 'standing on': 7}
+    spatial_preds = {'left': 1, 'right': 2, 'front': 3, 'behind': 4, 'close by': 5, 'above': 6, 'standing on': 7, 'symmetrical to': 12}
     
     evaluated_list = []
+    total_rel_loss = 0.0
     
     if triples:
         for edge in triples:
@@ -526,7 +527,7 @@ def visualize_relational_loss(objects, bounds, out_path, triples=None, predicate
             else:
                 s_idx, o_idx, p_idx, p_name = edge[0], edge[1], edge[2], edge[3]
                 
-            if p_name not in spatial_preds:
+            if p_name not in spatial_preds and str(p_idx) not in [str(k) for k in spatial_preds.values()]:
                 continue
                 
             sub_obj = obj_by_id.get(s_idx)
@@ -558,14 +559,22 @@ def visualize_relational_loss(objects, bounds, out_path, triples=None, predicate
             elif p_name in ('standing on', 'above', '6', '7'):
                 diff_y = abs(ys - yo)
                 loss = max(0.0, diff_y - stand_threshold)
+            elif p_name in ('symmetrical to', '12'):
+                d_x = np.sqrt((-xs - xo)**2 + (zs - zo)**2)
+                d_z = np.sqrt((xs - xo)**2 + (-zs - zo)**2)
+                d_xz = np.sqrt((-xs - xo)**2 + (-zs - zo)**2)
+                min_d = min(d_x, d_z, d_xz)
+                loss = max(0.0, min_d - close_threshold)
 
             if loss > 1e-4:
                 evaluated_list.append({
                     's_id': sub_obj['id'], 's_name': sub_obj['name'],
                     'o_id': obj_obj['id'], 'o_name': obj_obj['name'],
-                    'p_name': p_name, 'loss': loss,
+                    'p_name': p_name if isinstance(p_name, str) and not p_name.isdigit() else 'symmetrical to' if str(p_name) == '12' else p_name,
+                    'loss': loss,
                     'sub_pos': (xs, zs), 'obj_pos': (xo, zo)
                 })
+                total_rel_loss += loss
 
     # Highlight objects involved in violations with subtle red border/tint
     violated_obj_ids = set()
@@ -575,12 +584,12 @@ def visualize_relational_loss(objects, bounds, out_path, triples=None, predicate
 
     for obj in objects:
         if obj["id"] in violated_obj_ids and obj["name"] != "floor":
-            poly_viol = patches.Polygon(obj["corners"], closed=True, facecolor='red', edgecolor='darkred', alpha=0.15, linewidth=1.5, zorder=6)
+            poly_viol = patches.Polygon(obj["corners"], closed=True, facecolor='red', edgecolor='darkred', alpha=0.18, linewidth=1.5, zorder=6)
             ax.add_patch(poly_viol)
 
     drawn_pairs = set()
     for rel in evaluated_list:
-        pair_key = (rel['s_id'], rel['o_id'], rel['p_name'])
+        pair_key = (min(rel['s_id'], rel['o_id']), max(rel['s_id'], rel['o_id']), rel['p_name'])
         if pair_key in drawn_pairs: continue
         drawn_pairs.add(pair_key)
         
@@ -594,19 +603,22 @@ def visualize_relational_loss(objects, bounds, out_path, triples=None, predicate
         if rel['p_name'] in ('left', 'right', 'front', 'behind'):
             ax.annotate('', xy=(xo, zo), xytext=(xs, zs),
                         arrowprops=dict(arrowstyle="-|>", color=color, linestyle='--', lw=lw, alpha=alpha, mutation_scale=16), zorder=12)
-            ax.scatter([xs, xo], [zs, zo], color=color, s=28, zorder=14)
+            ax.scatter([xs, xo], [zs, zo], color=color, s=32, zorder=14)
+        elif rel['p_name'] == 'symmetrical to':
+            ax.annotate('', xy=(xo, zo), xytext=(xs, zs),
+                        arrowprops=dict(arrowstyle="<->", color='#d90429', linestyle='--', lw=lw, alpha=alpha, mutation_scale=16), zorder=12)
+            ax.scatter([xs, xo], [zs, zo], color='#d90429', s=32, zorder=14)
         elif rel['p_name'] == 'close by':
             ax.plot([xs, xo], [zs, zo], color=color, linestyle='--', linewidth=lw, alpha=alpha, zorder=11)
-            ax.scatter([xs, xo], [zs, zo], color=color, s=28, zorder=14)
+            ax.scatter([xs, xo], [zs, zo], color=color, s=32, zorder=14)
         else:
             ax.annotate('', xy=(xo, zo), xytext=(xs, zs),
-                        arrowprops=dict(arrowstyle="-|>", color=color, linestyle='--', lw=lw, alpha=alpha, mutation_scale=14), zorder=12)
+                        arrowprops=dict(arrowstyle="-|>", color=color, linestyle='--', lw=lw, alpha=alpha, mutation_scale=16), zorder=12)
 
-    if show_text:
-        viol_patch = patches.Patch(color='#d90429', label='Violated Spatial Constraint (Loss > 0)')
-        leg = ax.legend(handles=[viol_patch], loc='lower left', fontsize=9, framealpha=0.9)
-        if leg:
-            leg.set_zorder(20)
+        # Draw contextual callout badge on the link
+        mid_x, mid_z = (xs + xo) / 2.0, (zs + zo) / 2.0
+        ax.text(mid_x, mid_z, f"{rel['p_name']}\n+{rel['loss']:.2f}m", color='white', fontsize=7, fontweight='bold',
+                ha='center', va='center', bbox=dict(boxstyle="round,pad=0.2", fc=color, ec="darkred", lw=0.8, alpha=0.92), zorder=20)
 
     plt.tight_layout()
     ext = os.path.splitext(out_path)[1].strip('.')

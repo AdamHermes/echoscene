@@ -1,5 +1,4 @@
 import os
-import glob
 import json
 import argparse
 import numpy as np
@@ -25,53 +24,33 @@ COLOR_MAP = {
     "_scene_": "#e74c3c"
 }
 
-# Fallback coarse classes mapping for when scan_id is not found in dataset
-COARSE_CLASSES_MAP = {
-    0: '_scene_',
-    1: 'bed',
-    2: 'bookshelf',
-    3: 'cabinet',
-    4: 'chair',
-    5: 'desk',
-    6: 'floor',
-    7: 'lamp',
-    8: 'nightstand',
-    9: 'shelf',
-    10: 'sofa',
-    11: 'table',
-    12: 'tv_stand',
-    13: 'wardrobe'
-}
-
-def load_dataset_index(front_dir):
+def load_front_dataset_classes(front_dir):
     """
-    Loads all relationships_*.json and mapping.json from FRONT directory
-    to map scene_id -> list of fine-grained object names.
+    Builds the exact classes_r mapping directly from the FRONT dataset files:
+    mapping.json and classes_all.txt (following threedfront_dataset.py logic).
     """
     mapping_path = os.path.join(front_dir, 'mapping.json')
-    mapping = {}
-    if os.path.exists(mapping_path):
-        try:
-            with open(mapping_path, 'r') as f:
-                mapping = json.load(f)
-        except Exception as e:
-            print(f"Warning: Failed to load {mapping_path}: {e}")
-
-    scan_to_objects = {}
-    rel_files = glob.glob(os.path.join(front_dir, 'relationships_*.json'))
-    for rf in rel_files:
-        try:
-            with open(rf, 'r') as f:
-                data = json.load(f)
-                for s in data.get('scans', []):
-                    scan_id = s.get('scan')
-                    if scan_id and scan_id not in scan_to_objects:
-                        scan_to_objects[scan_id] = list(s.get('objects', {}).values())
-        except Exception as e:
-            print(f"Warning: Failed to load {rf}: {e}")
-
-    print(f"Indexed {len(scan_to_objects)} scenes from FRONT dataset at '{front_dir}'.")
-    return scan_to_objects, mapping
+    classes_path = os.path.join(front_dir, 'classes_all.txt')
+    
+    if not os.path.exists(mapping_path) or not os.path.exists(classes_path):
+        raise FileNotFoundError(f"Missing FRONT dataset files at '{front_dir}'")
+        
+    with open(mapping_path, 'r') as f:
+        mapping_full2simple = json.load(f)
+        
+    with open(classes_path, 'r') as f:
+        vocab_raw = f.readlines()
+        
+    vocab_simple = [mapping_full2simple[voc.strip('\n')]+'\n' for voc in vocab_raw]
+    classes = dict(zip(sorted(list(set([voc.strip('\n') for voc in vocab_simple]))),
+                        range(len(list(set(vocab_simple))))))
+    classes_r = dict(zip(classes.values(), classes.keys()))
+    
+    print(f"Loaded {len(classes_r)} classes directly from FRONT dataset at '{front_dir}':")
+    for idx, name in sorted(classes_r.items()):
+        print(f"  [{idx:2d}] {name}")
+        
+    return classes_r
 
 def get_obb_corners(x, z, l, w, angle_rad):
     """Calculates the 4 corners of the Oriented Bounding Box (OBB)."""
@@ -90,15 +69,13 @@ class JsonVisualizer:
         self.json_path = os.path.abspath(json_path)
         
         if front_dir is None:
-            # Default to FRONT directory relative to script
             script_dir = os.path.dirname(os.path.abspath(__file__))
             front_dir = os.path.abspath(os.path.join(script_dir, "..", "FRONT"))
             if not os.path.exists(front_dir):
-                # Fallback to hardcoded absolute path
                 front_dir = "/Users/lehoangan/Documents/GitHub/ROOM/echoscene/FRONT"
                 
         self.front_dir = front_dir
-        self.scan_to_objects, self.mapping = load_dataset_index(self.front_dir)
+        self.classes_r = load_front_dataset_classes(self.front_dir)
         
         print(f"Loading {self.json_path}...")
         with open(self.json_path, 'r') as f:
@@ -112,7 +89,6 @@ class JsonVisualizer:
         print(f"Loaded {self.num_scenes} scenes from JSON.")
         self.current_idx = 0
         self.show_gpt_collision = False
-        self.use_fine_grained = True
         
         self.fig, self.ax = plt.subplots(figsize=(9, 9))
         self.fig.subplots_adjust(bottom=0.15)
@@ -120,10 +96,6 @@ class JsonVisualizer:
         ax_gpt = plt.axes([0.72, 0.02, 0.23, 0.05])
         self.btn_gpt = Button(ax_gpt, 'GPT Mode: OFF')
         self.btn_gpt.on_clicked(self.toggle_gpt)
-        
-        ax_mode = plt.axes([0.45, 0.02, 0.25, 0.05])
-        self.btn_mode = Button(ax_mode, 'Names: Fine-Grained')
-        self.btn_mode.on_clicked(self.toggle_names)
         
         self.fig.canvas.mpl_connect('key_press_event', self.on_key)
         self.update_plot()
@@ -133,50 +105,28 @@ class JsonVisualizer:
         self.btn_gpt.label.set_text('GPT Mode: ON (Naive AABB)' if self.show_gpt_collision else 'GPT Mode: OFF')
         self.update_plot()
 
-    def toggle_names(self, event):
-        self.use_fine_grained = not self.use_fine_grained
-        self.btn_mode.label.set_text('Names: Fine-Grained' if self.use_fine_grained else 'Names: Coarse')
-        self.update_plot()
-
-    def get_scene_object_names(self, scene_id, max_cls, sizes):
+    def decode_object_name(self, cls_idx, size, trans):
         """
-        Determines the display name for each object in the scene.
+        Decodes the exact class name using FRONT dataset mapping.
+        Floor is ALWAYS the large flat boundary box (height < 0.1m, area > 1.0m^2).
+        _scene_ is the dummy token (tiny size < 0.2m or positioned at -5.6m).
         """
-        n_objs = len(max_cls)
-        names = []
+        l, h, w = size
+        x, _, z = trans
         
-        # Check if we have exact dataset ground truth object sequence for this scan_id
-        if scene_id in self.scan_to_objects:
-            gt_objs = list(self.scan_to_objects[scene_id])
-            # The model appends _scene_ at the very end
-            if len(gt_objs) == n_objs - 1:
-                gt_objs.append('_scene_')
-            elif len(gt_objs) < n_objs:
-                # If sizes don't match, pad with _scene_ or unknown
-                while len(gt_objs) < n_objs:
-                    gt_objs.append('_scene_')
+        # 1. Check if it's the scene dummy token
+        if (l < 0.2 and w < 0.2) or (x < -4.0 and z < -4.0):
+            return "_scene_"
             
-            for i in range(n_objs):
-                name = gt_objs[i]
-                if not self.use_fine_grained:
-                    name = self.mapping.get(name, name)
-                names.append(name)
-            return names
-        
-        # Fallback to coarse mapping from one-hot class index
-        for i in range(n_objs):
-            cls_idx = max_cls[i]
-            l, _, w = sizes[i]
-            if cls_idx == 14: # Padding column used for floor and _scene_
-                if (l * w) < 0.1 or (l < 0.2 and w < 0.2):
-                    name = "_scene_"
-                else:
-                    name = "floor"
-            else:
-                name = COARSE_CLASSES_MAP.get(cls_idx, f"class_{cls_idx}")
-            names.append(name)
+        # 2. Check if it's the floor (large flat horizontal box)
+        if abs(h) < 0.1 and (l * w) > 1.0:
+            return "floor"
             
-        return names
+        # 3. Check if one-hot index is the padding column
+        if cls_idx in [0, 6, 14]:
+            return "floor"
+            
+        return self.classes_r.get(cls_idx, f"class_{cls_idx}")
 
     def update_plot(self):
         self.ax.clear()
@@ -196,11 +146,16 @@ class JsonVisualizer:
         classes = np.array(self.data["class_labels"][self.current_idx])
         max_cls = np.argmax(classes, axis=-1)
         
-        object_names = self.get_scene_object_names(scene_name, max_cls, sizes)
+        # Identify floor index (largest flat object in scene)
+        flat_indices = [j for j in range(len(sizes)) if abs(sizes[j][1]) < 0.1 and (sizes[j][0] * sizes[j][2]) > 0.5]
+        floor_obj_idx = max(flat_indices, key=lambda j: sizes[j][0] * sizes[j][2]) if flat_indices else None
         
         for i in range(len(max_cls)):
-            name = object_names[i]
-            coarse_name = self.mapping.get(name, name)
+            cls_idx = int(max_cls[i])
+            if i == floor_obj_idx:
+                name = "floor"
+            else:
+                name = self.decode_object_name(cls_idx, sizes[i], trans[i])
             
             x, _, z = trans[i]
             l, _, w = sizes[i]
@@ -228,8 +183,8 @@ class JsonVisualizer:
                              bbox=dict(facecolor='white', alpha=0.7, edgecolor='red', pad=2))
                 continue
 
-            color = COLOR_MAP.get(coarse_name, "#1abc9c")
-            alpha = 0.25 if name in ["floor", "room_boundary"] or coarse_name == "floor" else 0.7
+            color = COLOR_MAP.get(name, "#1abc9c")
+            alpha = 0.25 if name in ["floor", "room_boundary"] else 0.7
             
             # Draw OBB (Oriented Bounding Box)
             obb_polygon = patches.Polygon(
@@ -239,7 +194,7 @@ class JsonVisualizer:
             self.ax.add_patch(obb_polygon)
             
             # Draw AABB (Dashed Red Line) for everything except floor/lamp
-            if coarse_name not in ["floor", "lamp"]:
+            if name not in ["floor", "lamp"]:
                 aabb_rect = patches.Rectangle(
                     (min_x, min_z), max_x - min_x, max_z - min_z, 
                     linewidth=1, edgecolor='#e74c3c', facecolor='none', 
@@ -248,9 +203,9 @@ class JsonVisualizer:
                 self.ax.add_patch(aabb_rect)
             
             # Text label
-            if name != "floor" and coarse_name != "floor":
+            if name != "floor":
                 self.ax.text(x, z, name, ha='center', va='center', 
-                             fontsize=8, weight='bold',
+                             fontsize=9, weight='bold',
                              bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=2))
                              
         # View settings
@@ -261,10 +216,9 @@ class JsonVisualizer:
         
         # Header text
         aabb_status = "GPT Mode (Naive)" if self.show_gpt_collision else "Normal Mode (Rotated AABB)"
-        name_status = "Fine-Grained" if self.use_fine_grained else "Coarse"
         title = f"File: {os.path.basename(self.json_path)} | Scene [{self.current_idx + 1}/{self.num_scenes}]\n"
-        title += f"ID: {scene_name} | {name_status} | {aabb_status}\n"
-        title += "←/→: Switch Scene | G: Toggle GPT Mode | F: Toggle Coarse/Fine Names"
+        title += f"ID: {scene_name} | {aabb_status}\n"
+        title += "← / →: Switch Scene | G: Toggle GPT Mode"
         self.ax.set_title(title, fontsize=11, weight='bold', pad=10)
         
         # Legend matching vis.py
@@ -286,14 +240,13 @@ class JsonVisualizer:
             self.update_plot()
         elif event.key in ['g', 'G']:
             self.toggle_gpt(None)
-        elif event.key in ['f', 'F']:
-            self.toggle_names(None)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Visualizes complete scene JSON predictions with dataset ground-truth names.")
+    parser = argparse.ArgumentParser(description="Visualizes complete scene JSON predictions with FRONT dataset names.")
     parser.add_argument("--json", type=str, required=True, help="Path to the JSON file (e.g. physcene_collision_input.json)")
     parser.add_argument("--front_dir", type=str, default=None, help="Optional path to FRONT dataset folder (defaults to FRONT dir)")
     args = parser.parse_args()
     
     vis = JsonVisualizer(args.json, front_dir=args.front_dir)
     plt.show()
+

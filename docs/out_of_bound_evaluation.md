@@ -25,12 +25,13 @@ python scripts/eval_ob.py --json current_works/to_be_merged/complete_released_fu
 
 ## How It Works
 
-1. **Loads Layout Data**: Parses the input JSON file containing the scene attributes.
-2. **Identifies Floor**: For each scene, the script searches for the floor object (identified by the second-to-last class label) and creates a 2D floor boundary polygon.
-3. **Identifies Furniture**: Iterates over all valid furniture items in the scene and generates 2D boundary polygons based on their predicted translations, sizes, and rotation angles.
-4. **Overlap Check**: Checks whether each furniture polygon is fully contained within the floor polygon using a small area tolerance (`1e-4`).
+1. **Loads Layout Data**: Parses the input JSON file containing scene translations, sizes, angles, and one-hot classes.
+2. **Identifies Floor**: Dynamically identifies the room floor polygon based on flat bounding box geometry ($\text{height} < 0.1\text{m}$ and maximum footprint area).
+3. **Identifies Furniture**: Iterates over all valid furniture items in the scene and creates 2D oriented bounding box (OBB) polygons based on their translations, sizes, and rotation angles.
+4. **Containment Check**: Verifies whether each furniture polygon is fully contained within the floor polygon using a shapely polygon intersection test.
 5. **Generates Statistics**: Computes and outputs:
    - Total number of scenes evaluated.
    - Total out-of-bound (OB) objects.
    - Total valid furniture objects.
-   - **Average #OB per scene**.
+   - **Object Out-of-Bound Rate (`tot_ob / tot_obj`)**: The primary metric, bounded in $[0, 1]$, matching `ColObj`.
+   - **Average #OB count per scene (`tot_ob / processed_scenes`)**.
