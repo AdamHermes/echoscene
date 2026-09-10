@@ -23,6 +23,7 @@ NEW_FOLDERS = [
     "baseline_missing",
     "baseline_full",
     "work_27_2",
+    "work_27_light",
 ]
 
 # Discover any other subfolders on SSD

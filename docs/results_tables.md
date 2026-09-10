@@ -5,6 +5,7 @@ Mirror of the `ColObj Score` and `SmallTests` sheets from `SceneGraph Experiemen
 - **ColObj Score** = 370-scene benchmark
 - **SmallTests** = fixed 52-scene subset (20 bedrooms + 12 living rooms + 20 dining rooms)
 - **Out of Bound (OB)** = average count of out-of-bound furniture objects per scene (e.g., total OB objects / total scenes; lower = better)
+- **FID / KID Scores** = Image fidelity metrics across room types (see [fid_kid_evaluation.md](fid_kid_evaluation.md))
 - "PP" rows = post-processed (collision-resolved) scenes
 - SIG_obb evaluated on only 32/52 available scenes (20 bedrooms missing from source zips)
 
@@ -30,48 +31,34 @@ Mirror of the `ColObj Score` and `SmallTests` sheets from `SceneGraph Experiemen
 | — | work30 + PP | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix1-1 + relational_loss * 0.5 | inference_guidance: interval: 1 start_ratio: 0.9 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.0033 | 0.0108 | 0.0000 | physcene_collision_resolved.json | 0.2360 | 0.8046 | 0.8940 | 0.7739 | 0.9915 | 0.9884 | 0.7883 | 0.9511 | 0.9368 | 0.4161 | 0.3448 |
 | 31 | work31 | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix0.5-0.5 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.2304 | 0.4432 | 0.8216 | physcene_collision_input.json | 0.2382 | 0.6369 | 0.9637 | 0.8776 | 0.9876 | 0.9936 | 0.9619 | 0.9627 | 0.9971 | 0.7445 | 0.4957 |
 | — | work31 + PP | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix0.5-0.5 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.0183 | 0.0568 | 0.2189 | physcene_collision_resolved.json | 0.2326 | 0.6111 | 0.9636 | 0.8693 | 0.9901 | 0.9982 | 0.9619 | 0.9627 | 0.9971 | 0.7142 | 0.4612 |
-| 32 | work32 | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix0.5-0.5 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.2283 | 0.4216 | 0.8571 | physcene_collision_input.json | 0.2420 | 0.6165 | 0.9633 | 0.8803 | 0.9883 | 0.9943 | 0.9615 | 0.9578 | 0.9976 | 0.7453 | 0.5172 |
-| — | work32 + PP | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix0.5-0.5 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.0175 | 0.0541 | 0.8571 | physcene_collision_resolved.json | 0.2327 | 0.6091 | 0.9635 | 0.8774 | 0.9897 | 0.9992 | 0.9615 | 0.9578 | 0.9976 | 0.7191 | 0.5172 |
-| 33 | work33 | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix1-1 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.2246 | 0.4324 | 0.8913 | physcene_collision_input.json | 0.2373 | 0.6373 | 0.9642 | 0.8825 | 0.9904 | 0.9941 | 0.9627 | 0.9620 | 0.9976 | 0.7273 | 0.5431 |
-| 33 | work33 + PP | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix1-1 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.0096 | 0.0297 | 0.8913 | physcene_collision_resolved.json | 0.2276 | 0.6252 | 0.9646 | 0.8818 | 0.9915 | 0.9985 | 0.9627 | 0.9620 | 0.9976 | 0.7084 | 0.5517 |
+| 32 | work32 | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix0.5-0.5 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.2283 | 0.4216 | 0.8054 | physcene_collision_input.json | 0.2420 | 0.6165 | 0.9633 | 0.8803 | 0.9883 | 0.9943 | 0.9615 | 0.9578 | 0.9976 | 0.7453 | 0.5172 |
+| — | work32 + PP | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix0.5-0.5 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.0175 | 0.0541 | 0.2081 | physcene_collision_resolved.json | 0.2327 | 0.6091 | 0.9635 | 0.8774 | 0.9897 | 0.9992 | 0.9615 | 0.9578 | 0.9976 | 0.7191 | 0.5172 |
+| 33 | work33 | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix1-1 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.2246 | 0.4324 | 0.8486 | physcene_collision_input.json | 0.2373 | 0.6373 | 0.9642 | 0.8825 | 0.9904 | 0.9941 | 0.9627 | 0.9620 | 0.9976 | 0.7273 | 0.5431 |
+| 33 | work33 + PP | echoscene + collision_loss * 10 + room_outer_loss * 10 + walkable_loss_v3_mix1-1 + relational_loss * 0.5 | inference_guidance: interval: 5 start_ratio: 0.95 grad_clip: 10.1 strength: 20.0 relational: weight 0.5 start_ratio 0.5 | 0.0096 | 0.0297 | 0.1730 | physcene_collision_resolved.json | 0.2276 | 0.6252 | 0.9646 | 0.8818 | 0.9915 | 0.9985 | 0.9627 | 0.9620 | 0.9976 | 0.7084 | 0.5517 |
 | 34 | work34 | — | — | 0.2562 | 0.4730 | 0.9135 | physcene_collision_input.json | 0.2496 | 0.6237 | 0.9622 | 0.8803 | 0.9870 | 0.9923 | 0.9628 | 0.9600 | 0.9976 | 0.7150 | 0.5474 |
-| 34 | work34 + PP | — | — | 0.0158 | 0.0514 | 0.9135 | physcene_collision_resolved.json | 0.2353 | 0.6192 | 0.9628 | 0.8689 | 0.9896 | 0.9978 | 0.9628 | 0.9600 | 0.9976 | 0.7002 | 0.4741 |
+| 34 | work34 + PP | — | — | 0.0158 | 0.0514 | 0.2216 | physcene_collision_resolved.json | 0.2353 | 0.6192 | 0.9628 | 0.8689 | 0.9896 | 0.9978 | 0.9628 | 0.9600 | 0.9976 | 0.7002 | 0.4741 |
 | 35 | work35 | — | — | 0.2117 | 0.4054 | 1.3649 | physcene_collision_input.json | 0.2498 | 0.6550 | 0.9620 | 0.8758 | 0.9892 | 0.9943 | 0.9609 | 0.9605 | 0.9971 | 0.7027 | 0.5259 |
 | 35 | work35 + PP | — | — | 0.0125 | 0.0405 | 0.1973 | physcene_collision_resolved.json | 0.2358 | 0.6247 | 0.9626 | 0.8707 | 0.9904 | 0.9987 | 0.9609 | 0.9605 | 0.9971 | 0.6962 | 0.4914 |
 | 36 | work36 | — | — | 0.2442 | 0.4378 | 0.7811 | physcene_collision_input.json | 0.2428 | 0.6111 | 0.9636 | 0.8848 | 0.9863 | 0.9941 | 0.9587 | 0.9607 | 0.9976 | 0.7658 | 0.5302 |
-| 36 | work36 + PP | — | — | 0.0179 | 0.0568 | 0.7811 | physcene_collision_resolved.json | 0.2318 | 0.5983 | 0.9628 | 0.8741 | 0.9879 | 0.9983 | 0.9587 | 0.9607 | 0.9976 | 0.7281 | 0.4871 |
-| 37 | work37 | — | — | 0.0367 | 0.1054 | 0.6609 | physcene_collision_input.json | 0.2342 | 0.8529 | 0.9216 | 0.8289 | 0.9961 | 0.9968 | 0.8358 | 0.9660 | 0.9650 | 0.5553 | 0.4871 |
-| 37 | work37 + PP | — | — | 0.0025 | 0.0081 | 0.6609 | physcene_collision_resolved.json | 0.2279 | 0.8320 | 0.9215 | 0.8231 | 0.9958 | 0.9977 | 0.8358 | 0.9660 | 0.9650 | 0.5577 | 0.4440 |
+| 36 | work36 + PP | — | — | 0.0179 | 0.0568 | 0.1838 | physcene_collision_resolved.json | 0.2318 | 0.5983 | 0.9628 | 0.8741 | 0.9879 | 0.9983 | 0.9587 | 0.9607 | 0.9976 | 0.7281 | 0.4871 |
+| 37 | work37 | — | — | 0.0367 | 0.1054 | 0.8459 | physcene_collision_input.json | 0.2342 | 0.8529 | 0.9216 | 0.8289 | 0.9961 | 0.9968 | 0.8358 | 0.9660 | 0.9650 | 0.5553 | 0.4871 |
+| 37 | work37 + PP | — | — | 0.0025 | 0.0081 | 0.0000 | physcene_collision_resolved.json | 0.2279 | 0.8320 | 0.9215 | 0.8231 | 0.9958 | 0.9977 | 0.8358 | 0.9660 | 0.9650 | 0.5577 | 0.4440 |
 | 38 | work38 | — | — | 0.3321 | 0.5703 | 0.9459 | physcene_collision_input.json | 0.2326 | 0.6576 | 0.9529 | 0.8650 | 0.9689 | 0.9703 | 0.9611 | 0.9675 | 0.9765 | 0.7322 | 0.4784 |
-| 38 | work38 + PP | — | — | 0.0208 | 0.0649 | 0.9459 | physcene_collision_resolved.json | 0.2294 | 0.6310 | 0.9586 | 0.8434 | 0.9849 | 0.9908 | 0.9611 | 0.9675 | 0.9765 | 0.7125 | 0.3103 |
+| 38 | work38 + PP | — | — | 0.0208 | 0.0649 | 0.1081 | physcene_collision_resolved.json | 0.2294 | 0.6310 | 0.9586 | 0.8434 | 0.9849 | 0.9908 | 0.9611 | 0.9675 | 0.9765 | 0.7125 | 0.3103 |
 | 39 | work39 | — | — | 0.0825 | 0.2405 | 0.8676 | physcene_collision_input.json | 0.2199 | 0.8205 | 0.9229 | 0.8287 | 0.9924 | 0.9928 | 0.8499 | 0.9635 | 0.9516 | 0.5676 | 0.4828 |
-| 39 | work39 + PP | — | — | 0.0100 | 0.0324 | 0.8676 | physcene_collision_resolved.json | 0.2126 | 0.8177 | 0.9237 | 0.8251 | 0.9945 | 0.9972 | 0.8499 | 0.9635 | 0.9516 | 0.5577 | 0.4612 |
+| 39 | work39 + PP | — | — | 0.0100 | 0.0324 | 0.0135 | physcene_collision_resolved.json | 0.2126 | 0.8177 | 0.9237 | 0.8251 | 0.9945 | 0.9972 | 0.8499 | 0.9635 | 0.9516 | 0.5577 | 0.4612 |
 | 40 | work40 | — | — | 0.0283 | 0.0811 | 2.1784 | physcene_collision_input.json | 0.2558 | 0.7951 | 0.9313 | 0.8403 | 0.9969 | 0.9995 | 0.8738 | 0.9640 | 0.9693 | 0.5053 | 0.5733 |
-| 40 | work40 + PP | — | — | 0.0050 | 0.0135 | 2.1784 | physcene_collision_resolved.json | 0.2236 | 0.7747 | 0.9306 | 0.8307 | 0.9928 | 0.9963 | 0.8738 | 0.9640 | 0.9693 | 0.5446 | 0.4741 |
+| 40 | work40 + PP | — | — | 0.0050 | 0.0135 | 0.0811 | physcene_collision_resolved.json | 0.2236 | 0.7747 | 0.9306 | 0.8307 | 0.9928 | 0.9963 | 0.8738 | 0.9640 | 0.9693 | 0.5446 | 0.4741 |
 | 41 | work41 | — | — | 0.1913 | 0.4000 | 0.4784 | physcene_collision_input.json | 0.2221 | 0.6608 | 0.9692 | 0.8998 | 0.9871 | 0.9968 | 0.9662 | 0.9678 | 0.9952 | 0.7952 | 0.5905 |
-| 41 | work41 + PP | — | — | 0.0129 | 0.0378 | 0.4784 | physcene_collision_resolved.json | 0.2178 | 0.6492 | 0.9688 | 0.8940 | 0.9896 | 0.9978 | 0.9662 | 0.9678 | 0.9952 | 0.7723 | 0.5690 |
+| 41 | work41 + PP | — | — | 0.0129 | 0.0378 | 0.0243 | physcene_collision_resolved.json | 0.2178 | 0.6492 | 0.9688 | 0.8940 | 0.9896 | 0.9978 | 0.9662 | 0.9678 | 0.9952 | 0.7723 | 0.5690 |
 | 42 | work42 | — | — | 0.2029 | 0.4081 | 0.9324 | physcene_collision_input.json | 0.2355 | 0.6486 | 0.9599 | 0.8699 | 0.9863 | 0.9919 | 0.9561 | 0.9649 | 0.9823 | 0.7297 | 0.4784 |
-| 42 | work42 + PP | — | — | 0.0167 | 0.0459 | 0.9324 | physcene_collision_resolved.json | 0.2288 | 0.6336 | 0.9603 | 0.8613 | 0.9889 | 0.9953 | 0.9561 | 0.9649 | 0.9823 | 0.7191 | 0.4224 |
+| 42 | work42 + PP | — | — | 0.0167 | 0.0459 | 0.0297 | physcene_collision_resolved.json | 0.2288 | 0.6336 | 0.9603 | 0.8613 | 0.9889 | 0.9953 | 0.9561 | 0.9649 | 0.9823 | 0.7191 | 0.4224 |
 | 42.2 | work42_2 | — | — | 0.2029 | 0.4027 | 0.9243 | physcene_collision_input.json | 0.2181 | 0.6754 | 0.9593 | 0.8676 | 0.9861 | 0.9915 | 0.9522 | 0.9691 | 0.9832 | 0.7297 | 0.4612 |
-| 42.2 | work42_2 + PP | — | — | 0.0204 | 0.0595 | 0.9243 | physcene_collision_resolved.json | 0.2131 | 0.6632 | 0.9589 | 0.8591 | 0.9863 | 0.9930 | 0.9522 | 0.9691 | 0.9832 | 0.7207 | 0.4095 |
-| Tasks | Status | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| 3D SSG | On Going Bach | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Check Ground Truth Relation for 6482 | On Going Bach | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| OB metrics | On Going Bach | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Check Work27 No PP 6482 | Done An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| DiffuScene | On Going Bach | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Engineer Automatic Indexing System | Done Bach | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Run Col Obj, Col Scene (Quick Version) on Ground Truth | Done An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Run Walkability and Navigability on Ground Truth | Done An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Run work27 | Done An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Eval Col Obj Col Scene, Walkability Navigablity work28 | Done An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Run work28 | Done An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Run Col Obj, Col Scene (Full Version) on Ground Truth | Bach | Output Ground Truth: ColObj: 0.332 / ColScene: 0.626 | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| FIX DDPM GPU UTILIZATION | Failed An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Small Test SIG_walkv3_no_gausv1 | An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Small Test SIG_walkv2 | An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Run work30 370 scenes | Done An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
-| Run work31 370 scenes | Done An | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
+| 42.2 | work42_2 + PP | — | — | 0.0204 | 0.0595 | 0.0297 | physcene_collision_resolved.json | 0.2131 | 0.6632 | 0.9589 | 0.8591 | 0.9863 | 0.9930 | 0.9522 | 0.9691 | 0.9832 | 0.7207 | 0.4095 |
+| 27.2 | work27_2 | — | — | 0.2233 | 0.4378 | 0.8838 | physcene_collision_input.json | 0.2443 | 0.6451 | 0.9622 | 0.8746 | 0.9889 | 0.9945 | 0.9591 | 0.9609 | 0.9947 | 0.7281 | 0.4957 |
+| 27.2 | work27_2 + PP | — | — | 0.0133 | 0.0432 | 0.1568 | physcene_collision_resolved.json | 0.2421 | 0.6237 | 0.9622 | 0.8652 | 0.9910 | 0.9990 | 0.9591 | 0.9609 | 0.9947 | 0.7035 | 0.4483 |
+| 27.light | work27_light | — | — | 0.2458 | 0.4568 | 0.8162 | physcene_collision_input.json | 0.2389 | 0.6405 | 0.9639 | 0.8810 | 0.9886 | 0.9945 | 0.9583 | 0.9627 | 0.9976 | 0.7609 | 0.5043 |
+| 27.light | work27_light + PP | — | — | 0.0150 | 0.0486 | 0.1730 | physcene_collision_resolved.json | 0.2301 | 0.6142 | 0.9638 | 0.8775 | 0.9899 | 0.9987 | 0.9583 | 0.9627 | 0.9976 | 0.7314 | 0.5043 |
 
 ---
 
