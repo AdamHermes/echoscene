@@ -79,6 +79,8 @@ docs/_build/
 
 # PyBuilder
 target/
+3DSSG/
+/test3DSSG/adapted_scenes/
 
 # Jupyter Notebook
 .ipynb_checkpoints
