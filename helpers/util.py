@@ -312,6 +312,9 @@ def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes
             continue
         obj = next(trimesh_meshes)
         color = next(colors)
+        if obj.is_empty:  # the shape decoder occasionally yields no surface
+            print(f'warning: empty generated mesh for {query_label}, skipping it')
+            continue
         obj.visual.vertex_colors = color
         obj.visual.face_colors = color
         raw_obj_list.append(obj.copy())
