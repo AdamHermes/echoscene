@@ -748,6 +748,13 @@ class GaussianDiffusion:
             step_stats['skip_reason'] = step_stats.get('skip_reason', 'unused_grad')
             return model_mean, step_stats
             
+        # Guidance should only move and rotate objects. Without this, collision and
+        # room-boundary losses shrink box sizes (and thus the decoded shapes).
+        # Set inference_guidance.guide_sizes: true to reproduce the old behaviour.
+        if not bool(cfg_get(self.inference_guidance, 'guide_sizes', False)):
+            guidance_grad = guidance_grad.clone()
+            guidance_grad[:, :self.size_dim] = 0.0
+
         grad_norm = guidance_grad.norm(p=2, dim=1, keepdim=True)
         grad_clip = float(cfg_get(self.inference_guidance, 'grad_clip', 0.0))
         if grad_clip > 0.0:
