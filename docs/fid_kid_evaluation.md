@@ -28,6 +28,9 @@ This document compiles the **FID (Fréchet Inception Distance)** and **KID (Kern
 
 *(Note: `LivingDiningRoom` belongs to both `livingroom` and `diningroom` splits per 3D-FRONT standard)*.
 
+> [!NOTE]
+> **Why Baseline and SteerScene rows omit Library / All 370**: See detailed explanation in [library_and_all370_fid_kid_faq.md](library_and_all370_fid_kid_faq.md).
+
 ---
 
 ## 2. Cross-Model Benchmark Comparison (Standard: Without Lamps)
@@ -133,6 +136,45 @@ This document compiles the **FID (Fréchet Inception Distance)** and **KID (Kern
 - **library** (10 scenes): **FID = 153.3613** | **KID = 0.001461**
 
 ---
+
+---
+
+## 4. Recomputation (2026-10-18): both protocols, all runs on the same renders
+
+All images are re-rendered lamp-free from layout JSON (`scripts/rendering/render_images_only.py --without_lamp`) and scored with `scripts/eval/fid_eval.py` against `sdf_fov90_h8_wo_lamp_no_stool/small/test`. KID ×10⁻³. +PP rows use the controlled resolver re-run (`scripts/eval/rerun_pp.py`).
+
+**Validation:** on the paper's own render folders, the original protocol reproduces EchoScene + PP (bedroom 50.69 / 8.46) and Gaussian-v1 raw / +PP (58.50 / 14.84, 57.27 / 14.06) exactly.
+
+> [!CAUTION]
+> **The `work_33` numbers in sections 2–3 above are invalid.** `fid_eval_work33.py` used meshes from `work_33/part2` only (200 of 370 scenes), so 170 renders were blank. Corrected values are below. The paper's raw EchoScene row (bedroom 52.99 / 4.73 / 3.47, from `baseline_result.txt`) cannot be reproduced from any surviving render folder; use the recomputed EchoScene row.
+
+### Original protocol (paper Table 1): FID / FID-CLIP / KID
+
+| Model | bedroom | livingroom | diningroom | all_314 |
+|---|---|---|---|---|
+| EchoScene | 51.66 / 6.15 / 8.56 | 78.63 / 10.02 / 13.61 | 62.50 / 8.71 / 9.18 | 42.83 / 5.41 / 6.71 |
+| EchoScene + PP | 50.72 / 6.19 / 8.52 | 79.36 / 10.60 / 14.40 | 65.92 / 9.46 / 10.87 | 43.37 / 5.69 / 7.15 |
+| Gaussian-v1 (WACV model) | 58.50 / 7.32 / 14.84 | 80.92 / 9.06 / 15.01 | 68.06 / 9.14 / 12.38 | 47.40 / 5.96 / 10.21 |
+| Gaussian-v1 + PP | 57.33 / 7.25 / 14.11 | 82.22 / 9.68 / 16.40 | 70.29 / 9.59 / 14.25 | 47.66 / 6.15 / 10.42 |
+| Work 33 (Relation-v2 w=0.5) | 51.32 / 6.44 / 9.06 | 79.52 / 9.07 / 14.99 | 61.51 / 8.24 / 7.89 | 43.08 / 5.32 / 7.12 |
+| Work 33 + PP | 51.87 / 6.41 / 9.83 | 82.51 / 9.82 / 15.85 | 65.19 / 9.15 / 8.81 | 44.35 / 5.66 / 7.54 |
+| **Work 41** | 54.62 / 6.53 / 12.61 | 82.19 / 9.14 / 19.32 | 62.86 / 8.03 / 8.78 | 44.71 / 5.29 / 9.06 |
+| **Work 41 + PP** | 54.37 / 6.62 / 12.69 | 82.44 / 9.53 / 17.30 | 63.06 / 8.33 / 7.33 | 44.77 / 5.46 / 8.80 |
+
+### Newer protocol (Supp. Table VII): FID / KID
+
+| Model | bedroom | livingroom | diningroom | library | all_314 | all_370 |
+|---|---|---|---|---|---|---|
+| EchoScene | 51.66 / 8.56 | 78.63 / 13.61 | 62.50 / 9.18 | 87.03 / 3.08 | 42.83 / 6.71 | 40.73 / 6.07 |
+| EchoScene + PP | 50.72 / 8.52 | 79.36 / 14.40 | 65.92 / 10.87 | 87.60 / 1.31 | 43.37 / 7.15 | 41.02 / 6.17 |
+| Gaussian-v1 (WACV model) | 58.50 / 14.84 | 80.92 / 15.01 | 68.06 / 12.38 | 99.13 / 9.89 | 47.40 / 10.21 | 45.86 / 9.61 |
+| Gaussian-v1 + PP | 57.33 / 14.11 | 82.22 / 16.40 | 70.29 / 14.25 | 97.18 / 8.78 | 47.66 / 10.42 | 45.66 / 9.66 |
+| Work 33 (Relation-v2 w=0.5) | 51.32 / 9.06 | 79.52 / 14.99 | 61.51 / 7.89 | 89.34 / 5.31 | 43.08 / 7.12 | 41.16 / 6.80 |
+| Work 33 + PP | 51.87 / 9.83 | 82.51 / 15.85 | 65.19 / 8.81 | 89.09 / 4.50 | 44.35 / 7.54 | 42.07 / 6.91 |
+| **Work 41** | 54.62 / 12.61 | 82.19 / 19.32 | 62.86 / 8.78 | 97.01 / 10.44 | 44.71 / 9.06 | 43.81 / 9.06 |
+| **Work 41 + PP** | 54.37 / 12.69 | 82.44 / 17.30 | 63.06 / 7.33 | 96.84 / 9.53 | 44.77 / 8.80 | 43.67 / 8.69 |
+
+Raw JSON: `docs/results_2026-10-18/fid_original/`, `fid_new/`. Full audit: `docs/paper_number_audit.md`.
 
 ## 4. How to Calculate FID & KID
 

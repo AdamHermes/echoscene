@@ -1,5 +1,9 @@
 # ProcTHOR Walkability Evaluation Pipeline
 
+> [!WARNING]
+> **Superseded (audit 2026-10-18).** This report is the Jul 22 run. It evaluated only ~313/314 of 369/370 scenes (old ProcTHOR converter); the baseline was missing `LivingRoom-4789`, and the "Current Best Sig" JSON had `Bedroom-13858` twice. Its navigability numbers (Baseline PP **74.93%**, Current Best Sig PP **80.03%**) were copied into the WACV paper's Table 5 by mistake. Use `docs/results_tables.md` (Aug 18 full-370 rerun: **62.19% → 63.85%**). See `docs/paper_number_audit.md`.
+
+
 This guide outlines the newly integrated ProcTHOR physics-based evaluation pipeline for 3D room generation models (like EchoScene and Physcene), including execution instructions, a deep dive into the walkability calculation, and the final generated results.
 
 ---

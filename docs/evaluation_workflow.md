@@ -469,3 +469,27 @@ instances concurrently on one machine is fine.
       370-scene numbers from `ColObj Score`; the 52 scenes are always the same fixed
       subset (first 52 in canonical order)
 - [ ] Excel cells written as fractions (0–1), Arial 11, RAW row above PP row
+
+---
+
+## Controlled comparison scripts (`scripts/eval/`, added 2026-10-18)
+
+Use these whenever two runs are compared, so differences come from the generator and not from the tooling.
+
+1. **Same post-processing for every run:**
+   ```bash
+   python scripts/eval/rerun_pp.py <run>/2050/physcene_collision_input.json <out_dir>/pp/<run>.json
+   ```
+   Fixed resolver settings (`max_iter=500`, `push_eps=0.02`). Put raw copies in `<out_dir>/raw/<run>.json`.
+2. **How much PP had to change each layout** (displacement, order reversals, paired bootstrap CIs vs `baseline`):
+   ```bash
+   python scripts/eval/pp_damage.py <out_dir>    # expects <out_dir>/raw/baseline.json and <out_dir>/pp/baseline.json
+   ```
+3. **FID / FID-CLIP / KID:**
+   ```bash
+   # render lamp-free images from layout JSON + the run's object_meshes (all parts!)
+   python scripts/rendering/render_images_only.py --in_json <layout.json> --old_mesh_dir <object_meshes> --out_base_dir <dir> --without_lamp
+   # protocol "original" = paper Table 1 (bed/liv/din/all-314, FID-CLIP); "new" = Supp. Table VII (adds library, all-370)
+   python scripts/eval/fid_eval.py original <name> <dir>/render_imgs <result.json>
+   ```
+   **Check for blank renders first.** If a run was generated in parts (`part1/2/3`), its `object_meshes` must include every part; otherwise the missing scenes render blank and FID explodes (this happened to work 33 in Supp. Table VII).

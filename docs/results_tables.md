@@ -1,5 +1,8 @@
 # SceneGraph Experiment Results
 
+> **Audit 2026-10-18:** see `docs/paper_number_audit.md` for which of these numbers went into the WACV submission and which were wrong. A controlled re-run of 10 configurations (same resolver, same evaluators) is appended at the bottom of this file.
+
+
 Mirror of the `ColObj Score` and `SmallTests` sheets from `SceneGraph Experiement Log.xlsx` (fresh rerun, Aug 18 2026, current converter).
 
 - **ColObj Score** = 370-scene benchmark
@@ -90,3 +93,32 @@ Mirror of the `ColObj Score` and `SmallTests` sheets from `SceneGraph Experiemen
 | SIG relationv2 + pp | echoscene + SIG relationv2 guidance + OBB PP | 52 Rooms | 0.0108 | 0.0385 | 0.0192 | physcene_collision_resolved.json | — | 0.1892 | 0.6217 | 0.9451 | 0.8368 | 0.9873 | 0.9882 | 0.9346 | 0.9524 | 0.9306 | 0.7011 | 0.3636 |
 | SIG walkv2 | echoscene + SIG walkv2 guidance | 52 Rooms | 0.1789 | 0.3462 | 0.5000 | physcene_collision_input.json | — | 0.2146 | 0.5785 | 0.9676 | 0.8904 | 0.9895 | 0.9988 | 0.9612 | 0.9683 | 0.9937 | 0.7759 | 0.5455 |
 | SIG walkv2 + pp | echoscene + SIG walkv2 guidance + OBB PP | 52 Rooms | 0.0081 | 0.0192 | 0.0577 | physcene_collision_resolved.json | — | 0.2127 | 0.5862 | 0.9678 | 0.8915 | 0.9940 | 1.0000 | 0.9612 | 0.9683 | 0.9937 | 0.7471 | 0.5758 |
+
+---
+
+## Controlled re-run (2026-10-17/18): same resolver, same evaluators, all 370 scenes
+
+Every run's raw layout was re-post-processed with the trunk resolver (`scripts/eval/rerun_pp.py`, `max_iter=500`, `push_eps=0.02`) and scored with `scripts/eval_collision.py`, `scripts/eval_ob.py` and `scripts/relational/evaluate_relational_accuracy.py`. This removes differences caused by PP files made with older resolver versions (e.g. Gaussian-v1 + PP ColObj 0.0179 → 0.0163, OOB 0.0405 → 0.051). Raw data: `docs/results_2026-10-18/`. Navigability is not re-run here; use the rows above.
+
+| Run | Stage | ColObj | ColScene | OOB/scene | Total | Macro | Close By | Symm | PP mean move (cm) | PP >30 cm (%) | Scenes w/ order flip (%) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| EchoScene (no guidance) | RAW | 0.2550 | 0.4676 | 1.214 | 96.36 | 88.20 | 74.94 | 52.59 | — | — | — |
+| EchoScene (no guidance) | PP | 0.0179 | 0.0541 | 0.254 | 96.33 | 86.93 | 71.33 | 46.55 | 15.1 | 18.5 | 37.3 |
+| Gaussian-v1 (WACV main model) | RAW | 0.1762 | 0.3784 | 0.714 | 95.60 | 86.87 | 68.06 | 52.16 | — | — | — |
+| Gaussian-v1 (WACV main model) | PP | 0.0163 | 0.0514 | 0.051 | 95.61 | 86.42 | 66.67 | 50.00 | 6.1 | 5.2 | 18.9 |
+| Balanced / Light Gaussian (work 27.2) | RAW | 0.2233 | 0.4378 | 0.884 | 96.22 | 87.46 | 72.81 | 49.57 | — | — | — |
+| Balanced / Light Gaussian (work 27.2) | PP | 0.0133 | 0.0432 | 0.157 | 96.22 | 86.52 | 70.35 | 44.83 | 10.4 | 11.4 | 30.3 |
+| No relational (work 29) | RAW | 0.0246 | 0.0784 | 0.832 | 86.87 | 76.10 | 40.87 | 39.22 | — | — | — |
+| No relational (work 29) | PP | 0.0042 | 0.0135 | 0.913 | 86.78 | 75.80 | 39.80 | 38.36 | 11.6 | 12.0 | 28.6 |
+| Relation-v2 w=0.5 (work 33) | RAW | 0.2246 | 0.4324 | 0.849 | 96.42 | 88.25 | 72.73 | 54.31 | — | — | — |
+| Relation-v2 w=0.5 (work 33) | PP | 0.0096 | 0.0297 | 0.173 | 96.46 | 88.18 | 70.84 | 55.17 | 10.4 | 10.9 | 26.5 |
+| High-weight Relation-v2 (work 37) | RAW | 0.0367 | 0.1054 | 0.846 | 92.16 | 82.89 | 55.53 | 48.71 | — | — | — |
+| High-weight Relation-v2 (work 37) | PP | 0.0025 | 0.0081 | 0.000 | 92.15 | 82.31 | 55.77 | 44.40 | 2.5 | 2.1 | 8.6 |
+| No collision loss (work 39) | RAW | 0.0825 | 0.2405 | 0.868 | 92.29 | 82.87 | 56.76 | 48.28 | — | — | — |
+| No collision loss (work 39) | PP | 0.0100 | 0.0324 | 0.013 | 92.37 | 82.51 | 55.77 | 46.12 | 4.6 | 4.4 | 15.9 |
+| No room loss (work 40) | RAW | 0.0283 | 0.0811 | 2.178 | 93.13 | 84.03 | 50.53 | 57.33 | — | — | — |
+| No room loss (work 40) | PP | 0.0050 | 0.0135 | 0.081 | 93.06 | 83.07 | 54.46 | 47.41 | 15.2 | 18.6 | 30.8 |
+| **No navigability (work 41)** | RAW | 0.1913 | 0.4000 | 0.478 | 96.92 | 89.98 | 79.52 | 59.05 | — | — | — |
+| **No navigability (work 41)** | PP | 0.0129 | 0.0378 | 0.024 | 96.88 | 89.40 | 77.23 | 56.90 | 5.6 | 4.6 | 12.4 |
+| Center-centric nav (work 42.2) | RAW | 0.2029 | 0.4027 | 0.924 | 95.93 | 86.76 | 72.97 | 46.12 | — | — | — |
+| Center-centric nav (work 42.2) | PP | 0.0204 | 0.0595 | 0.030 | 95.89 | 85.91 | 72.07 | 40.95 | 8.2 | 7.9 | 24.3 |

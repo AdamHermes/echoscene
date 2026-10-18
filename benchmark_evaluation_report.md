@@ -1,5 +1,9 @@
 # 📊 EchoScene / ROOM Benchmark Evaluation Report
 
+> [!WARNING]
+> **Superseded (audit 2026-10-18).** This report is the Jul 22 run. It evaluated only ~313/314 of 369/370 scenes (old ProcTHOR converter); the baseline was missing `LivingRoom-4789`, and the "Current Best Sig" JSON had `Bedroom-13858` twice. Its navigability numbers (Baseline PP **74.93%**, Current Best Sig PP **80.03%**) were copied into the WACV paper's Table 5 by mistake. Use `docs/results_tables.md` (Aug 18 full-370 rerun: **62.19% → 63.85%**). See `docs/paper_number_audit.md`.
+
+
 This report presents the complete physical layout, navigation simulation, and 3D spatial relational accuracy evaluation metrics across all **10 model versions**:
 
 1. **Current Best Sig (Raw)** — `current_works/to_be_merged/complete_released_full_model`
