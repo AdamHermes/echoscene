@@ -4,7 +4,23 @@ import argparse
 import numpy as np
 from shapely.geometry import Polygon
 
-def evaluate_furniture_collisions(json_path, max_rooms=None, conf_thresh=0.0):
+def footprint(t, s, a, legacy=False, yaw_sign=1.0):
+    """xz footprint polygon of a box with full extents s, centre t, yaw a."""
+    a = yaw_sign * a
+    c, si = np.cos(a), np.sin(a)
+    dx = np.array([s[0] / 2, s[0] / 2, -s[0] / 2, -s[0] / 2])
+    dz = np.array([s[2] / 2, -s[2] / 2, -s[2] / 2, s[2] / 2])
+    if legacy:  # pre-2026-10-18 typo: dz*sin instead of dx*sin
+        return Polygon(zip(t[0] + dx * c - dz * si, t[2] + dz * si + dz * c))
+    return Polygon(zip(t[0] + dx * c - dz * si, t[2] + dx * si + dz * c))
+
+
+def evaluate_furniture_collisions(json_path, max_rooms=None, conf_thresh=0.0, legacy=False, yaw_sign=1.0):
+    """legacy=True reproduces the pre-2026-10-18 numbers of the prediction-JSON path, which
+    (1) excluded class index num_classes-2 (= wardrobe in the 15-class encoding, not a floor
+    class), (2) treated translation y as the box centre (it is the bottom), and (3) built the
+    footprint z coordinate as z + dz*sin + dz*cos instead of z + dx*sin + dz*cos.
+    yaw_sign=-1 mirrors the yaw (see docs/navigability_v2.md, "Orientation fix")."""
     if not os.path.exists(json_path):
         print(f"Error: File not found at {json_path}")
         return None
@@ -109,9 +125,12 @@ def evaluate_furniture_collisions(json_path, max_rooms=None, conf_thresh=0.0):
             classes = np.array(data["class_labels"][i])
             max_cls = np.argmax(classes, axis=-1)
 
-            # Exclude background class (last index) and floor/outer_room class (second last index)
             num_classes = classes.shape[-1]
-            valid_furniture = (max_cls != (num_classes - 1)) & (max_cls != (num_classes - 2))
+            if legacy:
+                valid_furniture = (max_cls != (num_classes - 1)) & (max_cls != (num_classes - 2))
+            else:
+                # Last index = floor (and the tiny '_scene_' token); num_classes-2 is the wardrobe
+                valid_furniture = max_cls != (num_classes - 1)
 
             if "objectness" in data and len(data["objectness"][i]) == len(valid_furniture):
                 objness = np.array(data["objectness"][i]).squeeze()
@@ -132,21 +151,18 @@ def evaluate_furniture_collisions(json_path, max_rooms=None, conf_thresh=0.0):
                     idx_j = valid_idx[bj]
 
                     # Vertical height check
-                    y1_min, y1_max = trans[idx_i][1] - sizes[idx_i][1] / 2.0, trans[idx_i][1] + sizes[idx_i][1] / 2.0
-                    y2_min, y2_max = trans[idx_j][1] - sizes[idx_j][1] / 2.0, trans[idx_j][1] + sizes[idx_j][1] / 2.0
+                    if legacy:
+                        y1_min, y1_max = trans[idx_i][1] - sizes[idx_i][1] / 2.0, trans[idx_i][1] + sizes[idx_i][1] / 2.0
+                        y2_min, y2_max = trans[idx_j][1] - sizes[idx_j][1] / 2.0, trans[idx_j][1] + sizes[idx_j][1] / 2.0
+                    else:  # translation y is the bottom of the box
+                        y1_min, y1_max = trans[idx_i][1], trans[idx_i][1] + sizes[idx_i][1]
+                        y2_min, y2_max = trans[idx_j][1], trans[idx_j][1] + sizes[idx_j][1]
                     if y1_max <= y2_min or y2_max <= y1_min:
                         continue
 
                     # 2D xz footprint check
-                    cos_i, sin_i = np.cos(angles[idx_i]), np.sin(angles[idx_i])
-                    dx_i = np.array([sizes[idx_i][0] / 2, sizes[idx_i][0] / 2, -sizes[idx_i][0] / 2, -sizes[idx_i][0] / 2])
-                    dz_i = np.array([sizes[idx_i][2] / 2, -sizes[idx_i][2] / 2, -sizes[idx_i][2] / 2, sizes[idx_i][2] / 2])
-                    p1 = Polygon(zip(trans[idx_i][0] + dx_i * cos_i - dz_i * sin_i, trans[idx_i][2] + dz_i * sin_i + dz_i * cos_i))
-
-                    cos_j, sin_j = np.cos(angles[idx_j]), np.sin(angles[idx_j])
-                    dx_j = np.array([sizes[idx_j][0] / 2, sizes[idx_j][0] / 2, -sizes[idx_j][0] / 2, -sizes[idx_j][0] / 2])
-                    dz_j = np.array([sizes[idx_j][2] / 2, -sizes[idx_j][2] / 2, -sizes[idx_j][2] / 2, sizes[idx_j][2] / 2])
-                    p2 = Polygon(zip(trans[idx_j][0] + dx_j * cos_j - dz_j * sin_j, trans[idx_j][2] + dz_j * sin_j + dz_j * cos_j))
+                    p1 = footprint(trans[idx_i], sizes[idx_i], angles[idx_i], legacy, yaw_sign)
+                    p2 = footprint(trans[idx_j], sizes[idx_j], angles[idx_j], legacy, yaw_sign)
 
                     if not p1.is_valid or not p2.is_valid:
                         continue
@@ -197,7 +213,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate ColObj and ColScene for 3D indoor scene predictions or Ground Truth.")
     parser.add_argument("--json", type=str, required=True, help="Path to prediction or GT JSON file")
     parser.add_argument("--max_rooms", type=int, default=190, help="Maximum number of rooms/scenes to evaluate (default: 190, set to 0 for all)")
+    parser.add_argument("--legacy", action="store_true",
+                        help="Reproduce pre-2026-10-18 numbers (wardrobes excluded, y as centre, footprint typo)")
+    parser.add_argument("--yaw_sign", type=float, default=1.0,
+                        help="-1 mirrors the yaw (orientation fix, see docs/navigability_v2.md)")
     args = parser.parse_args()
 
     max_rooms = None if args.max_rooms <= 0 else args.max_rooms
-    evaluate_furniture_collisions(args.json, max_rooms=max_rooms)
+    evaluate_furniture_collisions(args.json, max_rooms=max_rooms, legacy=args.legacy, yaw_sign=args.yaw_sign)

@@ -56,7 +56,11 @@ def parse_debug_bbox(file_path):
                         scenes[current_scene]['objects'].append(obj_data)
     return scenes
 
-def parse_final_json(file_path, full=False):
+def parse_final_json(file_path, full=False, legacy_vocab=False):
+    """legacy_vocab=True reproduces the pre-2026-10 conversions, which decoded the 15-dim
+    one-hot labels with vocab_14: class 12 (tv_stand) became the 'floor', class 13 (wardrobe)
+    was dropped as '_scene_', the real floor (class 14) was dropped, and the room fell back to
+    the furniture extent. Default: class_map_13 + {14: floor}, floor = largest class-14 box."""
     import json
     with open(file_path, 'r') as f:
         data = json.load(f)
@@ -88,10 +92,14 @@ def parse_final_json(file_path, full=False):
             except ValueError:
                 continue
                 
-            if len(labels[j]) >= 14 and class_idx < len(vocab_14):
-                name = vocab_14[class_idx]
+            if legacy_vocab or len(labels[j]) == 14:
+                if len(labels[j]) >= 14 and class_idx < len(vocab_14):
+                    name = vocab_14[class_idx]
+                else:
+                    name = class_map_13.get(class_idx, f"unknown_{class_idx}")
             else:
-                name = class_map_13.get(class_idx, f"unknown_{class_idx}")
+                # 15-dim labels: 1..13 = class_map_13, 14 = floor (plus a tiny '_scene_' node)
+                name = 'floor' if class_idx == len(labels[j]) - 1 else class_map_13.get(class_idx, f"unknown_{class_idx}")
 
             if name in ['_scene_', 'padding', 'unknown_14']:
                 continue
@@ -108,7 +116,9 @@ def parse_final_json(file_path, full=False):
             }
 
             if name == 'floor':
-                floor = obj_data
+                # keep the largest floor-class box (the other class-14 entry is the scene node)
+                if floor is None or legacy_vocab or l * w > floor['size']['x'] * floor['size']['z']:
+                    floor = obj_data
             else:
                 scene_objs.append(obj_data)
         scenes[scene_id] = {'objects': scene_objs, 'floor': floor}
@@ -328,13 +338,15 @@ if __name__ == "__main__":
     parser.add_argument("--bbox_path", type=str, required=True, help="Path to the debug_bbox.txt or physcene_collision_input.json file")
     parser.add_argument("--out_dir", type=str, required=True, help="Directory to save the converted JSON files")
     parser.add_argument("--full", action="store_true", help="If specified, converts all scenes. If not, limits to the first 50 scenes.")
+    parser.add_argument("--legacy_vocab", action="store_true",
+                        help="Reproduce pre-2026-10 conversions (wrong 15-class decoding: no wardrobes, room = furniture extent)")
     args = parser.parse_args()
     
     debug_bbox_path = args.bbox_path
     out_dir = args.out_dir
     
     if debug_bbox_path.endswith('.json'):
-        scenes = parse_final_json(debug_bbox_path, full=args.full)
+        scenes = parse_final_json(debug_bbox_path, full=args.full, legacy_vocab=args.legacy_vocab)
     else:
         scenes = parse_debug_bbox(debug_bbox_path)
         
