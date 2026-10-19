@@ -521,80 +521,35 @@ def compute_relational_guidance_loss(
         ls, hs, ws = bbox[b, s, 0], bbox[b, s, 1], bbox[b, s, 2]
         lo, ho, wo = bbox[b, o, 0], bbox[b, o, 1], bbox[b, o, 2]
 
+        # Every predicate's loss is computed for all relations and the right one is
+        # picked per relation with torch.where: same values as masking each predicate,
+        # but without the host-device syncs of m.any() / boolean indexing.
+        dist_xz = torch.sqrt((xs - xo)**2 + (zs - zo)**2 + 1e-8)
+        d_flip_x = torch.sqrt((-xs - xo)**2 + (zs - zo)**2 + 1e-8)
+        d_flip_z = torch.sqrt((xs - xo)**2 + (-zs - zo)**2 + 1e-8)
+        d_flip_xz = torch.sqrt((-xs - xo)**2 + (-zs - zo)**2 + 1e-8)
+        min_symm_dist = torch.minimum(torch.minimum(d_flip_x, d_flip_z), d_flip_xz)
+        vol_s = ls.clamp(min=1e-3) * hs.clamp(min=1e-3) * ws.clamp(min=1e-3)
+        vol_o = lo.clamp(min=1e-3) * ho.clamp(min=1e-3) * wo.clamp(min=1e-3)
+        top_s = ys + hs.clamp(min=1e-3)
+        top_o = yo + ho.clamp(min=1e-3)
+        per_predicate = {
+            1: torch.relu(zs - zo + margin),                    # left: subject Z < object Z - margin
+            2: torch.relu(zo - zs + margin),                    # right: subject Z > object Z + margin
+            3: torch.relu(xo - xs + margin),                    # front: subject X > object X + margin
+            4: torch.relu(xs - xo + margin),                    # behind: subject X < object X - margin
+            5: torch.relu(dist_xz - close_threshold),           # close by: XZ distance <= close_threshold
+            6: torch.relu(yo - ys + margin),                    # above: subject Y above object Y (+margin)
+            7: torch.relu(torch.abs(ys - yo) - stand_threshold),  # standing on: center Y difference < stand_threshold
+            8: torch.relu(vol_o - 0.85 * vol_s),                # bigger than
+            9: torch.relu(1.15 * vol_s - vol_o),                # smaller than
+            10: torch.relu(top_o - 0.90 * top_s),               # taller than
+            11: torch.relu(1.10 * top_s - top_o),               # shorter than
+            12: torch.relu(min_symm_dist - close_threshold),    # symmetrical to (X, Z or XZ mirror)
+        }
         loss_vec = torch.zeros(len(s), device=device, dtype=dtype)
-
-        # 1. left: Subject Z must be < Object Z - margin (along Z axis)
-        m = (p == 1)
-        if m.any():
-            loss_vec[m] = torch.relu(zs[m] - zo[m] + margin)
-
-        # 2. right: Subject Z must be > Object Z + margin (along Z axis)
-        m = (p == 2)
-        if m.any():
-            loss_vec[m] = torch.relu(zo[m] - zs[m] + margin)
-
-        # 3. front: Subject X must be > Object X + margin (along X axis)
-        m = (p == 3)
-        if m.any():
-            loss_vec[m] = torch.relu(xo[m] - xs[m] + margin)
-
-        # 4. behind: Subject X must be < Object X - margin (along X axis)
-        m = (p == 4)
-        if m.any():
-            loss_vec[m] = torch.relu(xs[m] - xo[m] + margin)
-
-        # 5. close by: 2D distance between Subject and Object <= close_threshold (0.45m)
-        m = (p == 5)
-        if m.any():
-            dist_xz = torch.sqrt((xs[m] - xo[m])**2 + (zs[m] - zo[m])**2 + 1e-8)
-            loss_vec[m] = torch.relu(dist_xz - close_threshold)
-
-        # 6. standing on: Ground-level support alignment (Center Y difference < 0.04m)
-        m = (p == 7)
-        if m.any():
-            loss_vec[m] = torch.relu(torch.abs(ys[m] - yo[m]) - stand_threshold)
-
-        # 7. above: Subject Y must be above Object Y (+margin)
-        m = (p == 6)
-        if m.any():
-            loss_vec[m] = torch.relu(yo[m] - ys[m] + margin)
-
-        # 8. symmetrical to: Subject and Object are mirrored across X, Z, or XZ plane (within 0.45m)
-        m = (p == 12)
-        if m.any():
-            d_flip_x = torch.sqrt((-xs[m] - xo[m])**2 + (zs[m] - zo[m])**2 + 1e-8)
-            d_flip_z = torch.sqrt((xs[m] - xo[m])**2 + (-zs[m] - zo[m])**2 + 1e-8)
-            d_flip_xz = torch.sqrt((-xs[m] - xo[m])**2 + (-zs[m] - zo[m])**2 + 1e-8)
-            min_symm_dist = torch.minimum(torch.minimum(d_flip_x, d_flip_z), d_flip_xz)
-            loss_vec[m] = torch.relu(min_symm_dist - close_threshold)
-
-        # 9. bigger than: (vol_s - vol_o) / vol_s >= 0.15 <=> vol_o - 0.85 * vol_s <= 0
-        m = (p == 8)
-        if m.any():
-            vol_s = ls[m].clamp(min=1e-3) * hs[m].clamp(min=1e-3) * ws[m].clamp(min=1e-3)
-            vol_o = lo[m].clamp(min=1e-3) * ho[m].clamp(min=1e-3) * wo[m].clamp(min=1e-3)
-            loss_vec[m] = torch.relu(vol_o - 0.85 * vol_s)
-
-        # 10. smaller than: (vol_s - vol_o) / vol_s <= -0.15 <=> 1.15 * vol_s - vol_o <= 0
-        m = (p == 9)
-        if m.any():
-            vol_s = ls[m].clamp(min=1e-3) * hs[m].clamp(min=1e-3) * ws[m].clamp(min=1e-3)
-            vol_o = lo[m].clamp(min=1e-3) * ho[m].clamp(min=1e-3) * wo[m].clamp(min=1e-3)
-            loss_vec[m] = torch.relu(1.15 * vol_s - vol_o)
-
-        # 11. taller than: (top_s - top_o) / top_s >= 0.10 <=> top_o - 0.90 * top_s <= 0
-        m = (p == 10)
-        if m.any():
-            top_s = ys[m] + hs[m].clamp(min=1e-3)
-            top_o = yo[m] + ho[m].clamp(min=1e-3)
-            loss_vec[m] = torch.relu(top_o - 0.90 * top_s)
-
-        # 12. shorter than: (top_s - top_o) / top_s <= -0.10 <=> 1.10 * top_s - top_o <= 0
-        m = (p == 11)
-        if m.any():
-            top_s = ys[m] + hs[m].clamp(min=1e-3)
-            top_o = yo[m] + ho[m].clamp(min=1e-3)
-            loss_vec[m] = torch.relu(1.10 * top_s - top_o)
+        for pred_id, pred_loss in per_predicate.items():
+            loss_vec = torch.where(p == pred_id, pred_loss, loss_vec)
 
         total_loss = total_loss + loss_vec.sum()
 
