@@ -52,6 +52,12 @@ parser.add_argument('--livingroom', default=False, type=bool_flag, help='Eval fi
 parser.add_argument('--living',     default=False, type=bool_flag, help='Eval first 12 livingroom scenes (start_idx=162, max_samples=12)')
 parser.add_argument('--diningroom', default=False, type=bool_flag, help='Eval first 20 diningroom scenes (start_idx=245, max_samples=20)')
 parser.add_argument('--smalltest',  default=False, type=bool_flag, help='Eval all 52 smalltest scenes (20 bedrooms + 12 livingrooms + 20 diningrooms)')
+# Hyperparameter tuning without touching the test set
+parser.add_argument('--split', default='val_scans', choices=['val_scans', 'train_scans'], help='val_scans = SG-FRONT test set, train_scans = trainval')
+parser.add_argument('--subset', type=int, default=None, help='Evaluate a fixed random subset of N scenes (seed --subset_seed)')
+parser.add_argument('--subset_seed', type=int, default=0)
+parser.add_argument('--override', nargs='*', default=[], help='OmegaConf dotlist overrides for the diffusion config, e.g. layout_branch.diffusion_kwargs.inference_guidance.constraints.collision.weight=20')
+parser.add_argument('--out_name', type=str, default=None, help='Store results in <exp>/vis/<out_name> instead of <exp>/vis/<epoch>')
 args = parser.parse_args()
 
 # Apply room-shortcut overrides (mutually exclusive; last one wins if multiple set)
@@ -682,7 +688,7 @@ def evaluate():
 
     test_dataset_no_changes = ThreedFrontDatasetSceneGraph(
         root=args.dataset,
-        split='val_scans',
+        split=args.split,
         use_scene_rels=modelArgs['use_scene_rels'],
         with_changes=False,
         eval=True,
@@ -699,18 +705,27 @@ def evaluate():
             test_dataset_no_changes.scans[162:174] +
             test_dataset_no_changes.scans[245:265]
         )
+    elif args.subset is not None:
+        rng = np.random.RandomState(args.subset_seed)
+        idx = sorted(rng.choice(len(test_dataset_no_changes.scans), args.subset, replace=False))
+        test_dataset_no_changes.scans = [test_dataset_no_changes.scans[i] for i in idx]
     elif args.max_samples is not None:
         test_dataset_no_changes.scans = test_dataset_no_changes.scans[args.start_idx:args.start_idx + args.max_samples]
         #test_dataset_rels_changes.scans = test_dataset_rels_changes.scans[args.start_idx:args.start_idx + args.max_samples]
         #test_dataset_addition_changes.scans = test_dataset_addition_changes.scans[args.start_idx:args.start_idx + args.max_samples]
 
     modeltype_ = modelArgs['network_type']
-    modelArgs['store_path'] = os.path.join(args.exp, "vis", args.epoch)
+    modelArgs['store_path'] = os.path.join(args.exp, "vis", args.out_name or args.epoch)
     replacelatent_ = modelArgs['replace_latent'] if 'replace_latent' in modelArgs else None
     with_changes_ = modelArgs['with_changes'] if 'with_changes' in modelArgs else None
 
     diff_opt = modelArgs['diff_yaml']
     diff_cfg = OmegaConf.load(diff_opt)
+    if args.override:
+        diff_cfg = OmegaConf.merge(diff_cfg, OmegaConf.from_dotlist(args.override))
+        print('diffusion config overrides:', args.override)
+    os.makedirs(modelArgs['store_path'], exist_ok=True)
+    OmegaConf.save(diff_cfg, os.path.join(modelArgs['store_path'], 'diff_config_used.yaml'))
     diff_cfg.layout_branch.diffusion_kwargs.train_stats_file = test_dataset_no_changes.box_normalized_stats
     diff_cfg.layout_branch.denoiser_kwargs.using_clip = modelArgs['with_CLIP']
     model = SGDiff(type=modeltype_, diff_opt=diff_cfg, vocab=test_dataset_no_changes.vocab, replace_latent=replacelatent_,
