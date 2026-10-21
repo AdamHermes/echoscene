@@ -20,7 +20,8 @@ from .physical_guidance import (
     compute_center_penalty_loss, 
     compute_pathfinding_walkable_loss, 
     compute_edge_gaussian_walkable_loss,
-    compute_relational_guidance_loss
+    compute_relational_guidance_loss,
+    compute_room_outer_loss_rotated
 )
 #from helpers.threedfront_box3d import bbox_overlaps_3d, axis_aligned_bbox_overlaps_3d
 
@@ -620,7 +621,11 @@ class GaussianDiffusion:
         # Room outer loss computation
         room_outer_loss = 0.0
         if room_outer_active and denorm_boxes is not None:
-            room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
+            if bool(cfg_get(room_outer_cfg, 'rotated', False)):
+                room_outer_loss = compute_room_outer_loss_rotated(
+                    denorm_boxes, scene_ids, objectness, margin=float(cfg_get(room_outer_cfg, 'margin', 0.0)))
+            else:
+                room_outer_loss = compute_room_outer_loss(denorm_boxes, room_outer_box, scene_ids, objectness)
         
         # Directional & Support Relational Guidance Loss
         relational_loss = 0.0

@@ -62,6 +62,46 @@ def find_shortest_path(matrix, start, end):
 
     return None
 
+def compute_room_outer_loss_rotated(bbox, scene_ids=None, objectness=None, margin=0.0):
+    """
+    Room-boundary loss on rotated footprints, matching scripts/eval_ob.py: an object is out of bounds
+    when any corner of its rotated XZ footprint lies outside the (rotated) floor rectangle. Penalizes
+    each corner's distance outside the floor shrunk by `margin`. Only translations get gradients
+    (angles are detached) so the loss moves objects instead of turning them.
+    bbox: [N, 7] denormalized (l, h, w, x, y, z, angle in radians); floor = largest non-object box.
+    """
+    if len(bbox.shape) == 3:
+        bbox = bbox.squeeze(0)
+    half = bbox[:, :3].clamp(min=1e-4) * 0.5
+    ang = bbox[:, 6].detach()
+    c, s = torch.cos(ang), torch.sin(ang)
+    sx = torch.tensor([1., 1., -1., -1.], device=bbox.device, dtype=bbox.dtype)
+    sz = torch.tensor([1., -1., -1., 1.], device=bbox.device, dtype=bbox.dtype)
+    dx, dz = half[:, 0:1] * sx, half[:, 2:3] * sz                            # [N, 4]
+    cx = bbox[:, 3:4] + dx * c[:, None] - dz * s[:, None]                     # same convention as eval_ob.py
+    cz = bbox[:, 5:6] + dx * s[:, None] + dz * c[:, None]
+
+    total_loss = bbox.new_zeros(())
+    unique_scenes = torch.unique(scene_ids) if scene_ids is not None else [0]
+    for scene_id in unique_scenes:
+        scene_mask = (scene_ids == scene_id) if scene_ids is not None else torch.ones(bbox.shape[0], dtype=torch.bool, device=bbox.device)
+        if objectness is None:
+            continue  # no way to tell the floor from furniture
+        obj = objectness.to(dtype=torch.bool, device=bbox.device).view(-1)
+        obj_mask, non_obj_mask = scene_mask & obj, scene_mask & ~obj
+        if not obj_mask.any() or not non_obj_mask.any():
+            continue
+        non_obj_idx = torch.where(non_obj_mask)[0]
+        f = non_obj_idx[torch.argmax(half[non_obj_idx, 0] * half[non_obj_idx, 2])]
+        fx, fz, fa = bbox[f, 3].detach(), bbox[f, 5].detach(), bbox[f, 6].detach()
+        fhx, fhz = half[f, 0].detach() - margin, half[f, 2].detach() - margin
+        rx, rz = cx[obj_mask] - fx, cz[obj_mask] - fz                         # corners in the floor frame
+        lx = rx * torch.cos(fa) + rz * torch.sin(fa)
+        lz = -rx * torch.sin(fa) + rz * torch.cos(fa)
+        total_loss = total_loss + torch.relu(lx.abs() - fhx).sum() + torch.relu(lz.abs() - fhz).sum()
+    return total_loss
+
+
 def compute_room_outer_loss(bbox, room_outer_box=None, scene_ids=None, objectness=None):
     """
     Computes Room-Layout Guidance loss by penalizing overlap with infinite walls or boundaries.
