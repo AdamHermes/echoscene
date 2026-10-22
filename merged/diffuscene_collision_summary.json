@@ -1,0 +1,1547 @@
+{
+  "method": "mesh",
+  "backend": "kaolin",
+  "transform_source": "json",
+  "size_scale": 1.0,
+  "object_mesh_root": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh",
+  "scene_count": 20,
+  "object_count": 98,
+  "collided_object_count": 6,
+  "collided_scene_count": 2,
+  "ColObj": 0.061224489795918366,
+  "ColScene": 0.1,
+  "per_scene": [
+    {
+      "scene_id": "Bedroom-87322_13_013",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-87322_13_013/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7697755098342896,
+            0.1485653668642044,
+            1.4901163578033447
+          ],
+          "bounds_max": [
+            -1.5603559017181396,
+            0.43328189849853516,
+            1.7671394348144531
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-87322_13_013/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.7027866840362549,
+            0.14539502561092377,
+            -1.0755120515823364
+          ],
+          "bounds_max": [
+            -1.4911119937896729,
+            0.42925724387168884,
+            -0.7949734330177307
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-87322_13_013/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4160585403442383,
+            0.22466367483139038,
+            -0.006207108497619629
+          ],
+          "bounds_max": [
+            -0.2894224524497986,
+            0.6746120452880859,
+            0.6293120384216309
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-68718_14_014",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-68718_14_014/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            1.3988986015319824,
+            0.6014010310173035,
+            -1.00482177734375
+          ],
+          "bounds_max": [
+            1.7034883499145508,
+            1.8028912544250488,
+            -0.10579630732536316
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-68718_14_014/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6091783046722412,
+            0.1471068561077118,
+            -1.3892016410827637
+          ],
+          "bounds_max": [
+            -1.3153482675552368,
+            0.4458613097667694,
+            -1.160496473312378
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-68718_14_014/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.6684321165084839,
+            0.26914331316947937,
+            -0.8701550364494324
+          ],
+          "bounds_max": [
+            0.2172066867351532,
+            0.8124364614486694,
+            0.275329053401947
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-68718_14_014/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            0.8521488904953003,
+            0.14688289165496826,
+            -1.372946858406067
+          ],
+          "bounds_max": [
+            1.1449352502822876,
+            0.446225643157959,
+            -1.1445316076278687
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-6482_3_003",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-6482_3_003/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1687190532684326,
+            0.10254231840372086,
+            0.2543482780456543
+          ],
+          "bounds_max": [
+            1.403982162475586,
+            0.2958371639251709,
+            0.5582478046417236
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-6482_3_003/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5212713479995728,
+            0.10334573686122894,
+            -0.8255876898765564
+          ],
+          "bounds_max": [
+            -1.277604341506958,
+            0.31064146757125854,
+            -0.5378978848457336
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-6482_3_003/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.1169970035552979,
+            0.2755984961986542,
+            0.09011811017990112
+          ],
+          "bounds_max": [
+            -0.034009456634521484,
+            0.8170534372329712,
+            1.2159240245819092
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-6482_3_003/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            1.3840447664260864,
+            0.10037744790315628,
+            0.22860461473464966
+          ],
+          "bounds_max": [
+            1.5874577760696411,
+            0.30429595708847046,
+            1.2230838537216187
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-6482_3_003/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            0.325345516204834,
+            0.6023823022842407,
+            -1.7167372703552246
+          ],
+          "bounds_max": [
+            1.2392224073410034,
+            1.8046739101409912,
+            -1.4128050804138184
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-11167_4_004",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-11167_4_004/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            0.31861114501953125,
+            0.46439167857170105,
+            0.5256268978118896
+          ],
+          "bounds_max": [
+            0.9279665350914001,
+            1.4115917682647705,
+            1.037543773651123
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-11167_4_004/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            1.2179533243179321,
+            0.11052846163511276,
+            0.25116440653800964
+          ],
+          "bounds_max": [
+            1.3661596775054932,
+            0.33188092708587646,
+            0.4049076735973358
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-11167_4_004/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            0.09151816368103027,
+            0.2431614249944687,
+            -1.5168275833129883
+          ],
+          "bounds_max": [
+            1.1351351737976074,
+            0.7273593544960022,
+            -0.4315837025642395
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-27127_5_005",
+      "object_count": 6,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-27127_5_005/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.49142587184906,
+            1.9154471158981323,
+            -0.9589728116989136
+          ],
+          "bounds_max": [
+            -1.218383550643921,
+            2.260596752166748,
+            -0.6895279884338379
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-27127_5_005/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.31687742471694946,
+            2.370185613632202,
+            0.028220027685165405
+          ],
+          "bounds_max": [
+            0.02810673415660858,
+            2.585991144180298,
+            0.36916595697402954
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-27127_5_005/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5738211870193481,
+            0.14221258461475372,
+            1.4948163032531738
+          ],
+          "bounds_max": [
+            -1.2723643779754639,
+            0.4190356731414795,
+            1.8048388957977295
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-27127_5_005/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.0337696075439453,
+            0.33712172508239746,
+            -0.20045319199562073
+          ],
+          "bounds_max": [
+            0.11046549677848816,
+            1.0079963207244873,
+            0.9870445728302002
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-27127_5_005/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5451523065567017,
+            0.14020417630672455,
+            -1.242395043373108
+          ],
+          "bounds_max": [
+            -1.2443861961364746,
+            0.4164104163646698,
+            -0.9294771552085876
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-27127_5_005/object_005.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5026476383209229,
+            1.8905830383300781,
+            1.4175201654434204
+          ],
+          "bounds_max": [
+            -1.2290476560592651,
+            2.239804744720459,
+            1.686885952949524
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-75552_6_006",
+      "object_count": 4,
+      "collided_object_count": 2,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-75552_6_006/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            0.04237149655818939,
+            2.268319845199585,
+            -0.16164685785770416
+          ],
+          "bounds_max": [
+            0.3341069519519806,
+            2.498387575149536,
+            0.1341691017150879
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-75552_6_006/object_001.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.3766772747039795,
+            0.5915616750717163,
+            -0.6658684015274048
+          ],
+          "bounds_max": [
+            -1.0405735969543457,
+            1.7881652116775513,
+            0.8115520477294922
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-75552_6_006/object_002.obj",
+          "collides": true,
+          "bounds_min": [
+            -1.4591784477233887,
+            0.23004432022571564,
+            -0.8541685342788696
+          ],
+          "bounds_max": [
+            -1.248841643333435,
+            0.6744893789291382,
+            -0.09618192911148071
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-75552_6_006/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.36585530638694763,
+            0.3644985258579254,
+            -0.1258535385131836
+          ],
+          "bounds_max": [
+            0.7925273180007935,
+            1.091484785079956,
+            0.9627599120140076
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-19119_7_007",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-19119_7_007/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2910287380218506,
+            0.31857988238334656,
+            -0.9765482544898987
+          ],
+          "bounds_max": [
+            0.11507785320281982,
+            0.9691177606582642,
+            0.28744059801101685
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-19119_7_007/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.7733641862869263,
+            2.4420177936553955,
+            -0.2733704149723053
+          ],
+          "bounds_max": [
+            -0.39826804399490356,
+            2.5530002117156982,
+            0.04319014400243759
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-19119_7_007/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -2.02649188041687,
+            0.14483897387981415,
+            -1.440941333770752
+          ],
+          "bounds_max": [
+            -1.7837729454040527,
+            0.43034759163856506,
+            -1.2011137008666992
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-12352_20_020",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-12352_20_020/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            0.07755984365940094,
+            2.080303192138672,
+            -0.1214236170053482
+          ],
+          "bounds_max": [
+            0.3663328289985657,
+            2.3581061363220215,
+            0.1687082052230835
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-12352_20_020/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.01785913109779358,
+            0.21125857532024384,
+            -0.7373735904693604
+          ],
+          "bounds_max": [
+            0.757940411567688,
+            0.6406214237213135,
+            0.2622848153114319
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-12352_20_020/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            1.113356113433838,
+            0.12128507345914841,
+            -1.1963266134262085
+          ],
+          "bounds_max": [
+            1.3983217477798462,
+            0.3601747453212738,
+            -0.9717341065406799
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-12352_20_020/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.7842577695846558,
+            0.11919669806957245,
+            -1.2060034275054932
+          ],
+          "bounds_max": [
+            -0.5077049732208252,
+            0.3585333526134491,
+            -0.983290433883667
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-12352_20_020/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.4095101356506348,
+            0.5648456811904907,
+            -0.8781459331512451
+          ],
+          "bounds_max": [
+            -1.1098281145095825,
+            1.6958078145980835,
+            -0.12497082352638245
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-7894_21_021",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-7894_21_021/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.4286154806613922,
+            1.8264390230178833,
+            -0.22538141906261444
+          ],
+          "bounds_max": [
+            0.05776144564151764,
+            2.468109130859375,
+            0.26023682951927185
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-7894_21_021/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            1.518768310546875,
+            0.6132948994636536,
+            -1.9745508432388306
+          ],
+          "bounds_max": [
+            1.7360457181930542,
+            1.8384790420532227,
+            0.1599748134613037
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-7894_21_021/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.7456237077713013,
+            0.20751971006393433,
+            -0.2392463982105255
+          ],
+          "bounds_max": [
+            0.4172419309616089,
+            0.6081300377845764,
+            0.8413345813751221
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-7894_21_021/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.5405923128128052,
+            0.22471968829631805,
+            1.0782703161239624
+          ],
+          "bounds_max": [
+            -1.2674413919448853,
+            0.6590142250061035,
+            1.2812614440917969
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-7894_21_021/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            0.988422155380249,
+            0.2200920432806015,
+            1.136016845703125
+          ],
+          "bounds_max": [
+            1.2539958953857422,
+            0.6486398577690125,
+            1.339034914970398
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-118594_22_022",
+      "object_count": 7,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-118594_22_022/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            0.03166922181844711,
+            2.0852487087249756,
+            0.21849802136421204
+          ],
+          "bounds_max": [
+            0.20695936679840088,
+            2.3168463706970215,
+            0.39475083351135254
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-118594_22_022/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.8271124958992004,
+            0.30320146679878235,
+            -0.21309618651866913
+          ],
+          "bounds_max": [
+            0.19326698780059814,
+            0.8955809473991394,
+            0.7036663293838501
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-118594_22_022/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.316235899925232,
+            1.4712655544281006,
+            -1.172528862953186
+          ],
+          "bounds_max": [
+            -1.1813009977340698,
+            1.7718126773834229,
+            -1.0345419645309448
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-118594_22_022/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.9029625654220581,
+            0.529473066329956,
+            -1.9113948345184326
+          ],
+          "bounds_max": [
+            -0.08096739649772644,
+            1.5847337245941162,
+            -1.6231791973114014
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-118594_22_022/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3414462804794312,
+            1.1870787143707275,
+            1.4564573764801025
+          ],
+          "bounds_max": [
+            -1.2490830421447754,
+            1.4400484561920166,
+            1.5595574378967285
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-118594_22_022/object_005.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2902740240097046,
+            0.1290833055973053,
+            -1.1846067905426025
+          ],
+          "bounds_max": [
+            -1.0698702335357666,
+            0.39260536432266235,
+            -0.920405387878418
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-118594_22_022/object_006.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3395169973373413,
+            0.1287134885787964,
+            1.4123516082763672
+          ],
+          "bounds_max": [
+            -1.1168439388275146,
+            0.39280325174331665,
+            1.6760122776031494
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-6399_23_023",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-6399_23_023/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.1786043643951416,
+            0.21572189033031464,
+            -1.481735348701477
+          ],
+          "bounds_max": [
+            -0.3822268545627594,
+            0.6465479731559753,
+            -1.2744743824005127
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-6399_23_023/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.9206784963607788,
+            0.5238943099975586,
+            -1.0629465579986572
+          ],
+          "bounds_max": [
+            -1.6004669666290283,
+            1.5745024681091309,
+            -0.1608460545539856
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-6399_23_023/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            0.2826446294784546,
+            0.30561569333076477,
+            -0.9474344253540039
+          ],
+          "bounds_max": [
+            1.3106906414031982,
+            0.906286358833313,
+            0.11755406856536865
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-6399_23_023/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            1.93049955368042,
+            0.158099964261055,
+            -1.438767671585083
+          ],
+          "bounds_max": [
+            2.309609889984131,
+            0.473389595746994,
+            -1.1181461811065674
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-52584_24_024",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-52584_24_024/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            0.7598961591720581,
+            0.11686293035745621,
+            1.4052428007125854
+          ],
+          "bounds_max": [
+            1.0318081378936768,
+            0.34187051653862,
+            1.6043955087661743
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-52584_24_024/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.45472314953804016,
+            0.34671640396118164,
+            -0.12516647577285767
+          ],
+          "bounds_max": [
+            0.4349149167537689,
+            1.035752296447754,
+            1.014998435974121
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-52584_24_024/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            1.2579628229141235,
+            0.2754095792770386,
+            -0.23249883949756622
+          ],
+          "bounds_max": [
+            1.4643642902374268,
+            0.8122609853744507,
+            0.4460263252258301
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-52584_24_024/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.5800366401672363,
+            0.11972714215517044,
+            -1.4660900831222534
+          ],
+          "bounds_max": [
+            0.3570941686630249,
+            0.3650771379470825,
+            -1.2616649866104126
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-52584_24_024/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.11264725029468536,
+            2.205150842666626,
+            0.07954226434230804
+          ],
+          "bounds_max": [
+            0.09628697484731674,
+            2.4494664669036865,
+            0.282572865486145
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-860_25_025",
+      "object_count": 3,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-860_25_025/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1675728559494019,
+            0.13086605072021484,
+            1.2119125127792358
+          ],
+          "bounds_max": [
+            1.3590524196624756,
+            0.39195501804351807,
+            1.4019089937210083
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-860_25_025/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            0.033826589584350586,
+            0.6063910722732544,
+            -1.411784291267395
+          ],
+          "bounds_max": [
+            0.9434949159622192,
+            1.8086611032485962,
+            -1.1118820905685425
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-860_25_025/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.4380619525909424,
+            0.19610846042633057,
+            -0.40334469079971313
+          ],
+          "bounds_max": [
+            0.7671806812286377,
+            0.5854160189628601,
+            0.746068000793457
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-2719_8_008",
+      "object_count": 4,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-2719_8_008/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2570282220840454,
+            0.3674740195274353,
+            0.3218027353286743
+          ],
+          "bounds_max": [
+            -0.1050824522972107,
+            1.0984225273132324,
+            1.2667196989059448
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-2719_8_008/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            0.4858282208442688,
+            0.1695122867822647,
+            0.2849622368812561
+          ],
+          "bounds_max": [
+            0.864396333694458,
+            0.49688035249710083,
+            1.0510127544403076
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-2719_8_008/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.8224146366119385,
+            0.1998349130153656,
+            -0.49988389015197754
+          ],
+          "bounds_max": [
+            -1.6034586429595947,
+            0.5994107723236084,
+            -0.24024531245231628
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-2719_8_008/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6977293491363525,
+            0.20147649943828583,
+            1.8560751676559448
+          ],
+          "bounds_max": [
+            -1.4799786806106567,
+            0.6008761525154114,
+            2.110299587249756
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-430_9_009",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-430_9_009/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2799485921859741,
+            0.12728291749954224,
+            1.6464706659317017
+          ],
+          "bounds_max": [
+            -0.9170704483985901,
+            0.37161582708358765,
+            1.8524142503738403
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-430_9_009/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.623140275478363,
+            0.30024486780166626,
+            0.33952492475509644
+          ],
+          "bounds_max": [
+            0.22047525644302368,
+            0.8994230628013611,
+            1.4261679649353027
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-430_9_009/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            1.352800965309143,
+            0.37002041935920715,
+            0.22107893228530884
+          ],
+          "bounds_max": [
+            1.6221672296524048,
+            1.1111834049224854,
+            1.3609631061553955
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-430_9_009/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.21468417346477509,
+            2.0191752910614014,
+            -0.20532020926475525
+          ],
+          "bounds_max": [
+            0.16458547115325928,
+            2.361619472503662,
+            0.2342788577079773
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-430_9_009/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.6326236724853516,
+            0.37672221660614014,
+            -1.7580534219741821
+          ],
+          "bounds_max": [
+            0.19093838334083557,
+            1.104493260383606,
+            -1.5787925720214844
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "MasterBedroom-18415_10_010",
+      "object_count": 8,
+      "collided_object_count": 4,
+      "has_collision": true,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-18415_10_010/object_000.obj",
+          "collides": true,
+          "bounds_min": [
+            1.3607944250106812,
+            2.072307825088501,
+            -1.55819833278656
+          ],
+          "bounds_max": [
+            1.6014611721038818,
+            2.470487117767334,
+            -1.207929015159607
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-18415_10_010/object_001.obj",
+          "collides": true,
+          "bounds_min": [
+            1.417412281036377,
+            2.057924747467041,
+            0.9942572116851807
+          ],
+          "bounds_max": [
+            1.6442193984985352,
+            2.45639705657959,
+            1.3481441736221313
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-18415_10_010/object_002.obj",
+          "collides": true,
+          "bounds_min": [
+            1.439193606376648,
+            2.0509414672851562,
+            -1.5676358938217163
+          ],
+          "bounds_max": [
+            1.7202218770980835,
+            2.442227363586426,
+            -1.2030607461929321
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-18415_10_010/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            1.4993200302124023,
+            0.12442228943109512,
+            -1.7018835544586182
+          ],
+          "bounds_max": [
+            1.7426458597183228,
+            0.3693012595176697,
+            -1.4033360481262207
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-18415_10_010/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            0.06425577402114868,
+            0.2254953384399414,
+            -0.6363391280174255
+          ],
+          "bounds_max": [
+            1.1723377704620361,
+            0.6684300303459167,
+            0.1395859718322754
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-18415_10_010/object_005.obj",
+          "collides": true,
+          "bounds_min": [
+            1.4154351949691772,
+            2.0986883640289307,
+            1.0197112560272217
+          ],
+          "bounds_max": [
+            1.64313542842865,
+            2.4935410022735596,
+            1.3857978582382202
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-18415_10_010/object_006.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.008982107043266296,
+            1.8740944862365723,
+            -0.4123670160770416
+          ],
+          "bounds_max": [
+            0.3224071264266968,
+            2.2675869464874268,
+            -0.07773233950138092
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/MasterBedroom-18415_10_010/object_007.obj",
+          "collides": false,
+          "bounds_min": [
+            1.51796555519104,
+            0.12374535202980042,
+            0.9760282039642334
+          ],
+          "bounds_max": [
+            1.7592473030090332,
+            0.3685765266418457,
+            1.279268741607666
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-1145_11_011",
+      "object_count": 6,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-1145_11_011/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.05083167552947998,
+            2.2277231216430664,
+            -0.9394634366035461
+          ],
+          "bounds_max": [
+            0.40179064869880676,
+            2.6985487937927246,
+            -0.484563410282135
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-1145_11_011/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.3337490558624268,
+            0.15042810142040253,
+            -2.1427440643310547
+          ],
+          "bounds_max": [
+            -1.083117127418518,
+            0.457183301448822,
+            -1.8982822895050049
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-1145_11_011/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.3674212098121643,
+            0.391193151473999,
+            -1.6739916801452637
+          ],
+          "bounds_max": [
+            0.6891078948974609,
+            1.169258713722229,
+            -0.5050981640815735
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-1145_11_011/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            1.494729995727539,
+            0.5069760084152222,
+            0.4395790100097656
+          ],
+          "bounds_max": [
+            2.039050579071045,
+            1.5436697006225586,
+            0.7178645133972168
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-1145_11_011/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            1.4139894247055054,
+            0.15271249413490295,
+            -2.1390581130981445
+          ],
+          "bounds_max": [
+            1.664841890335083,
+            0.46017736196517944,
+            -1.8944857120513916
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-1145_11_011/object_005.obj",
+          "collides": false,
+          "bounds_min": [
+            -2.1591601371765137,
+            0.5882951617240906,
+            -1.8298883438110352
+          ],
+          "bounds_max": [
+            -1.8306137323379517,
+            1.7805224657058716,
+            -0.8161113262176514
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-2787_12_012",
+      "object_count": 7,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-2787_12_012/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            1.4101593494415283,
+            0.12256114184856415,
+            1.8452134132385254
+          ],
+          "bounds_max": [
+            1.6386533975601196,
+            0.37261486053466797,
+            2.115614891052246
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-2787_12_012/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            1.144091010093689,
+            2.005662679672241,
+            1.6608723402023315
+          ],
+          "bounds_max": [
+            1.4650630950927734,
+            2.43045973777771,
+            2.0084280967712402
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-2787_12_012/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.05364412069320679,
+            0.2835828363895416,
+            0.10790383815765381
+          ],
+          "bounds_max": [
+            1.0677027702331543,
+            0.8461625576019287,
+            1.1649408340454102
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-2787_12_012/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            1.1210944652557373,
+            1.9952576160430908,
+            -0.4594096541404724
+          ],
+          "bounds_max": [
+            1.4525182247161865,
+            2.419318199157715,
+            -0.09408926963806152
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-2787_12_012/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.6272542476654053,
+            0.18111422657966614,
+            0.9964947700500488
+          ],
+          "bounds_max": [
+            -1.4036904573440552,
+            0.5531865358352661,
+            1.7297182083129883
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-2787_12_012/object_005.obj",
+          "collides": false,
+          "bounds_min": [
+            1.4023102521896362,
+            0.12302017211914062,
+            -0.6473000049591064
+          ],
+          "bounds_max": [
+            1.6300103664398193,
+            0.3727383315563202,
+            -0.3737186789512634
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-2787_12_012/object_006.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.12230876833200455,
+            2.3129913806915283,
+            0.4607897698879242
+          ],
+          "bounds_max": [
+            0.226130872964859,
+            2.7361345291137695,
+            0.8324978351593018
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "Bedroom-12864_18_018",
+      "object_count": 5,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-12864_18_018/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.4582171142101288,
+            0.5912602543830872,
+            1.1722015142440796
+          ],
+          "bounds_max": [
+            1.0156644582748413,
+            1.7886769771575928,
+            1.5056968927383423
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-12864_18_018/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.1911686658859253,
+            2.1236000061035156,
+            -0.5170421600341797
+          ],
+          "bounds_max": [
+            0.32523104548454285,
+            2.5604209899902344,
+            0.0014120936393737793
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-12864_18_018/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            -0.7444409132003784,
+            0.3910555839538574,
+            -0.8885720372200012
+          ],
+          "bounds_max": [
+            0.4217914044857025,
+            1.172471046447754,
+            0.1620159149169922
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-12864_18_018/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2246057987213135,
+            0.1568703055381775,
+            -1.6837583780288696
+          ],
+          "bounds_max": [
+            -0.9800258874893188,
+            0.4630795121192932,
+            -1.4358274936676025
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/Bedroom-12864_18_018/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.2320159673690796,
+            0.15455031394958496,
+            0.8046180009841919
+          ],
+          "bounds_max": [
+            -0.9886407852172852,
+            0.46107399463653564,
+            1.050008773803711
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "SecondBedroom-266050_19_019",
+      "object_count": 6,
+      "collided_object_count": 0,
+      "has_collision": false,
+      "objects": [
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-266050_19_019/object_000.obj",
+          "collides": false,
+          "bounds_min": [
+            -1.139333724975586,
+            2.812096357345581,
+            -1.1139287948608398
+          ],
+          "bounds_max": [
+            -0.9614285826683044,
+            2.8758485317230225,
+            -0.9440231919288635
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-266050_19_019/object_001.obj",
+          "collides": false,
+          "bounds_min": [
+            1.0279076099395752,
+            0.26770249009132385,
+            -1.211523175239563
+          ],
+          "bounds_max": [
+            1.2992420196533203,
+            0.7946298122406006,
+            -0.9454655051231384
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-266050_19_019/object_002.obj",
+          "collides": false,
+          "bounds_min": [
+            1.9069172143936157,
+            0.19807904958724976,
+            -1.0644102096557617
+          ],
+          "bounds_max": [
+            2.21640944480896,
+            0.5823275446891785,
+            -0.5594128370285034
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-266050_19_019/object_003.obj",
+          "collides": false,
+          "bounds_min": [
+            2.1018316745758057,
+            0.19080238044261932,
+            1.6825379133224487
+          ],
+          "bounds_max": [
+            2.3384621143341064,
+            0.575477123260498,
+            1.9461908340454102
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-266050_19_019/object_004.obj",
+          "collides": false,
+          "bounds_min": [
+            0.6040070056915283,
+            2.737330198287964,
+            0.4714645445346832
+          ],
+          "bounds_max": [
+            0.8670679330825806,
+            2.8052127361297607,
+            0.7308759093284607
+          ]
+        },
+        {
+          "path": "/content/drive/MyDrive/DiffuScene/merge_b/drive-download-20260731T041851Z-1-001/merged/scene_mesh/SecondBedroom-266050_19_019/object_005.obj",
+          "collides": false,
+          "bounds_min": [
+            0.7507333755493164,
+            0.26138532161712646,
+            0.19849446415901184
+          ],
+          "bounds_max": [
+            1.8584500551223755,
+            0.7856020927429199,
+            1.1927990913391113
+          ]
+        }
+      ]
+    }
+  ]
+}

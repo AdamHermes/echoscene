@@ -22,6 +22,7 @@ def evaluate_3dssg():
     parser.add_argument('--json_dir', required=False, type=str, default=None, help='Path to directory of JSONs')
     parser.add_argument('--start_idx', type=int, default=0, help='Start index')
     parser.add_argument('--max_samples', type=int, default=-1, help='Max samples')
+    parser.add_argument('--output_dir', type=str, default=None, help='Output directory (use a separate directory per parallel job)')
 
     parser.add_argument('--dataset', required=False, type=str, default="FRONT", help="dataset path")
     parser.add_argument('--exp', default='../released_full_model', help='experiment name')
@@ -38,7 +39,7 @@ def evaluate_3dssg():
     with open(argsJson) as j:
         modelArgs = json.load(j)
 
-    modelArgs['store_path'] = os.path.join(args.exp, "vis_3dssg", args.epoch)
+    modelArgs['store_path'] = args.output_dir or os.path.join(args.exp, "vis_3dssg", args.epoch)
     os.makedirs(modelArgs['store_path'], exist_ok=True)
     
     # 1. Load Vocab matching ThreedFrontDatasetSceneGraph logic

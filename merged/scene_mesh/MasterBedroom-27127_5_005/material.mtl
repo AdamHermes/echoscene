@@ -1,0 +1,8 @@
+# https://github.com/mikedh/trimesh
+
+newmtl glass_001_wire
+Ka 0.25098039 0.25098039 0.26274510
+Kd 0.25098039 0.25098039 0.26274510
+Ks 1.00000000 1.00000000 1.00000000
+Ns 1.00000000
+map_Kd glass_001_wire.png
