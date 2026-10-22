@@ -23,6 +23,7 @@ def evaluate_3dssg():
     parser.add_argument('--start_idx', type=int, default=0, help='Start index')
     parser.add_argument('--max_samples', type=int, default=-1, help='Max samples')
     parser.add_argument('--output_dir', type=str, default=None, help='Output directory (use a separate directory per parallel job)')
+    parser.add_argument('--disable_physical_guidance', action='store_true', help='Disable layout physical guidance for this run only')
 
     parser.add_argument('--dataset', required=False, type=str, default="FRONT", help="dataset path")
     parser.add_argument('--exp', default='../released_full_model', help='experiment name')
@@ -78,6 +79,10 @@ def evaluate_3dssg():
     print("Loading Model...")
     diff_opt = modelArgs['diff_yaml']
     diff_cfg = OmegaConf.load(diff_opt)
+    if args.disable_physical_guidance:
+        OmegaConf.update(diff_cfg, 'layout_branch.inference_guidance.enabled', False, merge=False)
+    print('Physical guidance enabled:', bool(OmegaConf.select(
+        diff_cfg, 'layout_branch.inference_guidance.enabled', default=False)), flush=True)
     # the model expects a train_stats_file for normalization
     diff_cfg.layout_branch.diffusion_kwargs.train_stats_file = os.path.join(args.dataset, f'centered_bounds_{args.room_type}_trainval.txt')
     diff_cfg.layout_branch.denoiser_kwargs.using_clip = modelArgs['with_CLIP']

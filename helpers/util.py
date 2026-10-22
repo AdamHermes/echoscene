@@ -297,8 +297,21 @@ def pytorch3d_to_trimesh(pytorch3d_mesh):
 
 def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes=False, colors=None, without_lamp=False):
     mesh_gen = sdf_to_mesh(shapes,render_all=True)
+    if mesh_gen is None:
+        raise ValueError('SDF-to-mesh conversion failed for the generated shapes')
     colors = iter(colors)
-    trimesh_meshes = iter([pytorch3d_to_trimesh(mesh) for mesh in mesh_gen])
+    # Access geometry directly: indexing a textured empty mesh fails inside
+    # PyTorch3D before we can check whether marching cubes found a surface.
+    converted_meshes = []
+    for verts, faces in zip(mesh_gen.verts_list(), mesh_gen.faces_list()):
+        if len(verts) == 0 or len(faces) == 0:
+            converted_meshes.append(None)
+            continue
+        obj = trimesh.Trimesh(vertices=verts.detach().cpu().numpy(),
+                              faces=faces.detach().cpu().numpy(), process=False)
+        obj.invert()
+        converted_meshes.append(obj)
+    trimesh_meshes = iter(converted_meshes)
     obj_list = []
     lamp_mesh_list = []
     raw_obj_list = []
@@ -310,6 +323,11 @@ def get_generated_shapes(boxes, shapes, cat_ids, classes, mesh_dir, render_boxes
             continue
         obj = next(trimesh_meshes)
         color = next(colors)
+        if obj is None:
+            print(f'Warning: generated mesh is empty for object {j} ({query_label}); '
+                  'omitting its mesh from rendering. Its predicted box is retained.', flush=True)
+            instance_id += 1
+            continue
         obj.visual.vertex_colors = color
         obj.visual.face_colors = color
         raw_obj_list.append(obj.copy())

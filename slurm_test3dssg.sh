@@ -3,7 +3,7 @@
 #SBATCH --output=logs/test3dssg_%A_%a.out
 #SBATCH --error=logs/test3dssg_%A_%a.err
 #SBATCH --array=0-5
-#SBATCH --gres=gpu:1
+#SBATCH --gpus=a100-40:1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -47,8 +47,13 @@ EXP_DIR="$(cd "$EXP_DIR" && pwd)"
 DATASET_DIR="$(cd "$DATASET_DIR" && pwd)"
 
 TOTAL_SCENES="$(python -c 'import glob, os, sys; print(len(glob.glob(os.path.join(sys.argv[1], "*.json"))))' "$JSON_DIR")"
-TASK_OFFSET=$((SLURM_ARRAY_TASK_ID - SLURM_ARRAY_TASK_MIN))
-TASK_COUNT="$SLURM_ARRAY_TASK_COUNT"
+# Keep the original six partitions when resubmitting a subset of task IDs.
+TASK_OFFSET="$SLURM_ARRAY_TASK_ID"
+TASK_COUNT=6
+if (( TASK_OFFSET < 0 || TASK_OFFSET >= TASK_COUNT )); then
+    echo "Task ID must be between 0 and 5." >&2
+    exit 1
+fi
 START_IDX=$((TOTAL_SCENES * TASK_OFFSET / TASK_COUNT))
 END_IDX=$((TOTAL_SCENES * (TASK_OFFSET + 1) / TASK_COUNT))
 MAX_SAMPLES=$((END_IDX - START_IDX))
