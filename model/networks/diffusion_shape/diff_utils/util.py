@@ -94,8 +94,7 @@ def mkdirs(paths):
 
 
 def mkdir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
+    os.makedirs(path, exist_ok=True)
 
 def seed_everything(seed):
     
