@@ -31,6 +31,7 @@ def evaluate_out_of_bound(json_path, conf_thresh=0.0):
     tot_ob = 0
     num_scenes = len(data["class_labels"])
     processed_scenes = 0
+    room_stats = {}  # room type -> [OB objects, objects, scenes]
 
     for i in range(num_scenes):
         trans = np.array(data["translations"][i])
@@ -77,7 +78,10 @@ def evaluate_out_of_bound(json_path, conf_thresh=0.0):
             valid_furniture = valid_furniture & (objness > conf_thresh)
 
         valid_idx = np.where(valid_furniture)[0]
-        
+        room = ''.join(ch for ch in str(data["scene_ids"][i]).split('-')[0] if ch.isalpha()).lower() if "scene_ids" in data else 'all'
+        rs = room_stats.setdefault(room, [0, 0, 0])
+        rs[2] += 1
+
         for idx_i in valid_idx:
             cos_i, sin_i = np.cos(angles[idx_i]), np.sin(angles[idx_i])
             dx_i = np.array([sizes[idx_i][0] / 2, sizes[idx_i][0] / 2, -sizes[idx_i][0] / 2, -sizes[idx_i][0] / 2])
@@ -92,8 +96,10 @@ def evaluate_out_of_bound(json_path, conf_thresh=0.0):
             # Allow a small threshold (e.g. 1e-4)
             if furn_poly.area - intersection.area > 1e-4:
                 tot_ob += 1
-                
+                rs[0] += 1
+
             tot_obj += 1
+            rs[1] += 1
 
     ob_rate = tot_ob / tot_obj if tot_obj > 0 else 0.0
     avg_ob_per_scene = tot_ob / processed_scenes if processed_scenes > 0 else 0.0
@@ -102,6 +108,10 @@ def evaluate_out_of_bound(json_path, conf_thresh=0.0):
     print(f"Total furniture objects: {tot_obj}")
     print(f"Average #OB per scene: {avg_ob_per_scene:.4f}")
     print(f"OB Object Rate (tot_ob / tot_obj): {ob_rate:.4f}")
+    print(f"{'room':18s} | OB/scene | OB rate | OB objects | scenes")
+    for room in sorted(room_stats):
+        ob, ob_tot, sc = room_stats[room]
+        print(f"{room:18s} | {ob / max(sc, 1):.4f}   | {ob / max(ob_tot, 1):.4f}  | {ob}/{ob_tot} | {sc}")
     
     return float(avg_ob_per_scene)
 
