@@ -1,0 +1,30 @@
+{
+  "title": "SteerScene on EchoScene: qualitative results",
+  "runs": {
+    "echoscene": {
+      "label": "EchoScene",
+      "raw": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/2050/physcene_collision_input.json",
+      "pp": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/2050/physcene_collision_resolved.json",
+      "meshes": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/vis_2050.zip",
+      "mesh_eval": {"raw": "mesh_eval/baseline_server_raw.per_scene.json",
+                    "pp": "mesh_eval/baseline_server_pp.per_scene.json"}
+    },
+    "steerscene": {
+      "label": "SteerScene (r6_cr30rot10_eg2_rel100)",
+      "raw": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/2050/physcene_collision_input.json",
+      "pp": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/2050/physcene_collision_resolved.json",
+      "meshes": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/vis_2050.zip",
+      "mesh_eval": {"raw": "mesh_eval/final_r6_cr30rot10_eg2_rel100_raw.per_scene.json",
+                    "pp": "mesh_eval/final_r6_cr30rot10_eg2_rel100_pp.per_scene.json"}
+    }
+  },
+  "panels": [
+    {"run": "echoscene", "stage": "raw", "label": "EchoScene", "role": "other"},
+    {"run": "echoscene", "stage": "pp", "label": "EchoScene + Collision Resolver", "role": "other"},
+    {"run": "steerscene", "stage": "raw", "label": "EchoScene + Physical Guidance", "role": "ours"},
+    {"run": "steerscene", "stage": "pp", "label": "EchoScene + SteerScene", "role": "ours"}
+  ],
+  "compare": [[0, 2, "Base vs Physical Guidance"], [1, 3, "Resolver vs SteerScene"], [0, 3, "Base vs SteerScene"]],
+  "room_groups": {"Paper (bed / living / dining)": ["Bedroom", "MasterBedroom", "SecondBedroom", "LivingRoom", "DiningRoom", "LivingDiningRoom"]},
+  "moved_threshold": 0.1
+}
