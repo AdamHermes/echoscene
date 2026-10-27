@@ -1,30 +1,141 @@
 {
-  "title": "SteerScene on EchoScene: qualitative results",
-  "runs": {
-    "echoscene": {
-      "label": "EchoScene",
-      "raw": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/2050/physcene_collision_input.json",
-      "pp": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/2050/physcene_collision_resolved.json",
-      "meshes": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/vis_2050.zip",
-      "mesh_eval": {"raw": "mesh_eval/baseline_server_raw.per_scene.json",
-                    "pp": "mesh_eval/baseline_server_pp.per_scene.json"}
+  "backbones": {
+    "EchoScene": {
+      "title": "SteerScene on EchoScene (370 SG-FRONT test scenes, generated shapes)",
+      "runs": {
+        "echoscene": {
+          "label": "EchoScene",
+          "raw": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/2050/physcene_collision_input.json",
+          "pp": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/2050/physcene_collision_resolved.json",
+          "meshes": "/media/lhan/SPINNINGHDD/current_works_v2/baseline_server/vis_2050.zip",
+          "mesh_eval": {"raw": "mesh_eval/baseline_server_raw.per_scene.json",
+                        "pp": "mesh_eval/baseline_server_pp.per_scene.json"}
+        },
+        "steerscene": {
+          "label": "SteerScene (r6_cr30rot10_eg2_rel100)",
+          "raw": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/2050/physcene_collision_input.json",
+          "pp": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/2050/physcene_collision_resolved.json",
+          "meshes": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/vis_2050.zip",
+          "mesh_eval": {"raw": "mesh_eval/final_r6_cr30rot10_eg2_rel100_raw.per_scene.json",
+                        "pp": "mesh_eval/final_r6_cr30rot10_eg2_rel100_pp.per_scene.json"}
+        }
+      },
+      "panels": [
+        {"run": "echoscene", "stage": "raw", "label": "EchoScene", "role": "other"},
+        {"run": "echoscene", "stage": "pp", "label": "EchoScene + Collision Resolver", "role": "other"},
+        {"run": "steerscene", "stage": "raw", "label": "EchoScene + Physical Guidance", "role": "ours"},
+        {"run": "steerscene", "stage": "pp", "label": "EchoScene + SteerScene", "role": "ours"}
+      ],
+      "presets": {"All four (Fig. 1, 2×2)": [0, 1, 2, 3], "Base vs SteerScene": [0, 3],
+                  "Base vs Physical Guidance": [0, 2], "Resolver vs SteerScene": [1, 3]},
+      "compare": [[0, 2, "Base vs Physical Guidance"], [1, 3, "Resolver vs SteerScene"], [0, 3, "Base vs SteerScene"]],
+      "room_groups": {"Paper (bed / living / dining)": ["Bedroom", "MasterBedroom", "SecondBedroom", "LivingRoom", "DiningRoom", "LivingDiningRoom"]}
     },
-    "steerscene": {
-      "label": "SteerScene (r6_cr30rot10_eg2_rel100)",
-      "raw": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/2050/physcene_collision_input.json",
-      "pp": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/2050/physcene_collision_resolved.json",
-      "meshes": "/media/lhan/SPINNINGHDD/current_works_v2/final_r6_cr30rot10_eg2_rel100/vis_2050.zip",
-      "mesh_eval": {"raw": "mesh_eval/final_r6_cr30rot10_eg2_rel100_raw.per_scene.json",
-                    "pp": "mesh_eval/final_r6_cr30rot10_eg2_rel100_pp.per_scene.json"}
+    "InstructScene": {
+      "title": "SteerScene on InstructScene (test split, seed 0, retrieved 3D-FUTURE furniture)",
+      "runs": {
+        "none": {
+          "kind": "placements", "label": "InstructScene (no guidance)",
+          "mesh_root": "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/meshes",
+          "raw": ["/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/bedroom_none/placements.json",
+                  "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/diningroom_none/placements.json",
+                  "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/livingroom_none/placements.json"],
+          "pp": ["/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/bedroom_none/placements_resolved.json",
+                 "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/diningroom_none/placements_resolved.json",
+                 "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/livingroom_none/placements_resolved.json"],
+          "floor": {"raw": ["/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/bedroom_none/result.json.floor.json",
+                            "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/diningroom_none/result.json.floor.json",
+                            "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/livingroom_none/result.json.floor.json"],
+                    "pp": ["/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/bedroom_none/result.json.floor.json",
+                           "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/diningroom_none/result.json.floor.json",
+                           "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/livingroom_none/result.json.floor.json"]}
+        },
+        "tuned": {
+          "kind": "placements", "label": "SteerScene (InstructScene main pick, col 30)",
+          "mesh_root": "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/meshes",
+          "raw": ["/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/bedroom_tuned/placements.json",
+                  "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/diningroom_tuned/placements.json",
+                  "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/livingroom_tuned/placements.json"],
+          "pp": ["/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/bedroom_tuned/placements_resolved.json",
+                 "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/diningroom_tuned/placements_resolved.json",
+                 "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/livingroom_tuned/placements_resolved.json"],
+          "floor": {"raw": ["/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/bedroom_tuned/result.json.floor.json",
+                            "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/diningroom_tuned/result.json.floor.json",
+                            "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/livingroom_tuned/result.json.floor.json"],
+                    "pp": ["/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/bedroom_tuned/result.json.floor.json",
+                           "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/diningroom_tuned/result.json.floor.json",
+                           "/media/lhan/SPINNINGHDD/qual_bundle/instructscene/runs/livingroom_tuned/result.json.floor.json"]}
+        }
+      },
+      "panels": [
+        {"run": "none", "stage": "raw", "label": "InstructScene", "role": "other"},
+        {"run": "none", "stage": "pp", "label": "InstructScene + Collision Resolver", "role": "other"},
+        {"run": "tuned", "stage": "raw", "label": "InstructScene + Physical Guidance", "role": "ours"},
+        {"run": "tuned", "stage": "pp", "label": "InstructScene + SteerScene", "role": "ours"}
+      ],
+      "presets": {"All four (2×2)": [0, 1, 2, 3], "Base vs SteerScene": [0, 3],
+                  "Base vs Physical Guidance": [0, 2], "Resolver vs SteerScene": [1, 3]},
+      "compare": [[0, 2, "Base vs Physical Guidance"], [1, 3, "Resolver vs SteerScene"], [0, 3, "Base vs SteerScene"]]
+    },
+    "PhyScene": {
+      "title": "SteerScene on PhyScene (1024 living rooms, seed 2027, retrieved 3D-FUTURE furniture)",
+      "runs": {
+        "physcene_coll": {
+          "kind": "placements", "label": "PhyScene (its own collision guidance)",
+          "mesh_root": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/meshes",
+          "raw": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/runs/physcene_coll/placements.json",
+          "pp": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/runs/physcene_coll/placements_resolved.json",
+          "floor": {"raw": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/runs/physcene_coll/result.json.floor.json",
+                    "pp": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/runs/physcene_coll/result.json.floor.json"}
+        },
+        "steerscene": {
+          "kind": "placements", "label": "SteerScene on PhyScene (p_w3_r10)",
+          "mesh_root": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/meshes",
+          "raw": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/runs/steerscene_p_w3_r10/placements.json",
+          "pp": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/runs/steerscene_p_w3_r10/placements_resolved.json",
+          "floor": {"raw": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/runs/steerscene_p_w3_r10/result.json.floor.json",
+                    "pp": "/media/lhan/SPINNINGHDD/qual_bundle/physcene/runs/steerscene_p_w3_r10/result.json.floor.json"}
+        }
+      },
+      "panels": [
+        {"run": "physcene_coll", "stage": "raw", "label": "PhyScene", "role": "other"},
+        {"run": "physcene_coll", "stage": "pp", "label": "PhyScene + Collision Resolver", "role": "other"},
+        {"run": "steerscene", "stage": "raw", "label": "PhyScene + Physical Guidance", "role": "ours"},
+        {"run": "steerscene", "stage": "pp", "label": "PhyScene + SteerScene", "role": "ours"}
+      ],
+      "presets": {"All four (2×2)": [0, 1, 2, 3], "Base vs SteerScene": [0, 3],
+                  "Base vs Physical Guidance": [0, 2], "Resolver vs SteerScene": [1, 3]},
+      "compare": [[0, 2, "Base vs Physical Guidance"], [1, 3, "Resolver vs SteerScene"], [0, 3, "Base vs SteerScene"]]
+    },
+    "DiffuScene": {
+      "title": "DiffuScene (co-author's 70 scenes, boxes only; no guided run here yet)",
+      "runs": {
+        "diffuscene": {
+          "kind": "boxes", "label": "DiffuScene", "half_sizes": false,
+          "raw": ["/media/lhan/SPINNINGHDD/qual_bundle/diffuscene/bedroom_collision_params.json",
+                  "/media/lhan/SPINNINGHDD/qual_bundle/diffuscene/living_collision_params.json",
+                  "/media/lhan/SPINNINGHDD/qual_bundle/diffuscene/dining_collision_params.json"],
+          "pp": ["/media/lhan/SPINNINGHDD/qual_bundle/diffuscene/bedroom_collision_params_resolved.json",
+                 "/media/lhan/SPINNINGHDD/qual_bundle/diffuscene/living_collision_params_resolved.json",
+                 "/media/lhan/SPINNINGHDD/qual_bundle/diffuscene/dining_collision_params_resolved.json"],
+          "classes": [
+            ["armchair", "bookshelf", "cabinet", "ceiling_lamp", "chair", "children_cabinet", "coffee_table", "desk", "double_bed",
+             "dressing_chair", "dressing_table", "kids_bed", "nightstand", "pendant_lamp", "shelf", "single_bed", "sofa", "stool",
+             "table", "tv_stand", "wardrobe"],
+            ["armchair", "bookshelf", "cabinet", "ceiling_lamp", "chaise_longue_sofa", "chinese_chair", "coffee_table", "console_table",
+             "corner_side_table", "desk", "dining_chair", "dining_table", "l_shaped_sofa", "lazy_sofa", "lounge_chair", "loveseat_sofa",
+             "multi_seat_sofa", "pendant_lamp", "round_end_table", "shelf", "stool", "tv_stand", "wardrobe", "wine_cabinet"],
+            ["armchair", "bookshelf", "cabinet", "ceiling_lamp", "chaise_longue_sofa", "chinese_chair", "coffee_table", "console_table",
+             "corner_side_table", "desk", "dining_chair", "dining_table", "l_shaped_sofa", "lazy_sofa", "lounge_chair", "loveseat_sofa",
+             "multi_seat_sofa", "pendant_lamp", "round_end_table", "shelf", "stool", "tv_stand", "wardrobe", "wine_cabinet"]]
+        }
+      },
+      "panels": [
+        {"run": "diffuscene", "stage": "raw", "label": "DiffuScene", "role": "other"},
+        {"run": "diffuscene", "stage": "pp", "label": "DiffuScene + Collision Resolver", "role": "other"}
+      ],
+      "presets": {"Base vs Resolver": [0, 1]}
     }
   },
-  "panels": [
-    {"run": "echoscene", "stage": "raw", "label": "EchoScene", "role": "other"},
-    {"run": "echoscene", "stage": "pp", "label": "EchoScene + Collision Resolver", "role": "other"},
-    {"run": "steerscene", "stage": "raw", "label": "EchoScene + Physical Guidance", "role": "ours"},
-    {"run": "steerscene", "stage": "pp", "label": "EchoScene + SteerScene", "role": "ours"}
-  ],
-  "compare": [[0, 2, "Base vs Physical Guidance"], [1, 3, "Resolver vs SteerScene"], [0, 3, "Base vs SteerScene"]],
-  "room_groups": {"Paper (bed / living / dining)": ["Bedroom", "MasterBedroom", "SecondBedroom", "LivingRoom", "DiningRoom", "LivingDiningRoom"]},
   "moved_threshold": 0.1
 }
