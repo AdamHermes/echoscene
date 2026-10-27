@@ -46,6 +46,7 @@ ssh -N -L 8765:localhost:8765 lhan@lhan.duckdns.org -p 22
 | P | pick the scene and store the view; on a picked scene, update the view |
 | 1–9 | switch that panel between raw and after the resolver |
 | H, F, G, R | highlights, floor, 1 row / 2×2, reset view |
+| / | room search: terms must all match the id, room type or an object label (`bedroom wardrobe tv`, `62037`); `#12` jumps to rank 12; tick **filter** to browse only the matches |
 
 The **Backbone** and **Panels** menus are in the header. Picks are saved on the server, one file per backbone (`qual_cache/picks_<backbone>.json`). Export options:
 
