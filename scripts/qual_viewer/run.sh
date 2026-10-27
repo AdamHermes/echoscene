@@ -6,6 +6,6 @@ cd "$(dirname "$0")"
 rm -f server.pid
 [ "$1" = stop ] && exit 0
 if [ -f ~/miniconda3/etc/profile.d/conda.sh ]; then source ~/miniconda3/etc/profile.d/conda.sh; conda activate echoscene; fi
-nohup python server.py --config config_lhanubu.json "$@" > server.log 2>&1 < /dev/null &
+nohup nice -n 10 python server.py --config config_lhanubu.json "$@" > server.log 2>&1 < /dev/null &
 echo $! > server.pid
 echo "started (pid $!), log: $(pwd)/server.log, open http://localhost:8765"

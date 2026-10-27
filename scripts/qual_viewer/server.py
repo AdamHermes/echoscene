@@ -16,7 +16,7 @@ usage: python server.py --config config_lhanubu.json [--port 8765] [--host 127.0
 then open http://localhost:8765 (from another machine: ssh -L 8765:localhost:8765 <host>).
 Only needs numpy + trimesh (python >= 3.8).
 """
-import argparse, io, json, os, re, sys, threading, zipfile
+import argparse, gzip, io, json, os, re, sys, threading, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from multiprocessing import Pool
 from urllib.parse import parse_qs, urlparse, unquote
@@ -171,6 +171,14 @@ def as_list(x):
     return x if isinstance(x, list) else [x]
 
 
+def load_obj(src):
+    """Geometry only: 3D-FUTURE objs reference large textures, which the viewer never uses (it colours by class)."""
+    if isinstance(src, str):
+        with open(src, 'rb') as f:
+            src = io.BytesIO(f.read())
+    return trimesh.load(src, file_type='obj', force='mesh', process=False, skip_materials=True)
+
+
 _BOUNDS = {}
 
 
@@ -217,7 +225,7 @@ class MeshSource:
         else:
             with open(name, 'rb') as f:
                 data = f.read()
-        return trimesh.load(io.BytesIO(data), file_type='obj', force='mesh', process=False)
+        return load_obj(io.BytesIO(data))
 
 
 class EchoRun:
@@ -325,7 +333,7 @@ class PlacementRun:
     def meshes(self, sid):
         out = []
         for n, o in enumerate(self.scenes[self.idx[sid]]['objects'], 1):
-            m = trimesh.load(self.path(o), file_type='obj', force='mesh', process=False)
+            m = load_obj(self.path(o))
             m.apply_transform(place_matrix(o))
             out.append((n, o.get('label', 'object'), m))
         return out
@@ -506,11 +514,28 @@ class SceneBuilder:
             nm = 'obj_%d_%s' % (inst, label)
             sc.add_geometry(m, node_name=nm, geom_name=nm)
         os.makedirs(os.path.dirname(out), exist_ok=True)
-        tmp = out + '.%d.%d.tmp' % (os.getpid(), threading.get_ident())
-        with open(tmp, 'wb') as f:
-            f.write(sc.export(file_type='glb'))
-        os.replace(tmp, out)
+        try:  # the viewer recomputes normals, so leave them out (smaller files)
+            data = trimesh.exchange.gltf.export_glb(sc, include_normals=False)
+        except TypeError:
+            data = sc.export(file_type='glb')
+        write_atomic(out + '.gz', gzip.compress(data, 6))
+        write_atomic(out, data)
         return out
+
+    def gz(self, b, r, s, sid):
+        """gzip copy of the scene file (meshes shrink 2-3x), built on first use."""
+        out = self.glb(b, r, s, sid)
+        if not os.path.exists(out + '.gz'):
+            with open(out, 'rb') as f:
+                write_atomic(out + '.gz', gzip.compress(f.read(), 6))
+        return out + '.gz'
+
+
+def write_atomic(path, data):
+    tmp = path + '.%d.%d.tmp' % (os.getpid(), threading.get_ident())
+    with open(tmp, 'wb') as f:
+        f.write(data)
+    os.replace(tmp, path)
 
 
 _WARM = None
@@ -538,7 +563,7 @@ def warm_cache(backbones, cache, indexes, workers):
     if not jobs:
         return
     print('[warm] building %d scene files with %d processes' % (len(jobs), workers), flush=True)
-    with Pool(workers, initializer=_warm_init, initargs=(backbones, cache)) as p:
+    with Pool(workers, initializer=_warm_init, initargs=(backbones, cache), maxtasksperchild=40) as p:
         for k, err in enumerate(p.imap_unordered(_warm_job, jobs, chunksize=2), 1):
             if err:
                 print('[warm] failed %s' % err, flush=True)
@@ -558,9 +583,12 @@ def make_handler(indexes, builder, cache):
         def log_message(self, *a):
             pass
 
-        def send(self, code, body, ctype):
+        def send(self, code, body, ctype, gzip_body=False):
             self.send_response(code)
             self.send_header('Content-Type', ctype)
+            if gzip_body:
+                self.send_header('Content-Encoding', 'gzip')
+                self.send_header('Vary', 'Accept-Encoding')
             self.send_header('Content-Length', str(len(body)))
             self.send_header('Cache-Control', 'max-age=86400' if ctype == 'model/gltf-binary' else 'no-cache')
             self.end_headers()
@@ -578,7 +606,8 @@ def make_handler(indexes, builder, cache):
                 return self.send(200, json.dumps([dict(name=n, title=indexes[n]['title'], scenes=len(indexes[n]['scenes']))
                                                   for n in names]).encode(), 'application/json')
             if p == '/api/index':
-                return self.send(200, json.dumps(indexes[self.backbone()]).encode(), 'application/json')
+                body, gz = json.dumps(indexes[self.backbone()]).encode(), 'gzip' in self.headers.get('Accept-Encoding', '')
+                return self.send(200, gzip.compress(body, 6) if gz else body, 'application/json', gzip_body=gz)
             if p == '/api/views':
                 f = os.path.join(cache, 'views.json')
                 return self.send(200, open(f, 'rb').read() if os.path.exists(f) else b'{}', 'application/json')
@@ -589,11 +618,12 @@ def make_handler(indexes, builder, cache):
             if m:
                 b, r, s, sid = (unquote(x) for x in m.groups())
                 if b in indexes and r in builder.bb[b]['runs'] and s in builder.bb[b]['runs'][r]:
+                    gz = 'gzip' in self.headers.get('Accept-Encoding', '')
                     try:
-                        f = builder.glb(b, r, s, sid)
+                        f = builder.gz(b, r, s, sid) if gz else builder.glb(b, r, s, sid)
                     except (ValueError, KeyError, IndexError) as e:
                         return self.send(404, str(e).encode(), 'text/plain')
-                    return self.send(200, open(f, 'rb').read(), 'model/gltf-binary')
+                    return self.send(200, open(f, 'rb').read(), 'model/gltf-binary', gzip_body=gz)
             self.send(404, b'not found', 'text/plain')
 
         def do_POST(self):
@@ -632,6 +662,7 @@ def main():
     ap.add_argument('--host', default='127.0.0.1', help='0.0.0.0 to allow other machines on the LAN')
     ap.add_argument('--workers', type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument('--rebuild', action='store_true', help='recompute the per-scene index')
+    ap.add_argument('--warm_workers', type=int, default=2, help='processes pre-building scene files (0 = off); keep low on a 16 GB machine')
     a = ap.parse_args()
     backbones = load_config(a.config)
     cache = a.cache or os.path.join(os.path.dirname(os.path.abspath(a.config)), 'qual_cache')
@@ -648,7 +679,8 @@ def main():
             print('[index] skipping %s: %s' % (name, e), flush=True)
     backbones = {n: backbones[n] for n in indexes}
     builder = SceneBuilder(backbones, cache)
-    threading.Thread(target=warm_cache, args=(backbones, cache, indexes, max(1, min(4, a.workers - 1))), daemon=True).start()
+    if a.warm_workers > 0:
+        threading.Thread(target=warm_cache, args=(backbones, cache, indexes, a.warm_workers), daemon=True).start()
     print('[serve] %s -> http://%s:%d' % (', '.join('%s (%d scenes)' % (n, len(i['scenes'])) for n, i in indexes.items()),
                                           'localhost' if a.host == '127.0.0.1' else a.host, a.port), flush=True)
     ThreadingHTTPServer((a.host, a.port), make_handler(indexes, builder, cache)).serve_forever()

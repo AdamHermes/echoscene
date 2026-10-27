@@ -102,6 +102,9 @@
     <h3>Picks <span id="npicks" class="help"></span></h3>
     <ul id="picks"></ul>
     <div class="row help">Click to open. A pick stores the camera; press <kbd>P</kbd> on a picked scene to update its view.</div>
+    <h3>Loading</h3>
+    <div class="row">Prefetch ± <input type="number" id="prefetchK" min="0" max="15" step="1" style="width:52px"> scenes</div>
+    <div class="row help" id="cacheInfo"></div>
     <h3>Export</h3>
     <div class="row">Cell <input type="number" id="cellW" value="700" min="100" step="50" style="width:64px"> ×
       <input type="number" id="cellH" value="700" min="100" step="50" style="width:64px"> px</div>
@@ -314,16 +317,61 @@ function renderPanels() {
 (function loop() { requestAnimationFrame(loop); if (controls.update() || needRender) { needRender = false; renderPanels(); } })();
 
 // ------------------------------------------------------------------ scene loading
+// Parsed scenes are kept in an LRU cache sized to hold the ±k prefetch window; downloads go through a small queue
+// so the scene on screen is always fetched first and neighbours load nearest-first behind it.
 const loader = new GLTFLoader();
-const glbCache = new Map();
-function loadGLB(run, stage, sid) {
+const glbCache = new Map(), readyKeys = new Set();
+let PREFETCH_K = store.get('prefetchK', 3);
+const cacheLimit = () => (2 * PREFETCH_K + 3) * Math.max(allPanels.length, 1);
+function loadGLB(run, stage, sid, priority = 0) {
   const key = `${run}/${stage}/${sid}`;
-  if (!glbCache.has(key)) {
-    glbCache.set(key, new Promise((res, rej) => loader.load(`/glb/${encodeURIComponent(BB)}/${run}/${stage}/${encodeURIComponent(sid)}.glb`, g => res(g.scene), undefined,
-      e => { glbCache.delete(key); rej(e); })));
-    if (glbCache.size > 80) glbCache.delete(glbCache.keys().next().value);
+  if (glbCache.has(key)) {
+    const v = glbCache.get(key); glbCache.delete(key); glbCache.set(key, v);  // mark as recently used
+    if (priority === 0) bumpQueue(key);
+    return v;
   }
-  return glbCache.get(key);
+  let job;
+  const p = new Promise((res, rej) => { job = { key, priority, url: `/glb/${encodeURIComponent(BB)}/${run}/${stage}/${encodeURIComponent(sid)}.glb`, res,
+    rej: e => { if (glbCache.get(key) === p) glbCache.delete(key); rej(e); } }; });
+  job.promise = p;
+  glbCache.set(key, p);  // must be in the cache before the queue looks at it
+  while (glbCache.size > cacheLimit()) { const old = glbCache.keys().next().value; glbCache.delete(old); readyKeys.delete(old); }
+  enqueue(job);
+  return p;
+}
+const queue = [];
+let active = 0;
+const MAX_ACTIVE = 4;
+function enqueue(job) { queue.push(job); pump(); }
+function bumpQueue(key) { const j = queue.find(x => x.key === key); if (j) { j.priority = 0; pump(); } }
+function pump() {
+  queue.sort((a, b) => a.priority - b.priority);
+  while (active < MAX_ACTIVE && queue.length) {
+    const j = queue.shift(); active++;
+    if (glbCache.get(j.key) !== j.promise) { active--; j.rej(new Error('evicted')); continue; }  // fell out of the window before it started
+    loader.load(j.url, g => { prepare(g.scene); active--; if (glbCache.get(j.key) === j.promise) readyKeys.add(j.key); j.res(g.scene); pump(); updateCacheInfo(); }, undefined,
+      e => { active--; j.rej(e); pump(); });
+  }
+}
+function prepare(root) {  // once per download, not per view: normals are computed on the shared geometry
+  root.traverse(o => { if (o.isMesh && !o.geometry.attributes.normal) o.geometry.computeVertexNormals(); });
+}
+function prefetchAround() {
+  for (let i = queue.length - 1; i >= 0; i--) if (queue[i].priority > 0) {  // drop the old window (re-queued below if still in it)
+    const [j] = queue.splice(i, 1); j.rej(new Error('dropped'));
+  }
+  for (let d = 1; d <= PREFETCH_K; d++) for (const k of [d, -d]) {
+    const n = order[pos + k]; if (n) panels.forEach(p => loadGLB(p.run, p.stage, n.s.id, d).catch(() => {}));
+  }
+  updateCacheInfo();
+}
+function updateCacheInfo() {
+  let ready = 0, total = 0;
+  for (let d = -PREFETCH_K; d <= PREFETCH_K; d++) {
+    const n = order[pos + d]; if (!n) continue;
+    for (const p of panels) { total++; if (readyKeys.has(`${p.run}/${p.stage}/${n.s.id}`)) ready++; }
+  }
+  $('cacheInfo').textContent = `${ready} / ${total} panel files ready (±${PREFETCH_K} scenes)`;
 }
 
 function buildPanelGroup(root, scene, st, opts) {
@@ -337,8 +385,6 @@ function buildPanelGroup(root, scene, st, opts) {
     const inst = m ? +m[1] : -1, label = m ? m[2] : 'object';
     let c = new THREE.Color(classColor(label));
     if (opts.hi) { if (col.has(inst)) c = HI.col.clone(); else if (oob.has(inst)) c = HI.oob.clone(); else if (moved.has(inst)) c = HI.moved.clone(); }
-    o.geometry = o.geometry.clone();
-    if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
     o.material = new THREE.MeshStandardMaterial({ color:c, roughness:0.85, metalness:0.0, side:THREE.DoubleSide });
   });
   g.add(obj);
@@ -421,7 +467,9 @@ async function show() {
   renderPick();
   $('loading').textContent = 'loading…';
   try {
-    const roots = await Promise.all(panels.map(p => loadGLB(p.run, p.stage, scene.id)));
+    const pending = panels.map(p => loadGLB(p.run, p.stage, scene.id));
+    prefetchAround();
+    const roots = await Promise.all(pending);
     if (token !== loadToken) return;
     roots.forEach((root, i) => {
       const sc = panelScenes[i];
@@ -431,9 +479,6 @@ async function show() {
     });
     $('loading').textContent = '';
     requestRender();
-    for (const k of [1, -1]) {  // prefetch neighbours
-      const n = order[pos + k]; if (n) panels.forEach(p => loadGLB(p.run, p.stage, n.s.id).catch(() => {}));
-    }
   } catch (e) { console.error(e); if (token === loadToken) $('loading').textContent = 'failed to load: ' + e; }
 }
 
@@ -609,6 +654,8 @@ $('vSave').onclick = () => {
 };
 $('vDel').onclick = () => { const n = $('viewPreset').value; if (n && confirm(`Delete view preset “${n}”?`)) { delete VIEWS[n]; saveViews(); renderViews(); } };
 renderViews();
+$('prefetchK').value = PREFETCH_K;
+$('prefetchK').onchange = () => { PREFETCH_K = THREE.MathUtils.clamp(Math.round(+$('prefetchK').value) || 0, 0, 15); $('prefetchK').value = PREFETCH_K; store.set('prefetchK', PREFETCH_K); prefetchAround(); };
 $('bPick').onclick = pickToggle;
 $('sort').onchange = () => { store.set('sort', $('sort').value); pos = 0; rank(null); };
 $('room').onchange = () => { store.set('room', $('room').value); rank(); };
