@@ -81,6 +81,21 @@
       <button id="bReset" title="Reset view (R)">Reset view</button>
       <button id="bPick" class="primary" title="Pick scene + save view (P)">☆ Pick</button>
     </div>
+    <div class="sep"></div>
+    <div class="grp" title="Zoom, kept when you move to another scene. 1 = whole floor fits a panel.">
+      Zoom <input type="range" id="zoomSlider" min="-1.5" max="3" step="0.01" value="0" style="width:130px">
+      ×<input type="number" id="vZoom" step="0.05" min="0.05" style="width:58px">
+    </div>
+    <div class="grp" title="View angle in degrees, kept across scenes. Type values and press Enter for an exact, repeatable view.">
+      az <input type="number" id="vAz" step="5" style="width:58px">°
+      el <input type="number" id="vEl" step="5" min="-89" max="89" style="width:52px">°
+      <button id="vApply">Apply</button>
+    </div>
+    <div class="grp">
+      <select id="viewPreset" title="Saved views (zoom + angle); the same preset frames every scene the same way"></select>
+      <button id="vSave" title="Save the current zoom + angle as a named preset">Save view</button>
+      <button id="vDel" title="Delete the selected preset">×</button>
+    </div>
   </header>
   <div id="view"><div id="loading"></div></div>
   <aside>
@@ -346,17 +361,32 @@ function buildPanelGroup(root, scene, st, opts) {
   return g;
 }
 
-function defaultView(scene, cam, ctl) {
-  const f = scene.floor ? scene.floor.flat() : [[-2.5, -2.5], [2.5, 2.5]];
+// A view is (azimuth, elevation, zoom) relative to the scene: zoom 1 fits the whole floor in a panel, so the same
+// view gives the same framing on every scene. It is kept across scenes and can be typed in or saved as a preset.
+const DEFAULT_VIEW = { az: 38.9, el: 44.4, zoom: 1 };
+let VIEW = { ...DEFAULT_VIEW, ...store.get('view', {}) };
+function frameOf(scene) {
+  const f = scene && scene.floor ? scene.floor.flat() : [[-2.5, -2.5], [2.5, 2.5]];
   const xs = f.map(p => p[0]), zs = f.map(p => p[1]);
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
   const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs), 2);
   const r = rects(view.clientWidth, view.clientHeight)[0], aspect = r.w / Math.max(r.h, 1);
-  const dist = span * 0.62 / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) / Math.min(1, aspect);
-  ctl.target.set(cx, 0.4, cz);
-  cam.position.copy(new THREE.Vector3(0.5, 0.78, 0.62).normalize().multiplyScalar(dist).add(ctl.target));
-  ctl.update();
+  return { center: new THREE.Vector3((Math.min(...xs) + Math.max(...xs)) / 2, 0.4, (Math.min(...zs) + Math.max(...zs)) / 2),
+           dist: span * 0.62 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.min(1, aspect) };
 }
+function applyView(scene, v, cam = camera, ctl = controls) {
+  const fr = frameOf(scene), az = THREE.MathUtils.degToRad(v.az), el = THREE.MathUtils.degToRad(v.el);
+  const d = fr.dist / Math.max(v.zoom, 1e-3);
+  ctl.target.copy(fr.center);
+  cam.position.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(d).add(fr.center);
+  ctl.update(); requestRender();
+}
+function readView(scene) {
+  const off = camera.position.clone().sub(controls.target), d = off.length();
+  return { az: +THREE.MathUtils.radToDeg(Math.atan2(off.x, off.z)).toFixed(1),
+           el: +THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(off.y / d, -1, 1))).toFixed(1),
+           zoom: +(frameOf(scene).dist / d).toFixed(3) };
+}
+function defaultView(scene) { applyView(scene, DEFAULT_VIEW); }
 
 let current = null, loadToken = 0;
 async function show() {
@@ -382,7 +412,7 @@ async function show() {
     labels[i].d.querySelector('.m').innerHTML = parts.join(' · ');
   });
   if (current !== scene.id) {
-    if (pick && pick.camera) applyCamera(pick.camera, camera, controls); else defaultView(scene, camera, controls);
+    if (pick && pick.camera) applyCamera(pick.camera, camera, controls); else applyView(scene, VIEW);
     // never show the previous scene's meshes under the new scene's labels
     panelScenes.forEach(sc => sc.children.filter(c => c.userData.content).forEach(c => sc.remove(c)));
     requestRender();
@@ -538,7 +568,47 @@ function toggleGrid() { layout2x2 = !layout2x2; store.set('grid', layout2x2); $(
 setBtn('bHi', showHi); setBtn('bFloor', showFloor); $('bGrid').textContent = layout2x2 ? '1 row' : '2×2';
 $('prev').onclick = () => go(-1); $('next').onclick = () => go(1);
 $('bHi').onclick = toggleHi; $('bFloor').onclick = toggleFloor; $('bGrid').onclick = toggleGrid;
-$('bReset').onclick = () => { const it = order[pos]; if (it) { defaultView(it.s, camera, controls); requestRender(); } };
+$('bReset').onclick = () => { const it = order[pos]; if (it) defaultView(it.s); };
+
+// zoom slider + typed view (zoom, azimuth, elevation) + named view presets saved on the server
+const curScene = () => order[pos] && order[pos].s;
+let syncing = false;
+function syncViewUI() {
+  const s = curScene(); if (!s || syncing) return;
+  VIEW = readView(s); store.set('view', VIEW);
+  $('zoomSlider').value = Math.log2(VIEW.zoom).toFixed(2);
+  if (document.activeElement !== $('vZoom')) $('vZoom').value = VIEW.zoom.toFixed(2);
+  if (document.activeElement !== $('vAz')) $('vAz').value = VIEW.az;
+  if (document.activeElement !== $('vEl')) $('vEl').value = VIEW.el;
+}
+let syncTimer = 0;
+controls.addEventListener('change', () => { clearTimeout(syncTimer); syncTimer = setTimeout(syncViewUI, 60); });
+function setView(v) { const s = curScene(); if (!s) return; VIEW = { ...VIEW, ...v }; applyView(s, VIEW); syncViewUI(); }
+$('zoomSlider').oninput = () => setView({ zoom: 2 ** +$('zoomSlider').value });
+for (const id of ['vZoom', 'vAz', 'vEl']) $(id).onkeydown = e => { if (e.key === 'Enter') { applyTyped(); e.target.blur(); } };
+$('vApply').onclick = applyTyped;
+function applyTyped() {
+  const z = +$('vZoom').value, az = +$('vAz').value, el = +$('vEl').value;
+  if (!(z > 0) || !isFinite(az) || !isFinite(el)) return flash('zoom > 0, angles in degrees');
+  setView({ zoom: z, az, el: THREE.MathUtils.clamp(el, -89, 89) });
+}
+let VIEWS = {};
+try { VIEWS = await (await fetch('/api/views')).json(); } catch (e) {}
+function renderViews() {
+  const sel = $('viewPreset'), keep = sel.value; sel.innerHTML = '';
+  sel.append(new Option('— view presets —', ''));
+  for (const [n, v] of Object.entries(VIEWS)) sel.append(new Option(`${n}  (×${v.zoom}, ${v.az}°, ${v.el}°)`, n));
+  sel.value = VIEWS[keep] ? keep : '';
+}
+async function saveViews() { try { await fetch('/api/views', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(VIEWS) }); } catch (e) { flash('could not save presets'); } }
+$('viewPreset').onchange = () => { const v = VIEWS[$('viewPreset').value]; if (v) setView(v); };
+$('vSave').onclick = () => {
+  const name = prompt('Name for this view preset (zoom, azimuth, elevation):', $('viewPreset').value || '');
+  if (!name) return;
+  VIEWS[name] = readView(curScene()); saveViews(); renderViews(); $('viewPreset').value = name; flash('preset saved');
+};
+$('vDel').onclick = () => { const n = $('viewPreset').value; if (n && confirm(`Delete view preset “${n}”?`)) { delete VIEWS[n]; saveViews(); renderViews(); } };
+renderViews();
 $('bPick').onclick = pickToggle;
 $('sort').onchange = () => { store.set('sort', $('sort').value); pos = 0; rank(null); };
 $('room').onchange = () => { store.set('room', $('room').value); rank(); };

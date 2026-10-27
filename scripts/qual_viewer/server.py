@@ -579,6 +579,9 @@ def make_handler(indexes, builder, cache):
                                                   for n in names]).encode(), 'application/json')
             if p == '/api/index':
                 return self.send(200, json.dumps(indexes[self.backbone()]).encode(), 'application/json')
+            if p == '/api/views':
+                f = os.path.join(cache, 'views.json')
+                return self.send(200, open(f, 'rb').read() if os.path.exists(f) else b'{}', 'application/json')
             if p == '/api/picks':
                 f = picks_path(self.backbone())
                 return self.send(200, open(f, 'rb').read() if os.path.exists(f) else b'[]', 'application/json')
@@ -594,10 +597,11 @@ def make_handler(indexes, builder, cache):
             self.send(404, b'not found', 'text/plain')
 
         def do_POST(self):
-            if urlparse(self.path).path == '/api/picks':
+            p = urlparse(self.path).path
+            if p in ('/api/picks', '/api/views'):
                 body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
                 json.loads(body)
-                f = picks_path(self.backbone())
+                f = picks_path(self.backbone()) if p == '/api/picks' else os.path.join(cache, 'views.json')
                 with open(f + '.tmp', 'wb') as fh:
                     fh.write(body)
                 os.replace(f + '.tmp', f)
