@@ -211,14 +211,15 @@ view.addEventListener('wheel', e => {
   const zoom = e.ctrlKey || $('scrollMode').value === 'zoom';
   const off = camera.position.clone().sub(controls.target);
   if (zoom) {
-    const k = Math.exp((e.ctrlKey ? e.deltaY * 0.01 : e.deltaY * 0.0015));
+    const k = Math.exp(THREE.MathUtils.clamp(e.deltaY, -60, 60) * (e.ctrlKey ? 0.01 : 0.002));
     off.multiplyScalar(THREE.MathUtils.clamp(k, 0.5, 2));
     camera.position.copy(controls.target).add(off);
   } else {
-    const d = off.length() * 0.0012;
+    // trackpads send many small deltas, mouse wheels a few large ones: cap each event
+    const d = off.length() * 0.0006, cap = v => THREE.MathUtils.clamp(v, -40, 40);
     const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
     const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
-    const delta = right.multiplyScalar(e.deltaX * d).add(up.multiplyScalar(-e.deltaY * d));
+    const delta = right.multiplyScalar(cap(e.deltaX) * d).add(up.multiplyScalar(-cap(e.deltaY) * d));
     camera.position.add(delta); controls.target.add(delta);
   }
   controls.update(); requestRender();
@@ -276,7 +277,8 @@ const glbCache = new Map();
 function loadGLB(run, stage, sid) {
   const key = `${run}/${stage}/${sid}`;
   if (!glbCache.has(key)) {
-    glbCache.set(key, new Promise((res, rej) => loader.load(`/glb/${run}/${stage}/${encodeURIComponent(sid)}.glb`, g => res(g.scene), undefined, rej)));
+    glbCache.set(key, new Promise((res, rej) => loader.load(`/glb/${run}/${stage}/${encodeURIComponent(sid)}.glb`, g => res(g.scene), undefined,
+      e => { glbCache.delete(key); rej(e); })));
     if (glbCache.size > 80) glbCache.delete(glbCache.keys().next().value);
   }
   return glbCache.get(key);
@@ -345,6 +347,9 @@ async function show() {
   });
   if (current !== scene.id) {
     if (pick && pick.camera) applyCamera(pick.camera, camera, controls); else defaultView(scene, camera, controls);
+    // never show the previous scene's meshes under the new scene's labels
+    panelScenes.forEach(sc => sc.children.filter(c => c.userData.content).forEach(c => sc.remove(c)));
+    requestRender();
   }
   current = scene.id;
   renderPick();
@@ -360,7 +365,7 @@ async function show() {
     });
     $('loading').textContent = '';
     requestRender();
-    for (const k of [1, -1, 2]) {  // prefetch neighbours
+    for (const k of [1, -1]) {  // prefetch neighbours
       const n = order[pos + k]; if (n) panels.forEach(p => loadGLB(p.run, p.stage, n.s.id).catch(() => {}));
     }
   } catch (e) { if (token === loadToken) $('loading').textContent = 'failed to load: ' + e; }

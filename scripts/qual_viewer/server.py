@@ -268,7 +268,7 @@ class SceneBuilder:
             nm = 'obj_%d_%s' % (inst, label)
             sc.add_geometry(m, node_name=nm, geom_name=nm)
         os.makedirs(os.path.dirname(out), exist_ok=True)
-        tmp = out + '.%d.tmp' % threading.get_ident()
+        tmp = out + '.%d.%d.tmp' % (os.getpid(), threading.get_ident())
         with open(tmp, 'wb') as f:
             f.write(sc.export(file_type='glb'))
         os.replace(tmp, out)
@@ -276,6 +276,37 @@ class SceneBuilder:
 
 
 # ---------------------------------------------------------------- HTTP
+
+_WARM = None
+
+
+def _warm_init(cfg, cache):
+    global _WARM
+    _WARM = SceneBuilder(cfg, cache)
+
+
+def _warm_job(job):
+    try:
+        _WARM.glb(*job)
+    except Exception as e:  # a broken scene must not stop the warm-up
+        return '%s: %s' % ('/'.join(job), e)
+
+
+def warm_cache(cfg, cache, index, workers):
+    """Pre-build every panel's GLB in background processes, so browsing never waits on mesh fitting."""
+    jobs = [(p['run'], s, sc['id']) for sc in index['scenes'] for p in cfg['panels'] for s in cfg['runs'][p['run']]
+            if s in ('raw', 'pp') and not os.path.exists(os.path.join(cache, 'glb', p['run'], s, sc['id'] + '.glb'))]
+    jobs = list(dict.fromkeys(jobs))
+    if not jobs:
+        return
+    print('[warm] building %d scene files with %d processes' % (len(jobs), workers), flush=True)
+    with Pool(workers, initializer=_warm_init, initargs=(cfg, cache)) as p:
+        for k, err in enumerate(p.imap_unordered(_warm_job, jobs, chunksize=2), 1):
+            if err:
+                print('[warm] failed %s' % err, flush=True)
+            if k % 200 == 0 or k == len(jobs):
+                print('[warm] %d / %d' % (k, len(jobs)), flush=True)
+
 
 def make_handler(index, builder, cache):
     picks_path = os.path.join(cache, 'picks.json')
@@ -345,6 +376,7 @@ def main():
     else:
         index = json.load(open(ip))
     builder = SceneBuilder(cfg, cache)
+    threading.Thread(target=warm_cache, args=(cfg, cache, index, max(1, min(4, a.workers - 1))), daemon=True).start()
     print('[serve] %d scenes, %d panels -> http://%s:%d' % (len(index['scenes']), len(index['panels']),
                                                           'localhost' if a.host == '127.0.0.1' else a.host, a.port), flush=True)
     ThreadingHTTPServer((a.host, a.port), make_handler(index, builder, cache)).serve_forever()
